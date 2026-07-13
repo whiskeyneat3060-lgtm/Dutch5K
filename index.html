@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dutch 5K &#8212; Vocab Trainer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#111111; --paper:#FFFFFF; --grey:#F2F2EF;
+    --red:#DD0100; --blue:#225095; --yellow:#FAC901;
+    --rule:3px solid var(--ink);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{
+    font-family:'Inter',sans-serif; color:var(--ink); background:var(--paper);
+    display:flex; flex-direction:column; min-height:100vh;
+  }
+  header{
+    border-bottom:var(--rule); padding:14px 16px;
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+  }
+  .logo{font-family:'Archivo',sans-serif; font-weight:900; font-size:20px; letter-spacing:-0.5px;}
+  .logo span{color:var(--red);}
+  .counter{font-family:'Archivo',sans-serif; font-weight:700; font-size:13px; text-align:right; line-height:1.2;}
+  .counter small{display:block; font-weight:400; font-size:10px; letter-spacing:1px; text-transform:uppercase; color:#666;}
+
+  nav{display:flex; border-bottom:var(--rule);}
+  nav button{
+    flex:1; padding:12px 4px; background:var(--paper); border:none; border-right:var(--rule);
+    font-family:'Archivo',sans-serif; font-weight:700; font-size:13px; text-transform:uppercase;
+    letter-spacing:1px; cursor:pointer; color:var(--ink);
+  }
+  nav button:last-child{border-right:none;}
+  nav button.active{background:var(--ink); color:var(--paper);}
+
+  main{flex:1; padding:16px; max-width:640px; width:100%; margin:0 auto; padding-bottom:48px;}
+
+  .mstrip{display:flex; height:22px; border:var(--rule); margin:16px 0;}
+  .mstrip div{border-right:3px solid var(--ink);}
+  .mstrip div:last-child{border-right:none;}
+  .m-learned{background:var(--blue);}
+  .m-learning{background:var(--yellow);}
+  .m-new{background:var(--paper);}
+
+  .card{
+    border:var(--rule); background:var(--paper); min-height:300px;
+    display:flex; flex-direction:column; cursor:pointer;
+  }
+  .card-tag{
+    font-size:10px; letter-spacing:2px; text-transform:uppercase; font-weight:600;
+    padding:8px 12px; border-bottom:var(--rule); display:flex; justify-content:space-between;
+  }
+  .card-body{flex:1; display:flex; flex-direction:column; justify-content:center; padding:24px 20px; gap:8px;}
+  .word-nl{font-family:'Archivo',sans-serif; font-weight:900; font-size:44px; letter-spacing:-1px; line-height:1; word-break:break-word;}
+  .word-hint{font-size:12px; color:#888; margin-top:12px;}
+  .word-en{font-size:20px; font-weight:600; color:var(--blue);}
+  .rankline{font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#999; margin-top:2px;}
+  .forms{margin-top:12px; font-size:13px; line-height:1.75;}
+  .forms .frow b{font-weight:600; display:inline-block; min-width:96px; color:#444;}
+  .chips{display:flex; flex-wrap:wrap; gap:6px; margin-top:12px;}
+  .chip{font-size:11.5px; font-weight:600; padding:4px 9px; border:2px solid var(--ink);}
+  .chip.syn{background:var(--grey);}
+  .chip.ant{background:var(--yellow);}
+  .sentence{margin-top:10px; padding-left:10px; border-left:4px solid var(--yellow); font-size:14px; line-height:1.5;}
+  .sentence em{display:block; font-style:normal; color:#666; font-size:12.5px;}
+
+  .actions{display:flex; gap:0; margin-top:14px; border:var(--rule);}
+  .actions button{
+    flex:1; padding:14px 6px; border:none; cursor:pointer; background:var(--paper);
+    font-family:'Archivo',sans-serif; font-weight:700; font-size:13px; text-transform:uppercase; letter-spacing:0.5px;
+  }
+  .actions button + button{border-left:var(--rule);}
+  .actions button.btn-again{color:var(--red);}
+  .actions button.btn-learning{background:var(--yellow);}
+  .actions button.btn-know{background:var(--blue); color:#fff;}
+
+  .deckinfo{font-size:12px; color:#666; margin-top:10px; text-align:center;}
+
+  .filters{display:flex; gap:0; border:var(--rule); margin-bottom:12px;}
+  .filters button{flex:1; padding:9px 2px; border:none; background:var(--paper); font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; cursor:pointer;}
+  .filters button + button{border-left:var(--rule);}
+  .filters button.active{background:var(--ink); color:#fff;}
+  input[type=search], input[type=password], input[type=text]{
+    width:100%; padding:11px 12px; border:var(--rule); font-family:'Inter'; font-size:14px; margin-bottom:12px; outline:none;
+  }
+  .wrow{
+    border:2px solid var(--ink); border-bottom:none; padding:10px 12px;
+    display:flex; align-items:center; justify-content:space-between; gap:10px; cursor:pointer;
+  }
+  .wlist .wrow:last-of-type{border-bottom:2px solid var(--ink);}
+  .wrow .nl{font-family:'Archivo'; font-weight:700; font-size:15px;}
+  .wrow .en{font-size:13px; color:#555;}
+  .dot{width:14px; height:14px; border:2px solid var(--ink); flex-shrink:0;}
+  .dot.learned{background:var(--blue);} .dot.learning{background:var(--yellow);} .dot.new{background:#fff;}
+  .wdetail{border:2px solid var(--ink); border-top:none; padding:12px; font-size:13px; background:var(--grey);}
+  .loadmore{width:100%; padding:12px; margin-top:10px; background:var(--paper); border:var(--rule); font-family:'Archivo'; font-weight:700; text-transform:uppercase; letter-spacing:1px; cursor:pointer;}
+
+  .stats{display:grid; grid-template-columns:1fr 1fr; border:var(--rule);}
+  .stat{padding:18px 14px; border-right:3px solid var(--ink); border-bottom:3px solid var(--ink);}
+  .stat:nth-child(2n){border-right:none;}
+  .stat:nth-last-child(-n+2){border-bottom:none;}
+  .stat .num{font-family:'Archivo'; font-weight:900; font-size:34px; line-height:1;}
+  .stat .lbl{font-size:10px; text-transform:uppercase; letter-spacing:1.5px; color:#666; margin-top:6px;}
+  .c-blue{color:var(--blue);} .c-yellow{color:#b89200;} .c-red{color:var(--red);}
+
+  .genbox{border:var(--rule); padding:16px; margin-top:18px;}
+  .genbox h3{font-family:'Archivo'; font-weight:900; font-size:16px; text-transform:uppercase; letter-spacing:0.5px;}
+  .genbox p{font-size:13px; color:#555; margin:8px 0 12px; line-height:1.5;}
+  .genbtn{
+    width:100%; padding:14px; background:var(--red); color:#fff; border:var(--rule);
+    font-family:'Archivo'; font-weight:900; font-size:14px; text-transform:uppercase; letter-spacing:1px; cursor:pointer;
+  }
+  .genbtn.alt{background:var(--blue);}
+  .genbtn:disabled{background:#999; cursor:wait;}
+  .note{font-size:11.5px; color:#888; margin-top:10px; line-height:1.5;}
+  .keyok{font-size:12px; font-weight:600; color:var(--blue); margin-bottom:8px;}
+  .toast{
+    position:fixed; bottom:16px; left:50%; transform:translateX(-50%);
+    background:var(--ink); color:#fff; padding:10px 18px; font-size:13px; font-weight:600;
+    opacity:0; pointer-events:none; transition:opacity .25s; z-index:99; max-width:90vw; text-align:center;
+  }
+  .toast.show{opacity:1;}
+  .empty{border:var(--rule); padding:32px 20px; text-align:center; font-size:14px; color:#555;}
+  .rowbtns{display:flex; gap:10px; margin-top:12px;}
+  .rowbtns button{flex:1; padding:12px; background:var(--paper); border:var(--rule); font-family:'Archivo'; font-weight:700; font-size:12px; text-transform:uppercase; letter-spacing:0.5px; cursor:pointer;}
+  @media (prefers-reduced-motion: reduce){ *{transition:none !important;} }
+  button:focus-visible, input:focus-visible, .card:focus-visible{outline:3px solid var(--red); outline-offset:2px;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">DUTCH<span>&#183;</span>5K</div>
+  <div class="counter"><small>Words learned</small><span id="hdrCount">0 / 5000</span></div>
+</header>
+
+<nav>
+  <button id="tabLearn" class="active" onclick="setTab('learn')">Learn</button>
+  <button id="tabWords" onclick="setTab('words')">Words</button>
+  <button id="tabProgress" onclick="setTab('progress')">Progress</button>
+</nav>
+
+<main id="main"></main>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ STORAGE ADAPTER ============ */
+const Store = {
+  hasClaude: typeof window.storage !== 'undefined',
+  async get(k){
+    if(this.hasClaude){
+      try{ const r = await window.storage.get(k); return r ? JSON.parse(r.value) : null; }
+      catch(e){ return null; }
+    }
+    try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; }catch(e){ return null; }
+  },
+  async set(k,v){
+    if(this.hasClaude){
+      try{ await window.storage.set(k, JSON.stringify(v)); }catch(e){ console.error(e); }
+      return;
+    }
+    try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){ toast('Storage full &#8212; export your progress'); }
+  }
+};
+
+/* ============ BAKED DATA ============ */
+/* FREQ: top 5,000 Dutch words by real corpus frequency (wordfreq), rank order. */
+const FREQ = ["de","van","het","een","en","in","is","op","ik","dat","voor","je","te","met","niet","zijn","die","als","er","maar","om","aan","hij","ook","ze","door","naar","uit","bij","dan","dit","was","we","wat","heeft","of","over","nog","deze","hebben","kan","meer","zo","al","geen","mijn","wel","tot","u","wordt","heb","worden","nu","haar","ben","kunnen","veel","jaar","me","moet","hoe","mensen","na","ons","waar","werd","goed","gaan","gaat","onze","wil","zich","zou","doen","andere","hier","dus","tegen","maken","alleen","mij","onder","had","hun","twee","nieuwe","weer","zien","zal","jij","moeten","eerste","komt","wij","echt","eens","daar","heel","toch","dag","mee","staat","alle","tijd","zij","zoals","iets","komen","leven","omdat","toen","ga","waren","hem","jullie","tijdens","altijd","tussen","ja","weet","wie","laten","waarom","alles","net","via","even","gewoon","grote","man","terug","af","laat","zonder","uur","steeds","zie","bent","eigen","keer","maakt","willen","iedereen","weg","hele","iemand","binnen","uw","werden","werk","nooit","zit","één","drie","the","zelf","aantal","geven","hebt","kinderen","samen","vinden","kunt","plaats","snel","toe","deel","elkaar","huis","laatste","mag","nederland","nodig","vanaf","vind","vrouw","weten","doet","krijgen","want","allemaal","beter","erg","staan","zeggen","zegt","denk","gemaakt","land","naam","zeker","zullen","misschien","stad","verschillende","volgens","anders","goede","houden","volgende","blijven","graag","jou","kwam","verder","wanneer","beste","lang","niets","per","vandaag","vragen","werken","dagen","eerst","elke","vraag","zelfs","gebruikt","gezien","ging","nee","wereld","helemaal","jaren","kom","lijkt","paar","doe","foto","geld","kijk","vooral","leuk","nemen","vaak","achter","gedaan","groot","natuurlijk","sinds","zo'n","bijna","geeft","kijken","mooi","ten","week","dood","hadden","familie","kon","nieuws","rond","website","wilt","zitten","jouw","kleine","online","moment","tweede","vrouwen","ligt","manier","politie","welke","buiten","enkele","geleden","geweest","kun","water","zei","eten","klaar","mannen","nieuw","oude","september","ter","denken","echter","enige","gebruik","helpen","hoop","men","minder","nou","open","beetje","bekend","dingen","genoeg","groep","later","maart","mogelijk","ziet","auto","school","soms","thuis","den","film","gebruiken","krijgt","mooie","niks","spelen","zoek","blijft","hen","onderzoek","terwijl","vier","zeg","zorgen","eigenlijk","informatie","pas","waarin","amsterdam","april","nederlandse","probleem","vanuit","video","vindt","zouden","maak","ooit","soort","vader","vast","vrienden","zeer","zuid","artikel","begin","gebied","moest","vrij","werkt","zodat","amerikaanse","best","daarom","idee","leren","moeder","ongeveer","regio","vijf","boven","der","foto's","niemand","oktober","verhaal","brengen","eerder","kans","meest","grootste","hand","horen","november","opnieuw","ander","bestaat","echte","kreeg","meisje","muziek","naast","slechts","waarbij","zetten","zoon","daarna","duidelijk","hoofd","kind","minuten","vond","wachten","zorg","zowel","boek","dank","gehad","gemeente","gratis","hoor","hou","lekker","maanden","problemen","team","vroeg","weinig","belangrijk","blij","druk","gelijk","houdt","lopen","mogen","oud","precies","vol","afgelopen","beginnen","betekent","december","dezelfde","geval","miljoen","sommige","zoeken","zoveel","halen","lange","lezen","mei","moeilijk","nummer","ouders","partij","top","weken","zaken","bezig","januari","langs","morgen","hulp","klein","krijg","m'n","nadat","vele","bedankt","bijvoorbeeld","delen","gevonden","maand","noord","oorlog","praten","recht","wilde","zag","zet","begon","einde","kamer","maakte","meeste","plaatsen","prijs","programma","stond","twitter","facebook","gaf","liggen","meisjes","neem","orde","volgen","deed","geef","geplaatst","juist","kant","landen","reden","vanwege","waardoor","zaak","elk","euro","europa","gevoel","geworden","jonge","media","tv","valt","voordat","aandacht","anderen","beide","dacht","geschiedenis","hetzelfde","juli","lees","midden","new","ogen","proberen","slecht","stuk","to","vervolgens","waarschijnlijk","bedrijf","februari","gegeven","gelukkig","handen","juni","leden","lichaam","onderwijs","plek","stellen","wedstrijd","wist","zes","dochter","ervan","meteen","persoon","rol","uiteindelijk","vorm","woord","word","augustus","buurt","contact","gepubliceerd","hoge","kopen","leeftijd","lid","liefde","minister","neemt","toekomst","verenigde","zat","and","avond","betalen","denkt","doel","hart","heen","ieder","organisatie","provincie","tien","vergeten","actie","belangrijke","huidige","km","nationale","rest","bang","begint","centrum","direct","gezegd","god","internet","inwoners","jan","jarige","kwamen","leuke","loopt","oh","plan","president","zichzelf","alsof","basis","derde","enkel","geloof","genoemd","http","mens","overal","politiek","project","staten","vertellen","waarvan","woorden","zin","bestaan","ervoor","europese","extra","grond","hoeveel","konden","kort","leiden","seizoen","vallen","algemeen","antwoord","bericht","daarmee","doden","eind","geweldig","hard","korte","links","meter","nam","omgeving","onderdeel","speelt","succes","vanavond","ver","welkom","wet","boeken","gebeurt","gehouden","hoewel","iedere","kleur","langer","site","stap","telefoon","vorige","waarmee","waarop","wonen","bed","beeld","bezoek","dienst","gek","inderdaad","jezelf","jongens","leger","lijst","los","personen","rijden","stem","verloren","zwarte","belangrijkste","blijf","club","erop","frankrijk","geboren","genomen","helaas","kent","mis","ontwikkeling","rode","spel","sterk","totaal","veilig","vriend","waaronder","bedrijven","begonnen","diverse","inmiddels","internationale","licht","sociale","veranderen","voorbij","voorkomen","vormen","aanwezig","duitsland","eiland","geschreven","hoeft","jongen","ken","la","link","meestal","pijn","prima","punt","stoppen","verwacht","volgt","actief","fijn","gekomen","gekregen","koning","kop","liet","meerdere","nacht","normaal","politieke","prachtig","regering","straat","trots","voel","vraagt","vrije","zaterdag","belang","bovendien","broer","eindelijk","ergens","kennen","live","namen","nederlands","noemen","on","partijen","periode","richting","schreef","titel","universiteit","volledig","zee","belgië","bepaalde","brengt","dorp","dr","for","gisteren","kiezen","officiële","schrijven","afrika","blijkt","daarnaast","heerlijk","hoogte","john","mocht","ondanks","overleden","raad","reis","serie","slapen","start","stel","stemmen","sturen","tegenwoordig","utrecht","versie","vertrouwen","vriendin","wakker","z'n","ziekenhuis","acht","baan","centraal","dicht","dieren","gebracht","gegaan","gewonnen","half","ie","no","overheid","relatie","ruim","rust","slechte","tekst","vrijdag","vs","witte","york","bank","energie","gebouw","gingen","helft","helpt","hoog","juiste","klopt","kracht","les","ontvangen","pagina","reactie","ruimte","situatie","sorry","spreken","systeem","voelen","voelt","zeven","zondag","bekende","dankzij","gebeuren","geheel","hoort","kaart","kerk","liever","taal","voorbeeld","vroeger","west","bron","feit","gevolg","gezet","gezicht","heet","prachtige","punten","radio","rotterdam","amerika","beschikbaar","betrokken","blog","dragen","fc","gehoord","gelegen","gevallen","heer","jong","kennis","keuze","plezier","slag","speciale","activiteiten","cultuur","daarvan","duitse","economie","eerlijk","ene","gekozen","haag","hotel","leggen","markt","resultaten","rustig","samenwerking","snap","winnen","wit","zomer","zwart","bijzonder","fout","franse","gedurende","geloven","genieten","gesprek","lokale","lucht","makkelijk","pakken","publiek","regels","val","verhalen","verschil","voetbal","behalve","bereiken","brand","eraan","geslacht","geweldige","google","haat","invloed","kunst","moesten","moord","park","sport","stelt","strijd","wk","bekijk","controle","dames","engels","geluk","gesproken","jongeren","koffie","loop","macht","moeite","ontstaan","persoonlijke","procent","stop","super","trekken","verkiezingen","waard","aarde","band","begrijpen","betere","china","eeuw","feest","gevraagd","gewone","hond","huwelijk","tevens","vakantie","veiligheid","waarheid","wacht","wees","bevolking","bieden","bouwen","deur","erbij","ervaring","films","gebeurd","groningen","holland","mezelf","opgenomen","stand","studenten","terecht","vermoord","viel","voormalige","vorig","bevat","bracht","britse","burgemeester","doordat","international","kilometer","kosten","let","lijn","namelijk","opdracht","oplossing","peter","ronde","rusland","schuld","seks","verlaten","welk","zoekt","drinken","gezin","hoger","kwijt","mening","niveau","post","stuur","verleden","zon","afstand","beelden","beschermen","betreft","bleef","blijkbaar","festival","functie","jeugd","komende","last","londen","mm","name","perfect","plannen","rechter","respect","schip","spanje","speciaal","veranderd","vlak","volk","boos","enorm","houd","kijkt","kost","lijken","maandag","museum","oosten","overzicht","praat","rij","schade","soorten","steden","stil","toegang","vergeet","vertelt","zwaar","zware","app","baby","betaald","biedt","brief","bus","daarbij","daarvoor","deelnemers","frans","gebaseerd","gesloten","hield","hierdoor","hieronder","hoi","hopen","luisteren","mail","nergens","persoonlijk","positie","probeert","russische","sluiten","spelers","straks","uitgevoerd","up","wegens","zomaar","bellen","dagelijks","david","gang","generaal","hiermee","kregen","middel","militaire","mond","oog","optreden","schrijver","serieus","sta","steun","verband","wijk","winkel","you","aangezien","algemene","beleid","besloten","bestuur","beweging","bewijs","bouw","eruit","gebieden","groter","interessant","it","parijs","prijzen","regelmatig","resultaat","spaanse","verantwoordelijk","verkopen","weekend","bel","directeur","enorme","gedrag","gezondheid","groene","help","kantoor","klinkt","lieve","mama","probeer","proces","slaan","stichting","vervangen","voeren","vrijheid","werkte","zover","allen","allerlei","bepaald","bestaande","ding","economische","ex","frank","lag","liep","max","netwerk","opleiding","rechten","rijk","rug","show","slachtoffer","stappen","trein","type","verkocht","vonden","voorzitter","waarde","warm","woont","world","ziek","zorgt","advies","bleek","gesteld","hoogste","jammer","koop","natuur","officieel","oost","openbaar","verdienen","vertelde","winnaar","bedoeld","bekijken","bos","by","donderdag","duurt","financiële","gebruikte","gevangenis","gewerkt","grappig","grens","groepen","historische","islam","koninkrijk","locatie","ondertussen","onderweg","paul","rechts","rivier","rood","san","schoenen","scholen","spreekt","station","vaker","verkeerd","wapen","wilden","aanval","advocaat","angst","antwerpen","artikelen","bedoel","bereikt","bureau","camera","cijfers","digitale","erin","gedachten","gegevens","gespeeld","gestuurd","goud","hoofdstad","interview","japan","jezus","leeft","leek","leiding","momenteel","muur","nr","tafel","toestemming","trouwens","verliezen","volledige","voorzien","wijze","achtergrond","belgische","finale","gehaald","gelezen","gevaar","groen","hallo","hoorde","inhoud","model","mr","ok","premier","reizen","risico","schrijf","sneller","sterke","vereniging","vlaanderen","westen","zodra","besluit","commissie","daardoor","draagt","el","favoriete","geniet","georganiseerd","gericht","gevolgen","gouden","grotere","halve","hierbij","indruk","lastig","moderne","ochtend","vlucht","vuur","zolang","absoluut","afdeling","afkomstig","auto's","bewoners","dikke","dollar","heren","keren","maat","medewerkers","mogelijke","mogelijkheid","omstandigheden","onderwerp","ongeluk","redden","sociaal","volg","woensdag","wou","zuiden","zus","aflevering","bezoekers","brussel","burgers","collega's","college","dak","deden","gebeurde","hiervan","inclusief","neer","noemt","noorden","reacties","reeds","rekening","sint","tegenover","teken","tijden","tips","totdat","verkeerde","vervoer","voormalig","voorstellen","account","beroep","betrekking","blauwe","erger","gaten","gedood","geldt","gemeenten","geopend","geweld","hiervoor","huizen","leerlingen","leider","leidt","mede","michael","miljard","one","openbare","stijl","turkije","uitgebreid","vaste","verdwenen","wind","zulke","aardig","afspraak","begrijp","bescherming","bezit","binnenkort","chinese","eet","eisen","fantastisch","fiets","gekocht","geleerd","hoef","hoek","internationaal","japanse","kleding","krant","laag","maatregelen","maatschappij","nogal","onderzoeken","oranje","organisaties","overwinning","pro","red","samenleving","slaap","sluit","toegevoegd","tom","toont","uren","verdachte","vieren","vlees","vrijwel","woning","ziekte","album","aldus","australië","bezoeken","brug","buitenland","centrale","dergelijke","diep","eigenaar","eén","gebouwd","geluid","gevolgd","harde","he","hey","ii","kamp","klanten","lachen","lage","leidde","lief","negen","neuken","ontwerp","reageren","strand","stukje","tuin","tweets","vandaan","vrede","vreemd","zingen","behandeling","beneden","berichten","brabant","code","eenmaal","ermee","gebouwen","geraakt","honger","ideeën","italië","leer","meid","min","mogelijkheden","my","partner","producten","productie","regen","speler","st","veld","verjaardag","verlies","vertaling","voorbeelden","waarvoor","zogenaamde","afhankelijk","bal","besloot","boom","buitenlandse","cm","degene","des","discussie","duizenden","etc","eu","fijne","gasten","geest","kritiek","love","lukt","mooiste","pak","parlement","rapport","slachtoffers","sprake","tijdje","verbeteren","verklaring","verwachten","vlag","vliegen","voet","voldoende","vrouwelijke","wens","arts","bijdrage","bijzondere","blauw","city","dinsdag","dromen","editie","gebruikers","genaamd","hangt","heerlijke","hopelijk","inzet","kust","langzaam","le","legt","limburg","melden","moslims","motor","nationaal","nl","ontdekt","personeel","raken","schrijft","spijt","storm","tonen","training","verbonden","verdient","wijn","youtube","zoiets","beperkt","bergen","bewust","bloed","boodschap","bronnen","campagne","collectie","contract","droom","eentje","hè","james","koud","kwaliteit","luister","mark","mexico","ministerie","nauwelijks","ontwikkeld","projecten","redenen","standaard","stonden","studie","televisie","totale","troepen","verliefd","volle","vormt","baas","communicatie","duur","engelse","ervaren","gefeliciteerd","gezond","goeie","haalt","initiatief","kaarten","kleuren","medische","meneer","missen","omhoog","positieve","rechtbank","republiek","soldaten","tenzij","verkeer","voedsel","vrijwilligers","wellicht","werkelijk","willem","aangeboden","all","alweer","bad","beslissing","categorie","combinatie","gelegenheid","george","hoeven","interesse","kapot","klasse","laatst","olympische","onzin","opgericht","organiseren","ouder","past","probeerde","schat","selectie","stelde","thee","twintig","uitspraak","vechten","veroorzaakt","wapens","wensen","werknemers","zagen","zeeland","én","akkoord","anti","as","bedoeling","bereid","boot","dansen","dienen","draaien","draait","feiten","fouten","gast","geile","gemakkelijk","gemiddelde","getrouwd","gewond","gezocht","hangen","heilige","italiaanse","kampioen","koningin","manieren","materiaal","meiden","merk","mobiele","oke","olie","ontwikkelen","oudere","pad","passen","politici","positief","raakte","restaurant","schoon","simpel","social","sprak","stierf","tenminste","test","tweet","twijfel","unieke","verkoop","verzoek","vierde","voelde","voornamelijk","wedstrijden","winkels","winter","won","adres","at","behulp","berg","bevindt","bier","compleet","computer","daarop","dame","debat","district","effect","evenement","gedeelte","gevoelens","haal","israël","leveren","natuurlijke","oma","ontzettend","raar","steken","ton","traditionele","verbinding","verenigd","verschenen","verschillen","verwijderd","verwijderen","vóór","ware","wint","zaten","afgesloten","arm","auteur","bomen","broek","dichtbij","diensten","dom","flink","gemeenschap","gent","geregeld","hogere","ineens","leeg","life","overigens","status","stof","time","verboden","vergadering","verslag","verteld","vluchtelingen","aanleiding","art","betekenis","details","eenheid","excuses","geholpen","gemist","gesprekken","india","iphone","kader","keuken","klant","klas","medewerker","mevrouw","operatie","paard","pers","professor","route","service","stukken","technische","teksten","teveel","tevreden","uiteraard","verandering","vis","vliegtuig","zult","anna","begraven","bepalen","bewijzen","bloemen","brazilië","concert","daarin","date","directe","duits","eenvoudig","erover","ervaringen","gehele","generatie","gevestigd","glas","golf","landelijke","las","maakten","milieu","minuut","news","onmogelijk","populair","rijdt","rondom","schatje","sfeer","slim","speelde","spoor","stadion","tour","vlaamse","voeten","voort","vooruit","wegen","woon","agenten","antwoorden","belachelijk","betekenen","big","black","ca","canada","day","gedacht","gestart","gezellig","graden","grenzen","groei","handel","hans","herinneren","industrie","jaarlijks","keek","levert","middelen","moe","out","overeenkomst","product","reeks","schuldig","snelle","sporen","taak","techniek","temperatuur","thema","tijdelijk","turkse","unie","verantwoordelijkheid","verplicht","voorstel","websites","wereldwijd","alsjeblieft","arme","be","beiden","beschreven","dagelijkse","game","gevaarlijk","groeien","harry","hof","journalist","kwaad","league","lengte","ma","mate","neus","oorspronkelijk","opening","originele","paus","plekken","presentatie","richten","shit","slot","stroom","trap","verandert","verdeeld","winst","zette","behoefte","beurt","coach","collega","concept","datum","deuren","duren","et","griekenland","hoeveelheid","honden","indien","ingezet","kwestie","leg","lekkere","liefst","lul","menselijke","noemde","normale","onafhankelijke","ontmoet","oorzaak","platform","profiel","raakt","relatief","roepen","schiet","sexy","spullen","sterven","street","studio","tas","tegelijkertijd","termijn","tijdschrift","trekt","twaalf","vermeld","verscheen","vertrek","volwassen","wetenschap","afrikaanse","bespreken","bob","brood","burger","cc","controleren","dode","doorgaan","eveneens","gelooft","gestolen","gevangen","gooien","interessante","jack","kansen","kende","kont","maria","onmiddellijk","ontworpen","oplossen","overige","prins","ring","seconden","sterren","technologie","terrein","trainer","trouwen","verdwijnen","zeiden","aangenomen","begrip","benen","beschouwd","bezocht","bijeenkomst","boord","crisis","da","data","engeland","europees","feestje","fietsen","gele","geprobeerd","grap","held","homo","honderd","honderden","indonesië","kandidaat","karakter","koken","leest","meerderheid","onderstaande","ontbijt","ontmoeten","openen","perfecte","planten","poging","populaire","publieke","race","regionale","sector","single","slaat","snelheid","starten","sterker","tekenen","thomas","vertel","vreselijk","with","zak","zwemmen","acties","afbeelding","allebei","avonds","bar","behoorlijk","charles","culturele","democratie","dik","dubbele","eer","eindhoven","fans","fantastische","gebrek","gisteravond","hierin","home","houten","info","jaarlijkse","kat","kies","kleren","letterlijk","manager","miljoenen","minstens","miss","missie","moeders","onderwerpen","opnemen","opzichte","plus","real","spaans","steen","talen","uitdaging","uitgezonden","uitslag","voordeel","afbeeldingen","appartement","bibliotheek","cd","creëren","gelukt","handig","hierover","high","maatschappelijke","martin","nogmaals","non","nummers","ontslagen","papa","richard","ruzie","sommigen","trek","trok","velen","vissen","workshop","zweden","aanvallen","aanwezigheid","an","apple","been","begrepen","behandeld","behouden","bekeken","berlijn","beschermd","betaalt","bewegen","dier","duurzame","elektrische","ernstig","goedemorgen","haven","kabinet","lager","machine","namens","oceaan","oproep","patiënten","polen","privé","reed","roept","shirt","speel","telt","term","theorie","toon","verdere","vergelijking","vertrekken","verzet","vreemde","waarna","aanbod","agenda","agent","bestellen","carrière","deelname","dichter","gebeurtenissen","gebleven","gebruiker","gedragen","huid","hé","inspiratie","kanaal","klassieke","klik","korting","lagen","maastricht","meedoen","meester","mochten","nijmegen","ontwikkelingen","praktijk","sindsdien","stenen","straf","testen","toevallig","trouw","vermist","waarden","war","washington","actieve","armen","azië","bezorgd","breed","bv","cel","do","duizend","enig","evenals","forum","friesland","gas","gaven","geleid","geleverd","gemiddeld","geschikt","haarlem","individuele","justitie","kim","kut","lossen","madrid","mannelijke","momenten","national","noem","onlangs","ontslag","ploeg","programma's","regel","regelen","richt","rijke","sex","ster","stoel","veilige","vluchten","volgde","werkelijkheid","wijzen","wisten","zwanger","aanpak","afscheid","barcelona","bedacht","benieuwd","bevestigd","buren","christus","dans","dating","free","geel","geheim","herinneringen","instantie","landschap","lot","makkelijker","melding","netjes","oké","piet","qua","rio","schaal","stopt","syrië","talent","toilet","us","veranderingen","verrassing","verslagen","vn","warme","behandelen","beveiliging","blik","boeren","broers","donker","duurde","fifa","geslagen","geïnteresseerd","haalde","hout","humor","instituut","islamitische","kanten","kilo","klimaat","lagere","nachts","noch","omgaan","optie","pensioen","podium","privacy","rand","reageert","robert","succesvol","theater","uitzending","uitzondering","verloor","verzamelen","vogels","vriendelijk","zetels","zichtbaar","aangepast","aanslag","banden","bedreigd","belangrijker","beroemde","bevatten","bijdragen","bleven","breng","commentaar","cup","dient","documenten","duidelijke","echtgenoot","eenvoudige","eigendom","enz","fase","games","gearresteerd","gedwongen","gegeten","geheime","go","instellingen","joden","kanker","kast","kiest","koos","logisch","maan","mike","moeilijke","onafhankelijk","roze","student","teams","tegelijk","tentoonstelling","this","tientallen","toegestaan","uitleg","vastgesteld","virus","visie","zakken","zwembad","albert","alsnog","arnhem","begrijpt","behoren","chris","co","cool","dokter","droog","egypte","evenementen","gevecht","gooi","kampen","komst","kunstenaar","leraar","lied","lijden","literatuur","logo","monument","nabij","naties","negatieve","opeens","overgenomen","overleven","papier","patiënt","sam","stilte","stuurt","toernooi","traditie","uitgebreide","vanmorgen","voorlopig","wezen","woningen","aangesloten","analyse","assistent","bak","banen","bevinden","café","center","congres","content","dertig","dubbel","eerdere","enthousiast","gedachte","groeit","heden","helder","herstellen","jarig","klacht","magazine","middag","mist","ondernemers","ontdekken","ontstond","opgelost","oudste","overleed","party","plastic","plein","professionele","raam","revolutie","schieten","schijnt","smaak","star","studeren","tanden","telkens","tijdelijke","uitgegeven","update","verspreid","vertaald","vogel","volgend","vroege","winnaars","zicht","beslist","boerderij","braziliaanse","dorpen","draag","eilanden","eindigt","gat","getuigen","gezonde","grotendeels","henry","house","ict","jas","lente","lunch","medisch","moskou","muren","nederlanders","nieuwste","opstand","reclame","samenwerken","schepen","scherp","set","sites","steunen","suriname","tegenstelling","tip","tuurlijk","uiterlijk","vanochtend","vermogen","video's","voorkeur","voren","wederom","woonde","xxx","zorgde","accepteren","ach","amerikanen","banken","bedrag","breda","competitie","donkere","droeg","drugs","elementen","erkend","gekeken","gewend","gewicht","griekse","ha","hierna","hot","https","huilen","huur","indiase","inzetten","katholieke","klachten","krachten","lessen","locaties","lol","mars","meegemaakt","mobiel","oefenen","ondersteuning","oorspronkelijke","opgepakt","overlijden","paarden","plaatselijke","pop","rekenen","rook","samenvatting","software","steek","technisch","toezicht","treinen","uitvoering","vak","veroordeeld","verschrikkelijk","villa","vingers","vliegveld","vocht","voert","werkzaamheden","wild","zaal","ziel","zwolle","bevel","boer","commerciële","deels","duurzaam","ed","elf","financieel","gelegd","gestopt","getuige","gevaarlijke","girl","happy","historisch","hoezo","hongarije","ijs","immers","ingang","knap","koninklijke","legde","levens","liedjes","marine","meegenomen","meldt","ondernemen","ondernemer","ondersteunen","onderzocht","opa","ophalen","paleis","prinses","recente","redelijk","relaties","roken","soldaat","spanning","steve","succesvolle","toegankelijk","toepassing","vangen","verklaard","vertrokken","vijftig","voorkomt","wagen","wereldoorlog","werkzaam","aangevallen","afval","alvast","bestuurder","bill","christelijke","conflict","erfgoed","ergste","gebeld","hemel","inkomen","kasteel","kg","klagen","korea","landbouw","laptop","leert","maximaal","not","ongelooflijk","ontmoeting","ontstaat","oplossingen","overtuigd","pagina's","paniek","plaatste","poort","principe","puur","stress","verborgen","verdieping","verkoopt","waaraan","wiens","alex","alexander","arabische","bedenken","bedoelde","beschrijving","besteld","breken","buik","cadeau","complete","das","definitief","del","domein","durf","ernstige","extreem","feite","from","geboorte","gereden","gerust","geslaagd","goederen","gouverneur","hierop","houding","identiteit","kapitein","kevin","koers","kunstenaars","leerde","merken","mode","moed","nadenken","nek","onderdelen","ouderen","passie","religie","religieuze","slimme","sms","sneeuw","springen","straten","stuurde","symbool","tekort","tim","tony","uitgebracht","vandaar","vannacht","vecht","verdrag","vernietigd","volgers","web","wijst","zand","zone","zwak","aanbieden","artiesten","behoort","bodem","bosch","chauffeur","chinees","conclusie","defensie","di","dj","doelen","eric","gay","gepland","gescheiden","getekend","green","herinnering","kenmerken","kerst","kleiner","kleinere","leef","lieten","line","louis","minste","negatief","pand","pc","plaat","realiseren","sloot","toekomstige","tranen","treden","united","verdedigen","vet","vijfde","voorwaarden","werking","westerse","zijde","air","alcohol","award","aziatische","beheer","belangen","bestond","boodschappen","bord","brieven","daniel","delft","docent","eieren","fan","gaande","gauw","gebroken","genoten","gevormd","goedkoop","henk","interne","jean","joe","jr","junior","kaas","klok","liedje","maal","marc","misdaad","modellen","onbekende","ontsnappen","oren","plaatje","plant","publiceerde","rome","rt","schoonheid","simon","spannend","sporten","stoffen","terugkeer","toegepast","toestand","vergelijken","verliest","vermoedelijk","verstand","verzameling","vielen","volwassenen","voorstelling","vrolijk","wandelen","zilver","aangegeven","ad","ah","ajax","anne","apart","aparte","back","beslag","bruin","business","charlie","cursus","deal","ellende","families","functies","gemeld","gered","gezellige","haast","harte","impact","intussen","investeren","jongste","kandidaten","lee","lichte","loon","luxe","melk","menselijk","metro","moorden","oekraïne","ofwel","organiseert","play","raden","rob","roman","russisch","sleutel","specifieke","structuur","tegenstander","uitbreiding","uitgenodigd","uitleggen","uitstekend","veranderde","verhuizen","verslaan","vloer","voorzichtig","wijken","zoektocht","zojuist","alternatief","bart","belangstelling","beperkte","btw","drama","du","elftal","filmpjes","johan","jongere","koopt","late","make","medicijnen","methode","middelbare","misbruik","nat","neef","opname","opvallend","politicus","prestaties","publicatie","rechtstreeks","rijn","sarah","seksuele","sloeg","streek","taken","tante","tel","typisch","uitvoeren","variant","verdediging","verdiend","verdriet","verschijnen","vijand","vlaams","voordelen","wetenschappelijk","zelden","zelfmoord","artsen","betaalde","blad","blok","dam","dankbaar","deelnemen","definitie","duitsers","externe","extreme","figuur","filmpje","geduld","gekke","herstel","hetgeen","job","jones","keuzes","laura","liegen","luchthaven","negeren","off","ontvangt","oom","overleg","plaatsvinden","promotie","ramp","reguliere","salaris","scherm","transport","verdacht","verkrijgbaar","veroorzaken","verrast","vlakbij","volop","wetten","zacht","zanger","zekerheid","aangekomen","aard","adam","alternatieve","armoede","automatisch","bas","belasting","beloofd","bewaard","bewezen","bijbel","blijken","brede","clubs","constant","democratische","documentaire","drukken","fotograaf","gelopen","getroffen","gras","hoorn","iran","jarenlang","juridische","kern","kip","kruis","leugens","levende","ms","naartoe","netwerken","onderhouden","ontdekte","oostenrijk","opkomst","opmerking","opstaan","pa","papieren","professioneel","rollen","tellen","toestel","trainen","vastgelegd","verbergen","verklaren","verwachting","wetgeving","white","wow","zelfde","apparaten","aspecten","beurs","bezorgen","blanke","brittannië","complex","contacten","creatieve","da's","diepe","dure","file","gedeeld","geldig","gelijke","geregistreerd","hel","jury","kids","kijkers","king","kocht","marokko","medaille","mijne","mini","nick","onderhoud","oordeel","pot","realiteit","rock","roy","schone","stopte","taxi","tilburg","trend","triest","uniek","verbetering","vergeleken","vervolg","verzameld","voorbereid","voorbereiding","vullen","waarschuwing","walter","wetenschappelijke","wifi","windows","wiskunde","zender","zonde","aangetroffen","amerikaans","australische","beker","bereik","betaal","dachten","degenen","dick","dochters","dvd","eerlijke","elite","emoties","geestelijke","gemeenteraad","geschoten","gevangenen","harder","inkomsten","japans","joodse","kijkje","koude","lijf","mac","meenemen","militairen","officier","omvang","pieter","prestatie","provincies","rare","recept","rennen","restaurants","spreek","tropische","uitzicht","verschijnt","vertrekt","waarover","your","zekere","zelfstandig","advocaten","afkomst","amper","argentinië","bedanken","bedraagt","bedreiging","beschrijft","besproken","bussen","daaraan","domme","doos","douche","economisch","elders","erik","fabriek","front","geheugen","gekend","gelderland","getoond","getrokken","gezelschap","grootte","hit","hitler","infrastructuur","ingesteld","inzicht","jawel","lady","landelijk","leerling","lokaal","michel","muzikale","naakt","noordelijke","noorwegen","onbekend","onvoldoende","oorsprong","oscar","overtuigen","pakket","pik","pvda","recepten","record","rit","robin","saai","scheiding","se","spiegel","verblijf","voegen","voortaan","voortdurend","voorzieningen","vriendje","will","wolf","aanvraag","activiteit","adviseur","am","archief","betreffende","binnenstad","blind","borst","deelt","destijds","diploma","don","doorheen","dringend","duo","effecten","eh","eigenschappen","eng","federale","formule","gewonden","gezamenlijke","gezinnen","geïnspireerd","grand","group","haren","herinnert","journalisten","kaartje","kolonel","lege","letten","lift","lukken","mary","minimaal","onszelf","onzeker","patrick","pen","plaatst","planeet","redactie","soep","toeristen","uitspraken","valse","vervelend","verwijzen","vrees","vriendschap","waaruit","wetenschappers","win","workshops","zwijgen","aandelen","aanmelden","are","boel","bossen","brak","brian","canadese","context","daadwerkelijk","daarover","dader","diner","dna","drank","dutch","erachter","es","fles","geil","gezamenlijk","gezondheidszorg","grondwet","hi","hoer","hoopt","jacht","kennelijk","keus","leefde","leeuwarden","letters","levend","lieverd","luitenant","marco","nep","omroep","ontwikkelde","opgesloten","or","pakt","partners","pauze","poolse","pure","racisme","ras","reizigers","resolutie","road","sc","schande","schreeuwen","taart","tempel","tenslotte","tent","uitsluitend","un","vent","verhogen","verklaart","vinger","voorgesteld","wc","welzijn","wettelijke","woonplaats","aanwijzingen","anoniem","beantwoorden","bidden","boze","brachten","brugge","camera's","check","christenen","circa","coalitie","cover","dossier","downloaden","drenthe","eindigde","elektronische","erkenning","eva","fruit","genomineerd","geproduceerd","gestorven","gezag","gold","grapje","grondgebied","hierboven","hollandse","hoogtepunt","instelling","irak","jaloers","lijnen","minst","moeilijker","onderzoekers","ontwerpen","opmerkingen","opzet","russen","stelling","supermarkt","tijde","toeval","toren","treedt","updates","vanmiddag","verbod","verlopen","vermoorden","versterken","vijftien","vincent","voertuig","vreselijke","werkgever","aangewezen","aanpakken","actuele","afloop","ali","ambassadeur","android","bedoelt","bereikbaar","besteden","betrouwbare","binnenlandse","box","branden","bruine","chaos","design","dijk","doelwit","dronken","drukke","duel","durven","eeuwen","ei","flinke","focus","francisco","gelaten","gevoelig","gevoerd","gezeten","glimlach","goedkope","good","graf","handelen","hersenen","heuvel","integratie","jo","knop","koninklijk","kranten","lach","lenen","massa","mensheid","night","noodzakelijk","obama","onderscheid","pan","petitie","raak","ramen","reputatie","scott","serieuze","sla","slotte","south","spellen","stimuleren","strategie","texas","tieten","uitgesproken","university","vanzelf","verdachten","vergroten","vernietigen","verwachtingen","vi","vijanden","voorwerpen","vriendinnen","westelijke","absolute","afsluiten","alarm","amsterdamse","benoemd","beschadigd","bestemming","bewustzijn","bezet","bezwaar","boete","chef","commissaris","daarentegen","elektriciteit","ere","ernaar","exemplaar","fotografie","gaaf","gecontroleerd","gespecialiseerd","gij","hielden","hongaarse","informeren","juan","jurk","kerken","krachtige","leiders","leo","lucas","malen","mes","modern","nood","ontvang","opgesteld","perspectief","recent","riep","seconde","special","stijging","stom","tempo","verscheidene","verwoest","vietnam","vooraf","voorsprong","woede","zuidelijke","aankomen","aanleg","aanzienlijk","achtergelaten","achternaam","ambtenaren","american","amersfoort","apparaat","assen","beantwoord","behoud","beschikking","besluiten","bestand","besteed","bevestigen","bewaren","boy","carlos","comité","criminelen","digitaal","download","effectief","ek","eur","expert","explosie","feesten","fysieke","gedoe","gegooid","gepresenteerd","gestaan","geweten","graaf","hal","hartelijk","helden","herfst","incident","innovatie","island","josé","kamers","kok","kritisch","linkse","lui","management","marokkaanse","militair","ns","onthouden","ontvangst","opgezet","passagiers","pijnlijk","private","produceren","schilderij","schrijvers","signaal","smith","sowieso","specialist","spelletjes","statistieken","teleurgesteld","thailand","veelal","veertig","verkiezing","verlaat","vermoeden","voorheen","weigerde","weleens","werkgevers","wethouder","wonder","allah","arthur","badkamer","ballen","bbc","bek","commandant","dennis","dordrecht","elizabeth","fred","garage","gedeeltelijk","gelden","geliefde","genoemde","gepleegd","geur","graven","great","herkennen","johannes","kritische","kwart","laden","leuven","lisa","little","massaal","meld","nederlaag","nuttig","onafhankelijkheid","ontmoette","opende","opgeven","opnames","oppervlakte","oprichter","opvolger","proef","ray","rivieren","rot","slaapkamer","snelweg","state","twente","varen","verbaasd","verdween","verdwijnt","verhouding","verklaarde","vermijden","verspreiden","vertrok","voertuigen","voice","william","zocht","aannemen","aanpassen","aantrekkelijk","aanvankelijk","au","baby's","beer","beslissingen","blue","bond","bood","bril","bruiloft","budget","burgeroorlog","computers","danny","deelnemer","diefstal","down","end","excuus","gedichten","geslapen","gezorgd","greep","grijs","grijze","hielp","hoogleraar","indrukwekkend","jim","keel","klap","leeuw","maarten","mannetje","marathon","marketing","moslim","nieuwsbrief","normen","nul","onderneming","onderscheiden","ontbreekt","opent","paspoort","pijpen","plat","portugal","prettig","risico's","scherpe","senator","slagen","steekt","story","support","tegenstanders","that","uitkomt","vaart","verlichting","vers","verwerkt","vliegt","voorraad","zout","zweedse","aangehouden","acteur","afgesproken","arbeid","architectuur","basisschool","bedekt","belt","beperken","beschermt","besef","besparen","bestel","blonde","cda","chemische","commercieel","communiceren","costa","cultureel","debuut","draai","drukte","ertoe","exact","examen","fort","fractie","france","gary","gewoonlijk","gods","hete","ho","hugo","ingeschreven","johnny","joseph","kiezers","kussen","massage","materialen","ministers","mooier","nieuwsgierig","ochtends","overeen","patroon","planning","plotseling","procedure","re","regent","rijbewijs","schoot","score","secretaris","slechter","sloten","stage","standpunt","stemming","stille","suiker","uiterst","uitgave","vallei","vergelijkbaar","verplaatsen","vuil","waardering","waarschuwt","weigeren","wenen","what","wim","ziekenhuizen","zonen","zoo","aangeven","bakker","begeleiding","betrokkenheid","brandstof","californië","challenge","cliënt","colombia","concurrentie","danken","discriminatie","docenten","doelpunt","dreigt","eenheden","figuren","ford","fuck","gedicht","heette","herman","hill","ingediend","kampioenschap","katten","kees","liepen","maagd","master","mix","more","music","ontvoerd","opgeheven","origineel","overgang","plegen","roep","schatting","series","simpele","slaapt","so","stabiel","stoelen","talloze","traject","uitmaken","uitnodiging","uitslagen","union","venlo","verbrand","verkregen","verrassend","verstandig","verwijst","voorafgaand","voorbereiden","voorjaar","vvd","wandeling","wisselen","zul","aangekondigd","abonnement","afspraken","airport","ambulance","autoriteiten","bereikte","bert","beslissen","bewijst","bezetting","boys","breekt","cent","chili","chocolade","dagblad","decennia","denemarken","dichterbij","doc","document","droge","eraf","favoriet","florida","fysiek","ge","gebeurtenis","gemeenschappelijke","gepakt","gestemd","gestoken","goedgekeurd","heten","idioot","interim","keizer","kogels","lab","lezers","li","lijk","linda","luistert","marie","natte","ongeacht","ontbreken","ophouden","prof","review","rusten","schattig","skype","snapt","streven","subsidie","syrische","systemen","tekeningen","theo","tijdperk","tijdstip","toegeven","trappen","vaardigheden","velden","verminderen","versterkt","vooruitgang","werkten","aangebracht","aanslagen","aansluiting","adem","ai","ambtenaar","arbeidsmarkt","avontuur","bekendheid","beperking","capaciteit","carl","creatief","dave","diezelfde","diversiteit","duiken","east","event","financiën","gewaarschuwd","gezichten","hedendaagse","interieur","israëlische","jacob","jesse","kopje","koppel","kroatië","laagste","lukte","maaltijd","meet","meldingen","metalen","mexicaanse","nadruk","ongetwijfeld","ongeval","ontspannen","opzetten","pizza","power","priester","samengesteld","samsung","schermen","schrijfster","scoren","smartphone","studies","sub","tegemoet","telefoons","terugkeren","toenemende","toerisme","traditioneel","tunnel","uitgeschakeld","uitkomen","universiteiten","verblijven","verliet","verwerken","voortgezet","wennen","zachte","zilveren","aanbieding","aandeel","almere","apparatuur","architect","beach","bepaalt","beperkingen","bestrijden","bevorderen","bewegingen","bewerkt","bloem","bom","bovenop","burgerlijke","correct","daden","drankje","emotionele","enthousiaste","experts","filmen","fox","geselecteerd","gitaar","goedkoper","groeten","hekel","il","illegaal","inzake","jonger","knappe","krachtig","kwetsbaar","label","leugen","lichamen","liter","maatschappelijk","match","mijzelf","mo","monster","nachten","oefening","onschuldig","onschuldige","oor","opstellen","overdag","particuliere","percentage","plaatse","plicht","protest","regisseur","registratie","rose","schema","schilderijen","schot","senior","sophie","specifiek","speelgoed","staatssecretaris","steunt","terroristen","tieners","tocht","uitgeroepen","verkrijgen","verloop","vrolijke","wassen","wenst","wettelijk","zesde","zieke","zuidoost","aanzien","achteraf","alan","alkmaar","arabisch","auteurs","bekendste","bestelling","bod","bol","brein","centimeter","chicago","crimineel","desondanks","deventer","diens","doorgaans","emotioneel","enschede","eredivisie","experiment","face","factoren","first","gemak","gevierd","gewenst","gewijzigd","girls","haten","iii","illegale","instrument","juridisch","kloppen","klus","lading","leukste","like","machines","mails","moskee","neerslag","nodige","omvat","ontving","oppositie","oprichting","overval","porno","prettige","rechtszaak","referendum","research","rick","roos","ruil","schelen","sectie","sessie","situaties","society","stadje","taylor","trokken","uitgelegd","uitstekende","verderop","verlangen","verleend","verre","verspreiding","victor","vliegtuigen","voer","weergegeven","wereldwijde","woestijn","zwakke","zwitserland","administratieve","afgerond","apeldoorn","apps","bakken","begrafenis","betekende","cellen","eist","emma","fraude","gebruikelijke","gecreëerd","gemeen","gemeentelijke","gerecht","gevangene","groeiende","heleboel","hieraan","hr","iemands","industriële","invoering","jackson","johnson","julia","keert","ketting","klote","kopie","leverde","lichten","liefste","lippen","muzikanten","neergeschoten","nut","ontdek","opgebouwd","opzoeken","overeenstemming","permanente","plekje","pond","populariteit","proeven","roger","ron","sara","schulden","server","stevig","stijgen","style","tag","talenten","toevoegen","tong","trouwde","uiterste","verbinden","verplaatst","verwijzing","volkomen","vrachtwagen","waarderen","wang","warmte","winkelcentrum","zuster","zusters","aankomst","aanvang","aanvragen","achterkant","achteruit","alstublieft","amateur","arresteren","august","balans","belgisch","benadering","beschikt","beschrijven","biologische","bot","brown","creativiteit","delta","depressie","dirk","dodelijk","draak","durft","eigenaren","fashion","fonds","foundation","gave","gemaakte","gemakkelijker","gerechten","here","hoofdstuk","instructies","ipad","italiaans","kaartjes","kroon","letter","leuker","luis","marcel","maximale","meen","merkt","microsoft","moordenaar","nader","object","objecten","onderhandelingen","onduidelijk","ongelofelijk","overdreven","overijssel","piano","pogingen","portret","publicaties","respectievelijk","run","santa","schitterend","sp","startte","strijden","supporters","tekening","times","uitgaan","uitmaakt","usa","vaders","verdeling","verdrietig","vertrouwde","verzinnen","vice","vierkante","voeding","voldoen","voorwaarde","vuile","werkende","zodanig","afgeleid","afgewezen","arena","awards","beloofde","bende","bevestiging","beïnvloed","boekje","bovenaan","champions","cv","daad","dol","dwars","eindigen","enigszins","eventuele","filipijnen","flat","geert","geruchten","gevuld","glazen","goedkeuring","groeide","halverwege","hilversum","hits","how","huiswerk","huren","id","ideale","ingericht","jeroen","just","knvb","koste","kus","langdurige","lef","lening","lezing","meent","mobile","moge","motoren","noodzaak","omschreven","ouwe","overheden","overkomen","overnemen","peru","philips","port","probeerden","provinciale","rijst","schaduw","slaven","slechtste","sparen","staart","toename","tram","verpest","voornaamste","vos","weerstand","williams","woonden","wraak","zakelijk","zeldzaam","zestig","zoet","zonnepanelen","aa","aanrader","afgenomen","artiest","association","autoriteit","batterij","behalen","beleven","beseffen","bevonden","conferentie","congo","consumenten","degelijk","detail","diegene","dorpje","dwingen","enthousiasme","gerard","gereed","gevechten","gordon","have","heftig","horloge","indeling","initiatieven","isis","kwartier","leed","losse","mishandeling","omzet","oorzaken","opdrachten","opdrachtgever","opgeroepen","oprecht","opties","opvallende","praktisch","praktische","profiteren","promoten","regio's","saint","scheelt","scheiden","schoten","seksueel","shop","slet","steeg","tank","toegekend","toeristische","toets","toonde","trio","uitgaven","vergelijkbare","vermiste","verse","vertegenwoordigd","vestiging","viert","waarschuwen","zijne","zingt","aangifte","about","behaald","belofte","bescheiden","bevrijd","bezittingen","bovenste","broeders","bruggen","centre","cirkel","daarbuiten","demonstratie","erom","exclusieve","factor","fit","food","garanderen","gebakken","geroepen","gsm","han","hbo","hersteld","hoeveelheden","hogeschool","horeca","index","investeringen","jay","jimmy","kerel","knie","lelijk","licentie","maas","magische","manchester","may","migranten","mol","motivatie","münchen","neen","nest","nicht","norman","now","ondergaan","ondersteund","ontkennen","ontwikkelt","order","persbericht","plaatjes","psv","rechtse","ruime","schouders","sea","sluiting","snijden","spannende","steven","stiekem","strak","tja","vacatures","vals","vat","versies","verzorgd","verzorgen","volgden","voorgaande","vrijgelaten","walgelijk","wall","werknemer","zakelijke","zeilen","zusje","aangenaam","afghanistan","alice","allang","anderhalf","arbeiders","beek","begreep","beoordelen","bevestigt","bijeen","bladeren","book","borsten","clinton","complexe","database","davis","dé","edward","ellen","express","feitelijk","gelanceerd","generaties","gevoelige","grappige","hartstikke","hek","her","historie","hitte","ingenomen","interviews","jagen","jason","kindje","koper","kostte","leiderschap","lezer","maten","mohammed","nauw","nazi","nederlander","nelson","old","omgekomen","opgegeven","opruimen","optredens","overeenkomsten","overgedragen","pakte","people","plaatsgevonden","professional","rapper","samenstelling","schoonmaken","singles","sir","solo","spits","spoedig","sprong","ss","stedelijke","stelen","stuks","sydney","tal","verdediger","verkozen","vertegenwoordiger","vertrouw","vies","vleugels","voeg","voltooid","vries","vrijwilliger","vroegere","waardevolle","wauw","webcam","werkelijke","wijs","wijsheid","zitting","zwangerschap","aangelegd","aanhangers","aantallen","aanwezige","aardige","advertentie","alhoewel","anderzijds","audio","bekendgemaakt","belastingen","beleg","beschikken","betrouwbaar","billy","brandweer","broertje","daders","doek","doelstellingen","duidelijkheid","erkende","europe","exclusief","fm","gedreven","gestegen","getest","gouda","gram","grijpen","haagse","hendrik","hobby","ideaal","ijzeren","ingevoerd","inschrijven","jazz","kardinaal","kortrijk","kou","landgoed","latere","leeuwen","maatregel","musea","nabijgelegen","nationaliteit","onderzoekt","opbouwen","opbrengst","opgeleid","opmerkelijk","os","plots","presenteren","processen","regime","rtl","schilderen","simpelweg","speelden","sterft","stijgt","track","uitzien","vasthouden","vergroot","vergunning","verkracht","verlengd","vermoed","vervanging","voorop","webshop","who","wilders","yeah","zevende","act","afgezet","andy","ban","bemanning","bestuurders","bevrijding","boten","bridge","community","daaruit","dekking","dieper","donald","drink","duurzaamheid","erotische","eventueel","feb","filosofie","florence","gepraat","get","hectare","herinner","huisje","instrumenten","jansen","jeruzalem","jonathan","jordan","jos","kelly","koffer","leerkracht","liga","lopende","lord","luidt","meesten","mega","mercedes","oftewel","onderling","oorlogen","overname","poëzie","release","rellen","roma","ronald","schiphol","seizoenen","senaat","servië","shirts","straling","typen","uitdagingen","uitgerust","verdiende","verdomme","verwarring","vormde","vrijwillig","wetenschapper","wijziging","zelfstandige","zinnen","zoom","aanklacht","aanstaande","academie","action","actrice","amanda","angeles","appel","argument","beoordeling","beroemd","beëindigen","bo","bocht","buitengewoon","cameron","camping","campus","casino","charlotte","cuba","daling","dance","deken","departement","diende","divisie","doorgeven","echtgenote","ede","eis","erna","exemplaren","finland","functioneren","geboden","geluiden","gemeten","goden","haha","herhaling","hoofdkantoor","indrukwekkende","institute","joost","journalistiek","kelder","klappen","kliniek","koelkast","ligging","literaire","london","long","lost","marcus","mario","molen","nina","olympisch","omlaag","onrust","opleveren","organiseerde","overgebracht","overwegen","paris","platen","pre","rustige","schilder","schuur","smart","staal","sterkte","tachtig","tanks","tassen","thema's","toegenomen","typische","uitgeverij","uitzoeken","va","verf","verplichte","verschillend","videoclip","voorbereidingen","voorwerp","vroegen","vrouwtje","werkloosheid","wél","zangeres","zelfvertrouwen","aankomt","aankoop","aap","ac","achteren","administratie","afgebroken","alsmede","andrew","belde","beschermde","beschuldigd","betaling","betekend","bevond","bevriend","bied","bommen","cbs","chat","constructie","criminele","doelpunten","earth","eddie","eventjes","fantasie","flessen","gebruikten","gekoppeld","gewapende","gigantische","grappen","handelingen","heilig","herkenbaar","herkent","herkomst","hieruit","hoofdredacteur","identificeren","inzien","journal","kunstwerk","liberale","lig","logistiek","loslaten","medelijden","metaal","meten","morgens","najaar","nathan","nieuwbouw","okt","omliggende","omtrent","opgehaald","oppervlak","parkeerplaats","piloot","plaatsvindt","platteland","poster","rap","rebellen","richtte","rijen","rondje","royal","samuel","schooljaar","smalle","stal","stevige","streng","therapie","ticket","tokio","traag","trui","veertien","veiliger","vergeven","verkrachting","vertegenwoordigers"];
+/* SEED: fully curated entries (labeled forms, synonyms, antonyms, examples). */
+const SEED = [{"w":"zijn","t":"verb","m":"to be","f":[["Present","ik ben, hij is"],["Past","was/waren"],["Perfect","is geweest"]],"ex":[["Ik ben moe vandaag.","I am tired today."],["Waar ben je geweest?","Where have you been?"]]},{"w":"hebben","t":"verb","m":"to have","f":[["Present","ik heb, hij heeft"],["Past","had/hadden"],["Perfect","heeft gehad"]],"ex":[["Ik heb twee kinderen.","I have two children."],["We hadden gisteren een vergadering.","We had a meeting yesterday."]]},{"w":"gaan","t":"verb","m":"to go","f":[["Present","ik ga, hij gaat"],["Past","ging/gingen"],["Perfect","is gegaan"]],"ex":[["Ik ga morgen naar Amsterdam.","I am going to Amsterdam tomorrow."],["Hoe gaat het met je?","How are you doing?"]]},{"w":"komen","t":"verb","m":"to come","f":[["Present","ik kom, hij komt"],["Past","kwam/kwamen"],["Perfect","is gekomen"]],"ex":[["Kom je vanavond ook?","Are you coming tonight too?"],["Hij is te laat gekomen.","He came too late."]],"ant":["gaan","vertrekken"]},{"w":"doen","t":"verb","m":"to do","f":[["Present","ik doe, hij doet"],["Past","deed/deden"],["Perfect","heeft gedaan"]],"ex":[["Wat doe je in het weekend?","What do you do on the weekend?"],["Ik heb het al gedaan.","I have already done it."]]},{"w":"maken","t":"verb","m":"to make","f":[["Present","ik maak, hij maakt"],["Past","maakte/maakten"],["Perfect","heeft gemaakt"]],"ex":[["Ik maak vanavond pasta.","I am making pasta tonight."],["Zij heeft een fout gemaakt.","She made a mistake."]]},{"w":"kunnen","t":"verb","m":"can, to be able to","f":[["Present","ik kan, hij kan"],["Past","kon/konden"],["Perfect","heeft gekund"]],"ex":[["Kun je me helpen?","Can you help me?"],["Ik kon gisteren niet komen.","I couldn't come yesterday."]]},{"w":"willen","t":"verb","m":"to want","f":[["Present","ik wil, hij wil"],["Past","wilde/wilden"],["Perfect","heeft gewild"]],"ex":[["Ik wil graag een koffie.","I would like a coffee."],["Wat wil je eten?","What do you want to eat?"]]},{"w":"moeten","t":"verb","m":"must, to have to","f":[["Present","ik moet, hij moet"],["Past","moest/moesten"],["Perfect","heeft gemoeten"]],"ex":[["Ik moet nu naar mijn werk.","I have to go to work now."],["Je moest eerder opstaan.","You had to get up earlier."]]},{"w":"mogen","t":"verb","m":"may, to be allowed to","f":[["Present","ik mag, hij mag"],["Past","mocht/mochten"],["Perfect","heeft gemogen"]],"ex":[["Mag ik hier zitten?","May I sit here?"],["Kinderen mogen niet alleen zwemmen.","Children are not allowed to swim alone."]]},{"w":"zullen","t":"verb","m":"shall, will","f":[["Present","ik zal, hij zal"],["Past","zou/zouden"]],"ex":[["Ik zal je morgen bellen.","I will call you tomorrow."],["Zullen we gaan?","Shall we go?"]]},{"w":"weten","t":"verb","m":"to know (a fact)","f":[["Present","ik weet, hij weet"],["Past","wist/wisten"],["Perfect","heeft geweten"]],"ex":[["Ik weet het niet.","I don't know."],["Wist je dat al?","Did you already know that?"]]},{"w":"zien","t":"verb","m":"to see","f":[["Present","ik zie, hij ziet"],["Past","zag/zagen"],["Perfect","heeft gezien"]],"ex":[["Ik zie je morgen!","See you tomorrow!"],["Heb je die film gezien?","Have you seen that movie?"]]},{"w":"zeggen","t":"verb","m":"to say","f":[["Present","ik zeg, hij zegt"],["Past","zei/zeiden"],["Perfect","heeft gezegd"]],"ex":[["Wat zei je?","What did you say?"],["Hij heeft niets gezegd.","He didn't say anything."]]},{"w":"denken","t":"verb","m":"to think","f":[["Present","ik denk, hij denkt"],["Past","dacht/dachten"],["Perfect","heeft gedacht"]],"ex":[["Ik denk dat je gelijk hebt.","I think you are right."],["Waar dacht je aan?","What were you thinking about?"]]},{"w":"vinden","t":"verb","m":"to find; to think (opinion)","f":[["Present","ik vind, hij vindt"],["Past","vond/vonden"],["Perfect","heeft gevonden"]],"ex":[["Ik vind dit een goed idee.","I think this is a good idea."],["Heb je je sleutels gevonden?","Did you find your keys?"]]},{"w":"geven","t":"verb","m":"to give","f":[["Present","ik geef, hij geeft"],["Past","gaf/gaven"],["Perfect","heeft gegeven"]],"ex":[["Kun je me het zout geven?","Can you give me the salt?"],["Zij gaf hem een cadeau.","She gave him a present."]],"syn":["schenken"],"ant":["nemen","krijgen"]},{"w":"nemen","t":"verb","m":"to take","f":[["Present","ik neem, hij neemt"],["Past","nam/namen"],["Perfect","heeft genomen"]],"ex":[["Ik neem de trein naar Utrecht.","I take the train to Utrecht."],["Neem je tijd.","Take your time."]]},{"w":"werken","t":"verb","m":"to work","f":[["Present","ik werk, hij werkt"],["Past","werkte/werkten"],["Perfect","heeft gewerkt"]],"ex":[["Ik werk in Amsterdam.","I work in Amsterdam."],["Zij heeft hard gewerkt.","She has worked hard."]],"ant":["rusten"]},{"w":"wonen","t":"verb","m":"to live (reside)","f":[["Present","ik woon, hij woont"],["Past","woonde/woonden"],["Perfect","heeft gewoond"]],"ex":[["Ik woon in Almere.","I live in Almere."],["Waar heb je vroeger gewoond?","Where did you live before?"]]},{"w":"spreken","t":"verb","m":"to speak","f":[["Present","ik spreek, hij spreekt"],["Past","sprak/spraken"],["Perfect","heeft gesproken"]],"ex":[["Spreek je Nederlands?","Do you speak Dutch?"],["We hebben elkaar gisteren gesproken.","We spoke to each other yesterday."]],"syn":["praten"],"ant":["zwijgen"]},{"w":"eten","t":"verb","m":"to eat","f":[["Present","ik eet, hij eet"],["Past","at/aten"],["Perfect","heeft gegeten"]],"ex":[["Wat eten we vanavond?","What are we eating tonight?"],["Ik heb al gegeten.","I have already eaten."]]},{"w":"drinken","t":"verb","m":"to drink","f":[["Present","ik drink, hij drinkt"],["Past","dronk/dronken"],["Perfect","heeft gedronken"]],"ex":[["Wil je iets drinken?","Do you want something to drink?"],["Hij dronk zijn koffie snel.","He drank his coffee quickly."]]},{"w":"kopen","t":"verb","m":"to buy","f":[["Present","ik koop, hij koopt"],["Past","kocht/kochten"],["Perfect","heeft gekocht"]],"ex":[["Ik moet brood kopen.","I need to buy bread."],["Zij heeft een nieuwe fiets gekocht.","She bought a new bicycle."]],"syn":["aanschaffen"],"ant":["verkopen"]},{"w":"lopen","t":"verb","m":"to walk","f":[["Present","ik loop, hij loopt"],["Past","liep/liepen"],["Perfect","heeft/is gelopen"]],"ex":[["Ik loop elke dag naar het station.","I walk to the station every day."],["We hebben uren gelopen.","We walked for hours."]]},{"w":"staan","t":"verb","m":"to stand","f":[["Present","ik sta, hij staat"],["Past","stond/stonden"],["Perfect","heeft gestaan"]],"ex":[["De fiets staat buiten.","The bike is (standing) outside."],["Ik stond in de rij.","I was standing in line."]]},{"w":"zitten","t":"verb","m":"to sit","f":[["Present","ik zit, hij zit"],["Past","zat/zaten"],["Perfect","heeft gezeten"]],"ex":[["Waar zit je?","Where are you sitting?"],["We zaten in de tuin.","We were sitting in the garden."]]},{"w":"blijven","t":"verb","m":"to stay, remain","f":[["Present","ik blijf, hij blijft"],["Past","bleef/bleven"],["Perfect","is gebleven"]],"ex":[["Blijf je eten?","Are you staying for dinner?"],["Hij is thuis gebleven.","He stayed home."]],"ant":["vertrekken","weggaan"]},{"w":"houden van","t":"verb","m":"to love, like","f":[["Present","ik houd, hij houdt"],["Past","hield/hielden"],["Perfect","heeft gehouden"]],"ex":[["Ik houd van kaas.","I love cheese."],["Zij hield van reizen.","She loved traveling."]]},{"w":"vragen","t":"verb","m":"to ask","f":[["Present","ik vraag, hij vraagt"],["Past","vroeg/vroegen"],["Perfect","heeft gevraagd"]],"ex":[["Mag ik iets vragen?","May I ask something?"],["Hij vroeg om hulp.","He asked for help."]],"ant":["antwoorden"]},{"w":"krijgen","t":"verb","m":"to get, receive","f":[["Present","ik krijg, hij krijgt"],["Past","kreeg/kregen"],["Perfect","heeft gekregen"]],"ex":[["Wat krijg je voor je verjaardag?","What are you getting for your birthday?"],["Ik heb een e-mail gekregen.","I received an email."]],"syn":["ontvangen"],"ant":["geven"]},{"w":"horen","t":"verb","m":"to hear","f":[["Present","ik hoor, hij hoort"],["Past","hoorde/hoorden"],["Perfect","heeft gehoord"]],"ex":[["Ik hoor je niet goed.","I can't hear you well."],["Heb je het nieuws gehoord?","Have you heard the news?"]]},{"w":"begrijpen","t":"verb","m":"to understand","f":[["Present","ik begrijp, hij begrijpt"],["Past","begreep/begrepen"],["Perfect","heeft begrepen"]],"ex":[["Ik begrijp het niet.","I don't understand."],["Heb je alles begrepen?","Did you understand everything?"]],"syn":["snappen"]},{"w":"proberen","t":"verb","m":"to try","f":[["Present","ik probeer, hij probeert"],["Past","probeerde/probeerden"],["Perfect","heeft geprobeerd"]],"ex":[["Ik probeer Nederlands te leren.","I am trying to learn Dutch."],["Heb je het geprobeerd?","Did you try it?"]],"syn":["pogen"]},{"w":"betalen","t":"verb","m":"to pay","f":[["Present","ik betaal, hij betaalt"],["Past","betaalde/betaalden"],["Perfect","heeft betaald"]],"ex":[["Kan ik met pin betalen?","Can I pay by card?"],["Wie heeft de rekening betaald?","Who paid the bill?"]]},{"w":"helpen","t":"verb","m":"to help","f":[["Present","ik help, hij helpt"],["Past","hielp/hielpen"],["Perfect","heeft geholpen"]],"ex":[["Kan ik je helpen?","Can I help you?"],["Zij heeft me erg geholpen.","She helped me a lot."]],"syn":["assisteren","steunen"]},{"w":"leren","t":"verb","m":"to learn; to teach","f":[["Present","ik leer, hij leert"],["Past","leerde/leerden"],["Perfect","heeft geleerd"]],"ex":[["Ik leer Nederlands.","I am learning Dutch."],["Wat heb je vandaag geleerd?","What did you learn today?"]]},{"w":"beginnen","t":"verb","m":"to begin, start","f":[["Present","ik begin, hij begint"],["Past","begon/begonnen"],["Perfect","is begonnen"]],"ex":[["De film begint om acht uur.","The movie starts at eight o'clock."],["We zijn net begonnen.","We just started."]],"syn":["starten"],"ant":["stoppen","eindigen"]},{"w":"huis","t":"noun","m":"house","f":[["Plural","huizen"],["Diminutive","huisje"]],"ex":[["Ons huis is in Almere.","Our house is in Almere."],["De huizen hier zijn duur.","The houses here are expensive."]],"a":"het"},{"w":"man","t":"noun","m":"man; husband","f":[["Plural","mannen"]],"ex":[["Die man werkt bij ons.","That man works with us."],["Haar man komt uit India.","Her husband is from India."]],"a":"de"},{"w":"vrouw","t":"noun","m":"woman; wife","f":[["Plural","vrouwen"]],"ex":[["Die vrouw is mijn collega.","That woman is my colleague."],["Zijn vrouw spreekt drie talen.","His wife speaks three languages."]],"a":"de"},{"w":"kind","t":"noun","m":"child","f":[["Plural","kinderen"]],"ex":[["Het kind speelt buiten.","The child is playing outside."],["Hoeveel kinderen heb je?","How many children do you have?"]],"a":"het"},{"w":"dag","t":"noun","m":"day","f":[["Plural","dagen"]],"ex":[["Fijne dag!","Have a nice day!"],["Ik werk vijf dagen per week.","I work five days a week."]],"a":"de"},{"w":"jaar","t":"noun","m":"year","f":[["Plural","jaren"]],"ex":[["Ik woon hier al drie jaar.","I have lived here for three years."],["Volgend jaar ga ik op vakantie.","Next year I am going on holiday."]],"a":"het"},{"w":"tijd","t":"noun","m":"time","f":[["Plural","tijden"]],"ex":[["Ik heb geen tijd.","I have no time."],["Het is tijd om te gaan.","It's time to go."]],"a":"de"},{"w":"week","t":"noun","m":"week","f":[["Plural","weken"]],"ex":[["Tot volgende week!","See you next week!"],["Ik ben twee weken op vakantie.","I am on holiday for two weeks."]],"a":"de"},{"w":"werk","t":"noun","m":"work, job","f":[["Note","no common plural"]],"ex":[["Ik ga naar mijn werk.","I am going to work."],["Het werk is bijna klaar.","The work is almost done."]],"a":"het"},{"w":"geld","t":"noun","m":"money","f":[["Note","no plural"]],"ex":[["Heb je genoeg geld bij je?","Do you have enough money with you?"],["Dat kost veel geld.","That costs a lot of money."]],"a":"het"},{"w":"water","t":"noun","m":"water","f":[["Plural","wateren (rare)"]],"ex":[["Mag ik een glas water?","May I have a glass of water?"],["Het water is koud.","The water is cold."]],"a":"het"},{"w":"stad","t":"noun","m":"city","f":[["Plural","steden"]],"ex":[["Utrecht is een mooie stad.","Utrecht is a beautiful city."],["We gaan naar de stad.","We are going into town."]],"a":"de"},{"w":"land","t":"noun","m":"country; land","f":[["Plural","landen"]],"ex":[["Nederland is een klein land.","The Netherlands is a small country."],["In welk land ben je geboren?","In which country were you born?"]],"a":"het"},{"w":"trein","t":"noun","m":"train","f":[["Plural","treinen"]],"ex":[["De trein naar Utrecht is vertraagd.","The train to Utrecht is delayed."],["Ik ga met de trein.","I am going by train."]],"a":"de"},{"w":"fiets","t":"noun","m":"bicycle","f":[["Plural","fietsen"]],"ex":[["Mijn fiets is gestolen.","My bike was stolen."],["Ik ga op de fiets naar het station.","I go to the station by bike."]],"a":"de"},{"w":"vriend","t":"noun","m":"friend; boyfriend","f":[["Plural","vrienden"],["Feminine","vriendin"]],"ex":[["Hij is een goede vriend.","He is a good friend."],["Ik ga met vrienden eten.","I am going to eat with friends."]],"a":"de"},{"w":"eten","t":"noun","m":"food","f":[["Note","no plural"]],"ex":[["Het eten is klaar!","The food is ready!"],["Nederlands eten is simpel maar lekker.","Dutch food is simple but tasty."]],"a":"het"},{"w":"goed","t":"adjective","m":"good","f":[["Comparative","beter"],["Superlative","best"]],"ex":[["Dat is een goed idee.","That is a good idea."],["Het gaat goed met mij.","I am doing well."]],"syn":["prima","uitstekend"],"ant":["slecht"]},{"w":"groot","t":"adjective","m":"big, large","f":[["Comparative","groter"],["Superlative","grootst"]],"ex":[["Amsterdam is een grote stad.","Amsterdam is a big city."],["Dit huis is groter dan het onze.","This house is bigger than ours."]],"syn":["enorm","fors"],"ant":["klein"]},{"w":"klein","t":"adjective","m":"small","f":[["Comparative","kleiner"],["Superlative","kleinst"]],"ex":[["We hebben een kleine tuin.","We have a small garden."],["Mijn kantoor is kleiner dan het jouwe.","My office is smaller than yours."]],"syn":["gering"],"ant":["groot"]},{"w":"mooi","t":"adjective","m":"beautiful, nice","f":[["Comparative","mooier"],["Superlative","mooist"]],"ex":[["Wat een mooi uitzicht!","What a beautiful view!"],["Dit is de mooiste plek in de stad.","This is the most beautiful spot in the city."]],"syn":["prachtig","fraai"],"ant":["lelijk"]},{"w":"nieuw","t":"adjective","m":"new","f":[["Comparative","nieuwer"],["Superlative","nieuwst"]],"ex":[["Ik heb een nieuwe baan.","I have a new job."],["Is die telefoon nieuw?","Is that phone new?"]],"syn":["modern","vers"],"ant":["oud"]},{"w":"oud","t":"adjective","m":"old","f":[["Comparative","ouder"],["Superlative","oudst"]],"ex":[["Hoe oud ben je?","How old are you?"],["Dit is een oud gebouw.","This is an old building."]],"syn":["bejaard","antiek"],"ant":["nieuw","jong"]},{"w":"lekker","t":"adjective","m":"tasty; nice, pleasant","f":[["Comparative","lekkerder"],["Superlative","lekkerst"]],"ex":[["Het eten was erg lekker.","The food was very tasty."],["Lekker weertje vandaag!","Nice weather today!"]],"syn":["heerlijk","smakelijk"],"ant":["vies"]},{"w":"druk","t":"adjective","m":"busy, crowded","f":[["Comparative","drukker"],["Superlative","drukst"]],"ex":[["Ik heb het druk op werk.","I am busy at work."],["De trein was heel druk.","The train was very crowded."]],"syn":["bezet","vol"],"ant":["rustig"]},{"w":"moe","t":"adjective","m":"tired","f":[],"ex":[["Ik ben moe na het werk.","I am tired after work."],["Je ziet er moe uit.","You look tired."]],"syn":["uitgeput","vermoeid"],"ant":["uitgerust"]},{"w":"duur","t":"adjective","m":"expensive","f":[["Comparative","duurder"],["Superlative","duurst"]],"ex":[["Huizen in Amsterdam zijn duur.","Houses in Amsterdam are expensive."],["Dat restaurant is te duur.","That restaurant is too expensive."]],"syn":["prijzig","kostbaar"],"ant":["goedkoop"]},{"w":"niet","t":"adverb","m":"not","f":[],"ex":[["Ik weet het niet.","I don't know."],["Dat is niet waar.","That is not true."]]},{"w":"ook","t":"adverb","m":"also, too","f":[],"ex":[["Ik wil ook koffie.","I also want coffee."],["Kom jij ook?","Are you coming too?"]]},{"w":"heel","t":"adverb","m":"very; whole","f":[],"ex":[["Dat is heel goed!","That is very good!"],["Ik heb de hele dag gewerkt.","I worked the whole day."]]},{"w":"erg","t":"adverb","m":"very; bad","f":[],"ex":[["Het is erg koud vandaag.","It is very cold today."],["Dat is niet zo erg.","That's not so bad."]]},{"w":"altijd","t":"adverb","m":"always","f":[],"ex":[["Ik neem altijd de trein.","I always take the train."],["Hij is altijd te laat.","He is always late."]],"syn":["steeds"],"ant":["nooit"]},{"w":"nooit","t":"adverb","m":"never","f":[],"ex":[["Ik ben nog nooit in Groningen geweest.","I have never been to Groningen."],["Zeg nooit nooit.","Never say never."]],"ant":["altijd"]},{"w":"misschien","t":"adverb","m":"maybe, perhaps","f":[],"ex":[["Misschien kom ik morgen.","Maybe I will come tomorrow."],["Heb je misschien een pen voor mij?","Do you perhaps have a pen for me?"]],"syn":["wellicht","mogelijk"],"ant":["zeker"]},{"w":"morgen","t":"adverb","m":"tomorrow; morning","f":[],"ex":[["Tot morgen!","See you tomorrow!"],["Morgen heb ik een vergadering.","Tomorrow I have a meeting."]]},{"w":"vandaag","t":"adverb","m":"today","f":[],"ex":[["Wat doe je vandaag?","What are you doing today?"],["Vandaag is het donderdag.","Today is Thursday."]]},{"w":"gisteren","t":"adverb","m":"yesterday","f":[],"ex":[["Gisteren was ik in Utrecht.","Yesterday I was in Utrecht."],["Heb je gisteren gewerkt?","Did you work yesterday?"]]},{"w":"graag","t":"adverb","m":"gladly; would like","f":[["Comparative","liever"],["Superlative","liefst"]],"ex":[["Ik wil graag een biertje.","I would like a beer."],["Ik drink liever thee.","I prefer to drink tea."]],"ant":["ongaarne"]},{"w":"natuurlijk","t":"adverb","m":"of course; natural","f":[],"ex":[["Natuurlijk help ik je!","Of course I will help you!"],["Dat is natuurlijk niet de bedoeling.","That is of course not the intention."]]},{"w":"alstublieft","t":"expression","m":"please; here you go (formal)","f":[["Informal","alsjeblieft"]],"ex":[["Een koffie, alstublieft.","A coffee, please."],["Alsjeblieft, je pakketje.","Here you go, your package."]]},{"w":"dank je wel","t":"expression","m":"thank you","f":[["Formal","dank u wel"],["Note","bedankt"]],"ex":[["Dank je wel voor je hulp!","Thank you for your help!"],["Bedankt voor het eten.","Thanks for the meal."]]},{"w":"de","t":"article","m":"the (common gender)","f":[],"ex":[["De trein komt eraan.","The train is coming."],["Waar is de auto?","Where is the car?"]]},{"w":"het","t":"article","m":"the (neuter); it","f":[],"ex":[["Het huis is groot.","The house is big."],["Het regent vandaag.","It is raining today."]]},{"w":"een","t":"article","m":"a, an; one","f":[],"ex":[["Ik wil een koffie.","I want a coffee."],["Er staat een fiets buiten.","There is a bike outside."]]},{"w":"van","t":"preposition","m":"of, from","f":[],"ex":[["Dit is de fiets van mijn buurman.","This is my neighbour's bike."],["Ik kom net van mijn werk.","I just came from work."]]},{"w":"en","t":"conjunction","m":"and","f":[],"ex":[["Ik wil kaas en brood.","I want cheese and bread."],["Hij en ik zijn collega's.","He and I are colleagues."]]},{"w":"in","t":"preposition","m":"in","f":[],"ex":[["Ik woon in Almere.","I live in Almere."],["De sleutels liggen in de la.","The keys are in the drawer."]]},{"w":"op","t":"preposition","m":"on, at","f":[],"ex":[["Het boek ligt op tafel.","The book is on the table."],["Ik ben op kantoor.","I am at the office."]]},{"w":"ik","t":"pronoun","m":"I","f":[["Object","mij / me"],["Possessive","mijn"]],"ex":[["Ik kom uit India.","I come from India."],["Dat is mijn tas.","That is my bag."]]},{"w":"je","t":"pronoun","m":"you (informal); your","f":[["Stressed","jij"],["Object","jou / je"],["Possessive","jouw / je"]],"ex":[["Hoe heet je?","What is your name?"],["Is dit je jas?","Is this your coat?"]]},{"w":"hij","t":"pronoun","m":"he","f":[["Object","hem"],["Possessive","zijn"]],"ex":[["Hij werkt bij NS.","He works at NS."],["Ik ken hem goed.","I know him well."]]},{"w":"ze","t":"pronoun","m":"she; they","f":[["Stressed","zij"],["Object","haar (she) / ze, hen, hun (they)"]],"ex":[["Ze komt uit Utrecht.","She comes from Utrecht."],["Ze zijn op vakantie.","They are on holiday."]]},{"w":"we","t":"pronoun","m":"we","f":[["Stressed","wij"],["Object","ons"],["Possessive","ons / onze"]],"ex":[["We gaan morgen padellen.","We are playing padel tomorrow."],["Dat is ons huis.","That is our house."]]},{"w":"dat","t":"pronoun","m":"that (neuter); which","f":[],"ex":[["Dat weet ik niet.","I don't know that."],["Het boek dat ik lees is goed.","The book that I am reading is good."]]},{"w":"die","t":"pronoun","m":"that, those (common); who, which","f":[],"ex":[["Die man ken ik.","I know that man."],["De collega die naast me zit is aardig.","The colleague who sits next to me is nice."]]},{"w":"dit","t":"pronoun","m":"this (neuter)","f":[],"ex":[["Dit is mijn kantoor.","This is my office."],["Wat is dit?","What is this?"]]},{"w":"voor","t":"preposition","m":"for; in front of; before","f":[],"ex":[["Dit cadeau is voor jou.","This present is for you."],["De bus stopt voor het station.","The bus stops in front of the station."]]},{"w":"te","t":"particle","m":"to (before infinitive); too","f":[],"ex":[["Ik probeer Nederlands te spreken.","I try to speak Dutch."],["De koffie is te heet.","The coffee is too hot."]]},{"w":"met","t":"preposition","m":"with","f":[],"ex":[["Ik ga met de trein.","I go by train."],["Kom je met ons mee?","Are you coming with us?"]]},{"w":"als","t":"conjunction","m":"if; when; as","f":[],"ex":[["Als het regent, blijf ik thuis.","If it rains, I stay home."],["Hij werkt als data-analist.","He works as a data analyst."]]},{"w":"er","t":"adverb","m":"there; of it/them","f":[],"ex":[["Er is koffie in de keuken.","There is coffee in the kitchen."],["Ik heb er twee.","I have two of them."]]},{"w":"maar","t":"conjunction","m":"but; just, only","f":[],"ex":[["Ik wil komen, maar ik heb geen tijd.","I want to come, but I have no time."],["Doe maar rustig aan.","Just take it easy."]]},{"w":"om","t":"preposition","m":"at (time); around; in order to","f":[],"ex":[["De les begint om zeven uur.","The class starts at seven o'clock."],["Ik bel om iets te vragen.","I am calling to ask something."]]},{"w":"aan","t":"preposition","m":"to; on, at","f":[],"ex":[["Geef het aan mij.","Give it to me."],["We zitten aan tafel.","We are sitting at the table."]]},{"w":"naar","t":"preposition","m":"to, towards","f":[],"ex":[["Ik ga naar huis.","I am going home."],["We rijden naar Amsterdam.","We are driving to Amsterdam."]]},{"w":"uit","t":"preposition","m":"out of, from","f":[],"ex":[["Ik kom uit India.","I come from India."],["Hij haalt de melk uit de koelkast.","He takes the milk out of the fridge."]]},{"w":"bij","t":"preposition","m":"at, near, with","f":[],"ex":[["Ik werk bij een groot bedrijf.","I work at a big company."],["De supermarkt is bij het station.","The supermarket is near the station."]]},{"w":"dan","t":"adverb","m":"then; than","f":[],"ex":[["Eerst eten, dan afwassen.","First eat, then do the dishes."],["Utrecht is kleiner dan Amsterdam.","Utrecht is smaller than Amsterdam."]]},{"w":"nog","t":"adverb","m":"still, yet; another","f":[],"ex":[["Ben je er nog?","Are you still there?"],["Wil je nog een kopje thee?","Do you want another cup of tea?"]]},{"w":"wat","t":"pronoun","m":"what; something; a bit","f":[],"ex":[["Wat bedoel je?","What do you mean?"],["Wil je wat drinken?","Do you want something to drink?"]]},{"w":"wel","t":"adverb","m":"indeed, surely (affirming)","f":[],"ex":[["Ik kom wel!","I will come, don't worry!"],["Dat valt wel mee.","It's not that bad."]]},{"w":"geen","t":"pronoun","m":"no, not a (negation of een)","f":[],"ex":[["Ik heb geen tijd.","I have no time."],["Er is geen melk meer.","There is no milk left."]]},{"w":"al","t":"adverb","m":"already; all","f":[],"ex":[["Ben je al klaar?","Are you done already?"],["Ik woon hier al drie jaar.","I have lived here for three years already."]]},{"w":"zo","t":"adverb","m":"so, like this; in a moment","f":[],"ex":[["Zo doe je dat.","This is how you do it."],["Ik kom zo.","I will come in a moment."]]},{"w":"nu","t":"adverb","m":"now","f":[],"ex":[["Ik moet nu gaan.","I have to go now."],["Nu begrijp ik het.","Now I understand."]]},{"w":"hier","t":"adverb","m":"here","f":[],"ex":[["Kom hier!","Come here!"],["Hier is je koffie.","Here is your coffee."]]},{"w":"daar","t":"adverb","m":"there","f":[],"ex":[["Daar is het station.","There is the station."],["Ik ben daar nooit geweest.","I have never been there."]]}];
+
+/* ============ DECK ============ */
+/* Every entry has a stable id. Curated/enriched entries: "word|type". Stubs: "word".
+   Progress and enrichment are stored against ids, so nothing collides or gets lost. */
+let deck = [];            // ordered entries
+let byId = {};            // id -> entry
+let enriched = {};        // id -> enriched data (persisted overlay)
+let progress = {};        // id -> 'learned' | 'learning'
+let apiKey = '';
+let tab = 'learn';
+let queue = []; let qPos = 0; let flipped = false;
+let filter = 'all'; let search = ''; let expanded = null; let listLimit = 100;
+let enrichInFlight = false;
+const GOAL = 5000;
+
+function entryId(e){ return e.t ? (e.w.toLowerCase() + '|' + e.t) : e.w.toLowerCase(); }
+
+function buildDeck(){
+  deck = []; byId = {};
+  const seedByWord = {};
+  SEED.forEach(s => { (seedByWord[s.w.toLowerCase()] = seedByWord[s.w.toLowerCase()] || []).push(s); });
+  const placed = new Set();
+  FREQ.forEach((w, i) => {
+    const hits = seedByWord[w];
+    if(hits){
+      hits.forEach(s => {
+        const e = Object.assign({rank:i+1, rich:true}, s);
+        e.id = entryId(e); deck.push(e); byId[e.id] = e;
+      });
+      placed.add(w);
+    } else {
+      const e = {w:w, rank:i+1, id:w, rich:false};
+      deck.push(e); byId[e.id] = e;
+    }
+  });
+  // curated multiword entries not present in the frequency list
+  SEED.forEach(s => {
+    if(placed.has(s.w.toLowerCase())) return;
+    const e = Object.assign({rank:0, rich:true}, s);
+    e.id = entryId(e);
+    if(!byId[e.id]){ deck.push(e); byId[e.id] = e; }
+  });
+  // apply enrichment overlay
+  Object.keys(enriched).forEach(id => {
+    const e = byId[id];
+    if(e){ Object.assign(e, enriched[id]); e.rich = true; }
+    else {
+      const n = Object.assign({rank:0, rich:true, id:id}, enriched[id]);
+      deck.push(n); byId[id] = n;
+    }
+  });
+}
+
+/* ============ MIGRATION from earlier versions ============ */
+async function migrate(){
+  // 1) old AI-generated words saved as full deck copies -> keep as enrichment overlay
+  const oldWords = await Store.get('dutch5k-words');
+  if(oldWords && Array.isArray(oldWords)){
+    oldWords.forEach(x => {
+      if(!x || !x.w) return;
+      const id = x.t ? (x.w.toLowerCase() + '|' + x.t) : x.w.toLowerCase();
+      const target = byId[id] || byId[x.w.toLowerCase()];
+      const useId = target ? target.id : id;
+      if(byId[useId] && byId[useId].rich) return; // curated wins
+      const data = {w:x.w, t:x.t, m:x.m, ex:x.ex || []};
+      if(x.a) data.a = x.a;
+      if(typeof x.f === 'string' && x.f && x.f !== '\u2014') data.f = [['Forms', x.f]];
+      else if(Array.isArray(x.f)) data.f = x.f;
+      if(x.syn) data.syn = x.syn; if(x.ant) data.ant = x.ant;
+      enriched[useId] = data;
+    });
+    await Store.set('dutch5k-enriched', enriched);
+  }
+  // 2) old progress keyed by plain word or word|type -> map to deck ids
+  const oldProg = await Store.get('dutch5k-progress');
+  if(oldProg && !oldProg.__v2){
+    const np = {__v2:true};
+    Object.keys(oldProg).forEach(k => {
+      if(k === '__v2') return;
+      const v = oldProg[k];
+      if(byId[k]){ np[byId[k].id] = v; return; }
+      const lk = k.toLowerCase();
+      if(byId[lk]){ np[byId[lk].id] = v; return; }
+      const m = deck.find(e => e.w.toLowerCase() === lk.split('|')[0]);
+      if(m) np[m.id] = v;
+    });
+    progress = np;
+    await Store.set('dutch5k-progress', progress);
+  }
+}
+
+async function init(){
+  enriched = (await Store.get('dutch5k-enriched')) || {};
+  progress = (await Store.get('dutch5k-progress')) || {__v2:true};
+  apiKey = (await Store.get('dutch5k-apikey')) || '';
+  buildDeck();
+  await migrate();
+  buildDeck(); // rebuild with any migrated enrichment applied
+  buildQueue();
+  render();
+  maybeEnrichAhead();
+}
+
+/* ============ QUEUE ============ */
+function buildQueue(){
+  const learning=[], fresh=[], learned=[];
+  deck.forEach((e,i)=>{
+    const s = progress[e.id];
+    if(s==='learning') learning.push(i);
+    else if(s==='learned') learned.push(i);
+    else fresh.push(i);
+  });
+  shuffle(learning); shuffle(learned);
+  // new words come in frequency order: most common Dutch first
+  fresh.sort((a,b)=> (deck[a].rank||99999) - (deck[b].rank||99999));
+  queue = [...learning, ...fresh, ...learned.slice(0, Math.max(3, Math.floor(learned.length*0.1)))];
+  qPos = 0; flipped = false;
+}
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } }
+
+function counts(){
+  let learned=0, learning=0;
+  deck.forEach(e=>{ if(progress[e.id]==='learned') learned++; else if(progress[e.id]==='learning') learning++; });
+  return {learned, learning, fresh: deck.length-learned-learning, total: deck.length};
+}
+
+/* ============ ACTIONS ============ */
+async function mark(status){
+  const e = deck[queue[qPos]];
+  if(status==='again'){ delete progress[e.id]; }
+  else progress[e.id] = status;
+  progress.__v2 = true;
+  await Store.set('dutch5k-progress', progress);
+  qPos++; flipped = false;
+  if(qPos >= queue.length) buildQueue();
+  render();
+  maybeEnrichAhead();
+}
+function flip(){
+  const e = deck[queue[qPos]];
+  if(!flipped && !e.rich){ maybeEnrichAhead(true); }
+  flipped = !flipped; render();
+}
+function setTab(t){ tab=t; expanded=null; listLimit=100; render(); }
+function setFilter(f){ filter=f; listLimit=100; render(); }
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.innerHTML=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2600);
+}
+
+async function saveKey(v){
+  apiKey = v.trim();
+  await Store.set('dutch5k-apikey', apiKey);
+  if(apiKey) toast('API key saved on this device');
+  render();
+}
+
+/* ============ AI ENRICHMENT ============ */
+function canCallApi(){ return Store.hasClaude || !!apiKey; }
+
+function apiHeaders(){
+  const h = {"Content-Type":"application/json"};
+  if(!Store.hasClaude && apiKey){
+    h["x-api-key"] = apiKey;
+    h["anthropic-version"] = "2023-06-01";
+    h["anthropic-dangerous-direct-browser-access"] = "true";
+  }
+  return h;
+}
+
+async function enrichWords(stubs){
+  const list = stubs.map(e=>e.w).join(', ');
+  const resp = await fetch("https://api.anthropic.com/v1/messages", {
+    method:"POST", headers: apiHeaders(),
+    body: JSON.stringify({
+      model:"claude-sonnet-4-6", max_tokens: 4000,
+      messages:[{role:"user", content:
+`You are enriching a Dutch vocabulary flashcard deck for conversational fluency. Create one entry for each of these Dutch words: ${list}
+
+Respond with ONLY a JSON array, no markdown, no preamble. Each item:
+{"w":"the word exactly as given","a":"de or het (nouns only, else omit)","t":"verb|noun|adjective|adverb|pronoun|preposition|conjunction|number|expression","m":"concise English meaning(s)","f":[["Label","value"],...],"syn":["1-2 Dutch synonyms or []"],"ant":["Dutch antonym or []"],"ex":[["Natural everyday Dutch sentence","English translation"],["Second Dutch sentence","English translation"]]}
+
+Forms labels: verbs get Present ("ik X, hij Xt"), Past ("sg/pl"), Perfect; nouns get Plural (and Diminutive if common); adjectives get Comparative, Superlative; others use [] if no forms. Sentences must be natural, everyday conversational Dutch. If a word is an inflected form or a name, still explain it (e.g. t "noun", m "plural of ...").`}]
+    })
+  });
+  if(!resp.ok){
+    const err = await resp.json().catch(()=>({}));
+    throw new Error((err.error && err.error.message) || ('API error ' + resp.status));
+  }
+  const data = await resp.json();
+  const text = (data.content||[]).filter(i=>i.type==='text').map(i=>i.text).join('\n');
+  const clean = text.replace(/```json|```/g,'').trim();
+  const batch = JSON.parse(clean);
+  let n = 0;
+  batch.forEach(x=>{
+    if(!x || !x.w) return;
+    const stub = stubs.find(s => s.w.toLowerCase() === x.w.toLowerCase());
+    if(!stub) return;
+    const data = {w:stub.w, t:x.t, m:x.m, f:Array.isArray(x.f)?x.f:[], ex:x.ex||[]};
+    if(x.a) data.a = x.a;
+    if(x.syn && x.syn.length) data.syn = x.syn;
+    if(x.ant && x.ant.length) data.ant = x.ant;
+    enriched[stub.id] = data;
+    Object.assign(byId[stub.id], data); byId[stub.id].rich = true;
+    n++;
+  });
+  await Store.set('dutch5k-enriched', enriched);
+  return n;
+}
+
+/* Silently prepare the next cards while you study */
+async function maybeEnrichAhead(force){
+  if(enrichInFlight || !canCallApi()) return;
+  const upcoming = [];
+  for(let i=qPos; i<Math.min(qPos+12, queue.length); i++){
+    const e = deck[queue[i]];
+    if(!e.rich) upcoming.push(e);
+    if(upcoming.length >= 10) break;
+  }
+  if(!upcoming.length) return;
+  if(!force && byId[deck[queue[qPos]].id].rich && upcoming.length < 4) return;
+  enrichInFlight = true;
+  try{
+    await enrichWords(upcoming);
+    enrichInFlight = false;
+    render();
+  }catch(e){
+    console.error(e); enrichInFlight = false;
+    toast('Card preparation failed &#8212; check your API key in Progress');
+  }
+}
+
+/* Manual bulk enrichment from the Progress tab */
+async function enrichBulk(btn){
+  if(!canCallApi()){ toast('Add your Anthropic API key first'); return; }
+  const stubs = deck.filter(e=>!e.rich).sort((a,b)=>(a.rank||99999)-(b.rank||99999)).slice(0,100);
+  if(!stubs.length){ toast('All words are already prepared!'); return; }
+  btn.disabled = true;
+  let done = 0;
+  try{
+    for(let i=0; i<stubs.length; i+=20){
+      btn.textContent = 'Preparing words\u2026 ' + done + ' / ' + stubs.length;
+      done += await enrichWords(stubs.slice(i, i+20));
+    }
+    toast('Prepared ' + done + ' words with full details');
+  }catch(e){
+    console.error(e);
+    toast(done ? ('Prepared ' + done + ' before an error \u2014 tap again to continue') : 'Failed \u2014 check your API key and credit');
+  }
+  buildQueue(); render();
+}
+
+/* ============ EXPORT / IMPORT ============ */
+function exportData(){
+  const payload = {v:2, progress, enriched, exported:new Date().toISOString()};
+  const blob = new Blob([JSON.stringify(payload)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'dutch5k-backup.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+function importData(){
+  const inp = document.createElement('input');
+  inp.type='file'; inp.accept='application/json';
+  inp.onchange = async () => {
+    try{
+      const txt = await inp.files[0].text();
+      const d = JSON.parse(txt);
+      if(d.progress){ Object.assign(progress, d.progress); progress.__v2 = true; }
+      if(d.enriched){ Object.assign(enriched, d.enriched); }
+      await Store.set('dutch5k-progress', progress);
+      await Store.set('dutch5k-enriched', enriched);
+      buildDeck(); buildQueue(); render();
+      toast('Progress imported');
+    }catch(e){ toast('Import failed \u2014 not a valid backup file'); }
+  };
+  inp.click();
+}
+
+/* ============ RENDER ============ */
+function esc(s){ return String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+function mondrianStrip(c){
+  const total = Math.max(c.total,1);
+  const pl = Math.max((c.learned/total)*100, c.learned?2:0);
+  const pg = Math.max((c.learning/total)*100, c.learning?2:0);
+  const pn = Math.max(100-pl-pg, 0);
+  return `<div class="mstrip" title="blue = learned, yellow = learning, white = new">
+    ${c.learned?`<div class="m-learned" style="width:${pl}%"></div>`:''}
+    ${c.learning?`<div class="m-learning" style="width:${pg}%"></div>`:''}
+    <div class="m-new" style="width:${pn}%"></div>
+  </div>`;
+}
+
+function formsHtml(e){
+  if(!Array.isArray(e.f) || !e.f.length) return '';
+  return `<div class="forms">` + e.f.map(p=>`<div class="frow"><b>${esc(p[0])}</b> ${esc(p[1])}</div>`).join('') + `</div>`;
+}
+function chipsHtml(e){
+  const syn = (e.syn||[]).map(s=>`<span class="chip syn">= ${esc(s)}</span>`).join('');
+  const ant = (e.ant||[]).map(s=>`<span class="chip ant">&#8800; ${esc(s)}</span>`).join('');
+  return (syn||ant) ? `<div class="chips">${syn}${ant}</div>` : '';
+}
+
+function render(){
+  const c = counts();
+  document.getElementById('hdrCount').textContent = `${c.learned} / ${GOAL}`;
+  ['learn','words','progress'].forEach(t=>{
+    document.getElementById('tab'+t[0].toUpperCase()+t.slice(1)).className = (tab===t)?'active':'';
+  });
+  const main = document.getElementById('main');
+
+  if(tab==='learn'){
+    if(!queue.length){ main.innerHTML = `<div class="empty">No words in the deck yet.</div>`; return; }
+    const e = deck[queue[qPos]];
+    const status = progress[e.id] || 'new';
+    const rankTxt = e.rank ? `#${e.rank} most frequent` : 'curated extra';
+    let back;
+    if(e.rich){
+      back = `
+        <div class="word-en">${esc(e.m)}</div>
+        ${formsHtml(e)}
+        ${chipsHtml(e)}
+        ${(e.ex||[]).map(s=>`<div class="sentence">${esc(s[0])}<em>${esc(s[1])}</em></div>`).join('')}`;
+    } else if(enrichInFlight){
+      back = `<div class="word-en">Preparing this card&#8230;</div><div class="word-hint">Meaning, forms and examples are being generated. One moment.</div>`;
+    } else if(canCallApi()){
+      back = `<div class="word-en">Card not prepared yet</div><div class="word-hint">Tap the card again to generate meaning, forms and examples.</div>`;
+    } else {
+      back = `<div class="word-en">Card not prepared yet</div><div class="word-hint">Add your Anthropic API key in the Progress tab, then cards prepare themselves as you study.</div>`;
+    }
+    main.innerHTML = `
+      ${mondrianStrip(c)}
+      <div class="card" tabindex="0" role="button" aria-label="Flip card" onclick="flip()">
+        <div class="card-tag"><span>${esc(e.t||'word')}${e.a?` &#183; ${esc(e.a)}`:''}</span><span>${status.toUpperCase()}</span></div>
+        <div class="card-body">
+          <div class="word-nl">${esc(e.w)}</div>
+          <div class="rankline">${rankTxt}</div>
+          ${flipped ? back : `<div class="word-hint">Tap to reveal meaning, forms &amp; sentences</div>`}
+        </div>
+      </div>
+      ${flipped ? `
+      <div class="actions">
+        <button class="btn-again" onclick="event.stopPropagation();mark('again')">&#10007; Again</button>
+        <button class="btn-learning" onclick="event.stopPropagation();mark('learning')">&#8776; Learning</button>
+        <button class="btn-know" onclick="event.stopPropagation();mark('learned')">&#10003; Know it</button>
+      </div>` : `
+      <div class="actions"><button onclick="flip()">Show answer</button></div>`}
+      <div class="deckinfo">Card ${qPos+1} of ${queue.length} in this round &#183; ${c.total} words in deck</div>
+    `;
+  }
+
+  if(tab==='words'){
+    const q = search.toLowerCase();
+    const list = deck.map((e,i)=>({e,i})).filter(({e})=>{
+      const s = progress[e.id] || 'new';
+      if(filter!=='all' && s!==filter) return false;
+      if(q && !(e.w.toLowerCase().includes(q) || (e.m||'').toLowerCase().includes(q))) return false;
+      return true;
+    });
+    const shown = list.slice(0, listLimit);
+    main.innerHTML = `
+      <input type="search" placeholder="Search Dutch or English&#8230;" value="${esc(search)}"
+        oninput="search=this.value; listLimit=100; render(); this.focus(); this.setSelectionRange(this.value.length,this.value.length);">
+      <div class="filters">
+        ${['all','new','learning','learned'].map(f=>`<button class="${filter===f?'active':''}" onclick="setFilter('${f}')">${f}</button>`).join('')}
+      </div>
+      <div class="wlist">
+      ${shown.map(({e,i})=>{
+        const s = progress[e.id]||'new';
+        return `<div class="wrow" onclick="expanded = expanded===${i} ? null : ${i}; render();">
+            <div><div class="nl">${e.a?esc(e.a)+' ':''}${esc(e.w)}</div><div class="en">${e.rich?esc(e.m):('#'+e.rank+' \u00b7 not prepared yet')}</div></div>
+            <div class="dot ${s}" title="${s}"></div>
+          </div>
+          ${expanded===i?`<div class="wdetail">
+            ${formsHtml(e)}
+            ${chipsHtml(e)}
+            ${(e.ex||[]).map(sn=>`<div class="sentence">${esc(sn[0])}<em>${esc(sn[1])}</em></div>`).join('') || (e.rich?'':'This card prepares itself when it comes up in Learn, or use \u201cPrepare next 100\u201d in Progress.')}
+          </div>`:''}`;
+      }).join('') || '<div class="empty">No words match.</div>'}
+      </div>
+      ${list.length > listLimit ? `<button class="loadmore" onclick="listLimit += 200; render();">Show more (${list.length - listLimit} remaining)</button>` : ''}`;
+  }
+
+  if(tab==='progress'){
+    const pct = ((c.learned/GOAL)*100).toFixed(1);
+    const prepared = deck.filter(e=>e.rich).length;
+    main.innerHTML = `
+      ${mondrianStrip(c)}
+      <div class="stats">
+        <div class="stat"><div class="num c-blue">${c.learned}</div><div class="lbl">Learned</div></div>
+        <div class="stat"><div class="num c-yellow">${c.learning}</div><div class="lbl">Still learning</div></div>
+        <div class="stat"><div class="num">${c.fresh}</div><div class="lbl">Not started</div></div>
+        <div class="stat"><div class="num c-red">${pct}%</div><div class="lbl">Of 5,000 goal</div></div>
+      </div>
+
+      <div class="genbox">
+        <h3>Card preparation</h3>
+        <p>All <b>5,000</b> highest-frequency Dutch words are already in your deck, in real corpus order. <b>${prepared}</b> have full details (meaning, forms, synonyms, examples). The rest prepare themselves automatically while you study &#8212; or prepare a batch now.</p>
+        ${Store.hasClaude ? `<div class="keyok">Running inside Claude &#8212; no API key needed.</div>` : `
+          ${apiKey ? `<div class="keyok">&#10003; API key saved on this device</div>` : ''}
+          <input type="password" id="keyInput" placeholder="Anthropic API key (sk-ant-&#8230;)" value="${esc(apiKey)}"
+            onchange="saveKey(this.value)">
+        `}
+        <button class="genbtn" onclick="enrichBulk(this)">Prepare next 100 words</button>
+        <div class="note">Get a key at console.anthropic.com &#8594; API Keys, and add a few euros of credit. The key is stored only in this browser and sent only to api.anthropic.com. Preparing 100 words costs a few cents.</div>
+      </div>
+
+      <div class="genbox">
+        <h3>Backup</h3>
+        <p>Your progress and prepared cards live in this browser. Export a backup before switching phones or browsers, then import it there.</p>
+        <div class="rowbtns">
+          <button onclick="exportData()">Export</button>
+          <button onclick="importData()">Import</button>
+        </div>
+        <div class="note">Tip: learn in small daily rounds. New words arrive most-common-first; "Learning" words come back first and "Know it" words resurface occasionally for review.</div>
+      </div>`;
+  }
+}
+
+init();
+</script>
+</body>
+</html>
