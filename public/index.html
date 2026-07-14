@@ -263,6 +263,22 @@ let streak = null;        // {count, lastStudied, todayCount, history:{date:coun
 let remindOn = false;
 const GOAL = 5000;
 const POS_LABELS = {verb:'Verbs', noun:'Nouns', adjective:'Adjectives', adverb:'Adverbs', pronoun:'Pronouns', preposition:'Prepositions', conjunction:'Conjunctions', number:'Numbers', expression:'Expressions', article:'Articles'};
+
+/* Shared filter definitions so the Learn and Words tabs stay consistent (same options + order). */
+const POS_FILTER = ['all','verb','noun','adjective','adverb','pronoun','preposition','conjunction','number','expression'];
+function posFilterButtons(active, handler){
+  return POS_FILTER.map(p=>`<button data-p="${p}" class="${active===p?'active':''}" onclick="hap();${handler}('${p}')">${p==='all'?'All types':(POS_LABELS[p]||p)}</button>`).join('');
+}
+// Source options in canonical order: All, General, Gang, Actie (book sources shown only if present in the deck).
+function srcFilterOpts(){
+  const o = [['all','All sources'],['general','General 5K']];
+  if(bookChapters('gang').length) o.push(['gang','Nederlands in Gang']);
+  if(bookChapters('actie').length) o.push(['actie','Nederlands in Actie']);
+  return o;
+}
+function srcFilterButtons(active, handler){
+  return srcFilterOpts().map(([s,label])=>`<button data-s="${s}" class="${active===s?'active':''}" onclick="hap();${handler}('${s}')">${label}</button>`).join('');
+}
 function posOf(e){ return (e.t||'').toLowerCase(); }
 function bookTag(e){
   if(!e.books || !e.books.length) return '';
@@ -506,7 +522,7 @@ function setFilter(f){
 function setPosFilter(p){
   posFilter=p; listLimit=100;
   if(tab==='words' && document.getElementById('wlist')){
-    document.querySelectorAll('.posfilters button').forEach(b=>{ b.className = (b.dataset.p===p)?'active':''; });
+    document.querySelectorAll('.posfilters button[data-p]').forEach(b=>{ b.className = (b.dataset.p===p)?'active':''; });
     renderWordList();
   } else render();
 }
@@ -919,18 +935,9 @@ function render(){
   const main = document.getElementById('main');
 
   if(tab==='learn'){
-    const posBar = `<div class="posfilters learn-pos">
-      <button class="${learnPos==='all'?'active':''}" onclick="hap();setLearnPos('all')">All</button>
-      ${['verb','noun','adjective','adverb'].map(p=>`<button class="${learnPos===p?'active':''}" onclick="hap();setLearnPos('${p}')">${POS_LABELS[p]}</button>`).join('')}
-    </div>`;
-    // Source filter bar — only if books are loaded
-    const srcOpts = [['all','All']];
-    if(bookChapters('actie').length) srcOpts.push(['actie','Actie']);
-    if(bookChapters('gang').length) srcOpts.push(['gang','Gang']);
-    srcOpts.push(['general','General']);
-    const srcBar = srcOpts.length>2 ? `<div class="posfilters learn-pos">
-      ${srcOpts.map(([s,l])=>`<button class="${learnSrc===s?'active':''}" onclick="hap();setLearnSrc('${s}')">${l}</button>`).join('')}
-    </div>` : '';
+    const posBar = `<div class="posfilters posscroll learn-pos">${posFilterButtons(learnPos,'setLearnPos')}</div>`;
+    // Source filter bar — only if book sources are loaded
+    const srcBar = srcFilterOpts().length>2 ? `<div class="srcfilters posfilters posscroll learn-pos">${srcFilterButtons(learnSrc,'setLearnSrc')}</div>` : '';
     if(!queue.length){
       main.innerHTML = posBar + srcBar + `<div class="empty">No words left in this round with these filters.<br>Try “All”.</div>`;
       return;
@@ -1023,13 +1030,10 @@ function render(){
       return;
     }
     // List view — rendered once; search updates only the list, never the input
-    const posButtons = ['all','verb','noun','adjective','adverb','pronoun','preposition','conjunction','number','expression']
-      .map(p=>`<button data-p="${p}" class="${posFilter===p?'active':''}" onclick="hap();setPosFilter('${p}')">${p==='all'?'All types':(POS_LABELS[p]||p)}</button>`).join('');
+    const posButtons = posFilterButtons(posFilter,'setPosFilter');
     // Source filter — only show book sources that actually exist in the deck
-    const srcOpts = [['all','All sources'],['general','General 5K']];
-    if(bookChapters('actie').length) srcOpts.push(['actie','Nederlands in Actie']);
-    if(bookChapters('gang').length) srcOpts.push(['gang','Nederlands in Gang']);
-    const srcButtons = srcOpts.map(([s,label])=>`<button data-s="${s}" class="${srcFilter===s?'active':''}" onclick="hap();setSrcFilter('${s}')">${label}</button>`).join('');
+    const srcOpts = srcFilterOpts();
+    const srcButtons = srcFilterButtons(srcFilter,'setSrcFilter');
     main.innerHTML = `
       <input type="search" id="wordSearch" placeholder="Search Dutch or English&#8230;" autocomplete="off" value="${esc(search)}">
       <div class="filters">
@@ -1168,7 +1172,7 @@ function render(){
 /* ============ OFFLINE (service worker) ============ */
 if('serviceWorker' in navigator){
   const swCode = `
-    const C = 'dutch5k-v9';
+    const C = 'dutch5k-v10';
     self.addEventListener('install', e => { self.skipWaiting(); });
     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
     self.addEventListener('fetch', e => {

@@ -59,8 +59,15 @@ Three tabs: **Learn** (flashcards, flip, Again/Learning/Know-it, Skip), **Words*
 **Progress** (stats, daily goal, streak, 14-day history, POS breakdown, backup).
 
 Filters in both Learn and Words: **status** (new/learning/learned), **POS** (verb/noun/adjective/...),
-**source** (All / General 5K / Nederlands in Actie / Nederlands in Gang). Book words show A/G badges
+**source** (All / General 5K / Nederlands in Gang / Nederlands in Actie). Book words show A/G badges
 and chapter tags ("Actie H3").
+
+The POS and source filters are **identical and in the same order across both tabs** — they render from
+shared helpers `posFilterButtons()` / `srcFilterButtons()` (built on `POS_FILTER` and `srcFilterOpts()`).
+Canonical source order is **All, General, Gang, Actie**. Edit the shared helpers, not the per-tab markup,
+or the two tabs will drift apart again. (Learn uses `setLearnPos`/`setLearnSrc` → full `render()`; Words
+uses `setPosFilter`/`setSrcFilter` → partial `renderWordList()` with a scoped `button[data-p]` update so
+the POS refresh doesn't clobber the source bar.)
 
 Synonyms/antonyms render as tappable rows; if the word exists in the deck it links to its card, with
 a back-stack (`wordViewStack`) so you can walk back.
