@@ -23,6 +23,13 @@ Workers (`wrangler.jsonc`), auto-deploying from `main` via Workers Builds. Push 
 | `TRANS` | 3,887 | Offline English meanings (FreeDict NL-EN + lemmatisation + manual). `word -> {m, t?}` |
 | `BOOKS` | 2,233 | Textbook vocab: 1,236 Nederlands in Actie + 997 Nederlands in Gang |
 
+There is also a small **fifth blob, `BOOKEX`** (defined just above `buildDeck`): hand-written example
+sentences for textbook words that shipped without them. Keyed by `"<src>:<word-lowercase>"` (the same
+key the `BOOKS` merge uses), value `[[dutch, english], …]`. `buildDeck()` applies it as an overlay —
+sets `ex`, `rich`, `hasMeaning` on the matching deck entry — so we never edit the giant `BOOKS` line.
+**This is the place to add examples going forward**: append entries to `BOOKEX`, don't touch `BOOKS`.
+It only fills words that have no examples yet, so it's safe to append to.
+
 `buildDeck()` merges all four into `deck[]`. Every entry has a stable `id`:
 - curated/enriched: `"word|type"` (homographs like `eten` verb vs noun must not collide)
 - frequency stubs: `"word"`
@@ -109,7 +116,13 @@ updates in ~60s. The worker name in `wrangler.jsonc` (`drop-a757014e-97c`) must 
 
 ## Open work
 
-1. ~413 Actie words need meanings/examples; 997 Gang words need example sentences. Both need API credit.
+1. **Add example sentences to textbook words** (Adi's request, in progress — hand-written into `BOOKEX`,
+   no API needed). **1,234 book words** shipped without examples. **Done so far: Nederlands in Actie
+   H1–H4** (the 38 words that already had a meaning). **Remaining:** the rest of Actie (~371, incl. ~257
+   that *also* lack a meaning — add the meaning in the same `BOOKEX`-adjacent pass) and all of Gang (~831).
+   Next batch: continue Actie by chapter (H5 onward), then Gang. Skip extraction artifacts like `taptap`,
+   `Eigen vocabulaire`, and words with a stray `` bell char. ~413 Actie / 997 Gang originally lacked
+   meanings/examples; those *meanings* still ideally want API enrichment, but examples are being hand-added.
 2. Gang words have no forms/synonyms.
 3. Adi mentioned wanting a premium gate for the API key rather than pasting one in.
 4. Frequency list is corpus-based (includes `website`, `twitter`, `http`) — a spoken-Dutch or

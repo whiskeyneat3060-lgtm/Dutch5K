@@ -288,6 +288,52 @@ function bookTag(e){
 
 function entryId(e){ return e.t ? (e.w.toLowerCase() + '|' + e.t) : e.w.toLowerCase(); }
 
+/* Hand-written example sentences for textbook words that shipped without them.
+   Keyed by "<src>:<word-lowercase>" (matches the BOOKS merge key). Each value is
+   [[dutch, english], ...]. Applied as an overlay in buildDeck() so we never touch
+   the big BOOKS blob. Grow this per session — see "Open work" in CLAUDE.md.
+   Progress: Nederlands in Actie H1-H4 (words that already had a meaning). */
+const BOOKEX = {
+  "actie:goede": [["Dat is een goede vraag.","That is a good question."]],
+  "actie:wereld": [["De hele wereld kijkt naar de finale.","The whole world is watching the final."]],
+  "actie:team": [["Ons team heeft de wedstrijd gewonnen.","Our team won the match."]],
+  "actie:lichaam": [["Beweging is goed voor je lichaam.","Exercise is good for your body."]],
+  "actie:plek": [["Dit is een rustige plek om te studeren.","This is a quiet place to study."]],
+  "actie:telefoon": [["Mijn telefoon is bijna leeg.","My phone is almost out of battery."]],
+  "actie:ziekenhuis": [["Mijn oma ligt in het ziekenhuis.","My grandmother is in the hospital."]],
+  "actie:kennis": [["Zij heeft veel kennis van de Nederlandse taal.","She has a lot of knowledge of the Dutch language."]],
+  "actie:economie": [["De economie groeit dit jaar langzaam.","The economy is growing slowly this year."]],
+  "actie:gesprek": [["We hadden een lang gesprek over het werk.","We had a long conversation about work."]],
+  "actie:geslacht": [["Het geslacht van de baby is nog een verrassing.","The baby's sex is still a surprise."]],
+  "actie:ronde": [["De renner won de laatste ronde van de race.","The cyclist won the last lap of the race."]],
+  "actie:niveau": [["Zijn Nederlands is op een hoog niveau.","His Dutch is at a high level."]],
+  "actie:beweging": [["Yoga bestaat uit rustige bewegingen.","Yoga consists of calm movements."]],
+  "actie:show": [["De show begint om acht uur vanavond.","The show starts at eight o'clock tonight."]],
+  "actie:hoofdstad": [["Amsterdam is de hoofdstad van Nederland.","Amsterdam is the capital of the Netherlands."]],
+  "actie:onderwerp": [["Het onderwerp van de les is de toekomst.","The topic of the lesson is the future."]],
+  "actie:stijl": [["Zij schrijft in een heldere stijl.","She writes in a clear style."]],
+  "actie:ziekte": [["Door zijn ziekte kon hij niet werken.","Because of his illness he could not work."]],
+  "actie:gelegenheid": [["Ik draag dit pak alleen bij een speciale gelegenheid.","I only wear this suit on a special occasion."]],
+  "actie:verzoek": [["Op verzoek van de klant hebben we de order aangepast.","At the customer's request we adjusted the order."]],
+  "actie:golf": [["Een grote golf sloeg over de boot.","A big wave crashed over the boat."]],
+  "actie:lengte": [["De lengte van de kamer is vier meter.","The length of the room is four meters."]],
+  "actie:spullen": [["Pak je spullen, we gaan!","Grab your things, we're leaving!"]],
+  "actie:haven": [["Rotterdam heeft de grootste haven van Europa.","Rotterdam has the largest port in Europe."]],
+  "actie:regel": [["Je moet je aan de regels houden.","You have to follow the rules."]],
+  "actie:jongere": [["Veel jongeren gebruiken de hele dag hun telefoon.","Many young people use their phone all day."]],
+  "actie:geheugen": [["Mijn geheugen is de laatste tijd slecht.","My memory has been bad lately."]],
+  "actie:grootte": [["De schoenen zijn er in elke grootte.","The shoes come in every size."]],
+  "actie:ei": [["Ik eet elke ochtend een gekookt ei.","I eat a boiled egg every morning."]],
+  "actie:strategie": [["Het bedrijf heeft een nieuwe strategie voor volgend jaar.","The company has a new strategy for next year."]],
+  "actie:drukte": [["In de zomer is er veel drukte in de stad.","In summer there is a lot of bustle in the city."]],
+  "actie:financiën": [["Zij houdt haar financiën goed bij.","She keeps good track of her finances."]],
+  "actie:pizza": [["Zullen we vanavond een pizza bestellen?","Shall we order a pizza tonight?"]],
+  "actie:tekening": [["Het kind maakte een mooie tekening van zijn huis.","The child made a nice drawing of his house."]],
+  "actie:voeding": [["Gezonde voeding is belangrijk voor je lichaam.","Healthy nutrition is important for your body."]],
+  "actie:kenmerk": [["Een belangrijk kenmerk van deze auto is de lage prijs.","An important feature of this car is the low price."]],
+  "actie:lijstje": [["Ik maak een lijstje met boodschappen.","I'm making a little list of groceries."]]
+};
+
 function buildDeck(){
   deck = []; byId = {};
   const seedByWord = {};
@@ -365,6 +411,18 @@ function buildDeck(){
       deck.push(e); byId[e.id]=e;
     }
   });
+  // Overlay hand-written example sentences for book words (BOOKEX keyed by "src:word").
+  BOOKS.forEach(b => {
+    const lw = b.w.toLowerCase();
+    const ex = BOOKEX[b.src + ':' + lw];
+    if(!ex) return;
+    const ent = byId[b.t ? (lw+'|'+b.t) : lw] || byId[lw] || byId['book:'+b.src+':'+lw]
+      || deck.find(e => e.w.toLowerCase()===lw && (e.books||[]).some(x=>x.src===b.src));
+    if(ent && (!ent.ex || !ent.ex.length)){
+      ent.ex = ex; ent.rich = true; ent.hasMeaning = true;
+    }
+  });
+
   // Give every entry a primary source tag for filtering: book words vs general frequency words
   deck.forEach(e => {
     if(e.books && e.books.length) e.srcTags = [...new Set(e.books.map(x=>x.src))];
@@ -1172,7 +1230,7 @@ function render(){
 /* ============ OFFLINE (service worker) ============ */
 if('serviceWorker' in navigator){
   const swCode = `
-    const C = 'dutch5k-v10';
+    const C = 'dutch5k-v11';
     self.addEventListener('install', e => { self.skipWaiting(); });
     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
     self.addEventListener('fetch', e => {
