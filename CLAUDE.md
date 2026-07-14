@@ -3,6 +3,11 @@
 A single-file Dutch vocabulary trainer. Mondrian-inspired design (black rules, red/blue/yellow blocks).
 Owner is Adi: B1 Dutch learner in Almere, studying toward conversational fluency.
 
+> **Convention (Adi's standing request):** whenever you change the app, update this `CLAUDE.md`
+> in the same commit — document new features, gotchas, and cache bumps here. Sessions get cleared
+> to save tokens, so this file is the project's memory. If it isn't written here, the next session
+> won't know it.
+
 ## Architecture — read this first
 
 **The entire app is one file: `public/index.html`** (~800 KB). No build step, no framework, no dependencies.
@@ -59,6 +64,14 @@ and chapter tags ("Actie H3").
 
 Synonyms/antonyms render as tappable rows; if the word exists in the deck it links to its card, with
 a back-stack (`wordViewStack`) so you can walk back.
+
+**Pronunciation:** a speaker icon (`spkBtn(idx)`, `.spk` class) sits next to every word in the Learn
+flashcard, Words list rows, and Words detail card. Tapping calls `speak(idx, event)`, which uses the
+browser's built-in Web Speech API (`SpeechSynthesisUtterance`, `lang='nl-NL'`) — offline, no deps, no
+API key. Picks a Dutch voice via `_loadNlVoice()`; icon turns red (`.spk.speaking`) while speaking.
+Works for all words, not just enriched ones. The `event` arg is for `stopPropagation` so tapping the
+icon doesn't flip the card or open the row. Caveat: voice quality depends on the device's installed
+TTS voices; a device with no Dutch voice may fall back to a wrong-accent voice.
 
 Offline-first: a service worker (cache `dutch5k-vN`) caches the shell. **Bump the cache version on every
 deploy** or returning users get a stale app.
