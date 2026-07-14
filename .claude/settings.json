@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git pull:*)",
+      "Bash(git checkout:*)",
+      "Bash(node --check:*)",
+      "Bash(node:*)",
+      "Bash(python3:*)",
+      "Bash(npx wrangler deploy)",
+      "Bash(npx wrangler dev)",
+      "Read(//home/**)",
+      "Edit(public/index.html)",
+      "Edit(wrangler.jsonc)"
+    ],
+    "ask": [
+      "Bash(rm:*)",
+      "Bash(git reset:*)",
+      "Bash(git push --force:*)"
+    ]
+  }
+}
