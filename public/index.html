@@ -55,6 +55,13 @@
   }
   .card-body{flex:1; display:flex; flex-direction:column; justify-content:center; padding:24px 20px; gap:8px;}
   .word-nl{font-family:'Archivo',sans-serif; font-weight:900; font-size:44px; letter-spacing:-1px; line-height:1; word-break:break-word;}
+  .spk{display:inline-flex; align-items:center; justify-content:center; vertical-align:middle; cursor:pointer; background:transparent; border:none; padding:3px; margin:0 0 0 5px; width:28px; height:28px; color:inherit; opacity:.68; -webkit-tap-highlight-color:transparent;}
+  .spk:hover{opacity:1;}
+  .spk:active{transform:scale(.88);}
+  .spk svg{width:100%; height:100%; display:block;}
+  .spk.speaking{color:var(--red); opacity:1;}
+  .wrow .spk{width:26px; height:26px; padding:3px;}
+  .word-nl .spk{width:34px; height:34px; padding:5px; margin-left:9px;}
   .word-hint{font-size:12px; color:#888; margin-top:12px;}
   .word-en{font-size:20px; font-weight:600; color:var(--blue);}
   .rankline{font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#999; margin-top:2px;}
@@ -822,6 +829,44 @@ function backFromWord(){
 /* Haptic feedback for taps (Vibration API; silently no-ops where unsupported) */
 function hap(ms){ try{ if(navigator.vibrate) navigator.vibrate(ms||10); }catch(e){} }
 
+/* Pronunciation via the browser's Dutch text-to-speech voice (offline, no deps). */
+const SPK_SVG='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 5V4L8 9H4z" fill="currentColor"/><path d="M15.5 8.5c1.6 1.2 1.6 5.8 0 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M18 6c3 2.2 3 9.8 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+function spkBtn(idx){ return `<button class="spk" title="Hear pronunciation in Dutch" aria-label="Hear pronunciation in Dutch" onclick="speak(${idx},event)">${SPK_SVG}</button>`; }
+let _nlVoice=null;
+function _loadNlVoice(){
+  try{
+    const vs=window.speechSynthesis.getVoices()||[];
+    _nlVoice = vs.find(v=>/^nl(-|_|$)/i.test(v.lang)) || vs.find(v=>/dutch|nederlands/i.test(v.name)) || null;
+  }catch(e){}
+}
+if('speechSynthesis' in window){
+  _loadNlVoice();
+  try{ window.speechSynthesis.onvoiceschanged=_loadNlVoice; }catch(e){}
+}
+function speak(idx, ev){
+  const btn = ev && (ev.currentTarget || (ev.target && ev.target.closest && ev.target.closest('.spk')));
+  if(ev && ev.stopPropagation) ev.stopPropagation();
+  hap();
+  const word = (deck[idx] && deck[idx].w) || '';
+  if(!word) return;
+  if(!('speechSynthesis' in window)){ toast("Pronunciation isn't supported on this device"); return; }
+  try{
+    window.speechSynthesis.cancel();
+    document.querySelectorAll('.spk.speaking').forEach(b=>b.classList.remove('speaking'));
+    if(!_nlVoice) _loadNlVoice();
+    const u=new SpeechSynthesisUtterance(word);
+    u.lang='nl-NL';
+    if(_nlVoice) u.voice=_nlVoice;
+    u.rate=0.9;
+    if(btn){
+      btn.classList.add('speaking');
+      const clear=()=>{ try{ btn.classList.remove('speaking'); }catch(e){} };
+      u.onend=clear; u.onerror=clear;
+    }
+    window.speechSynthesis.speak(u);
+  }catch(e){}
+}
+
 /* Words list: updates only the list container, so the search box keeps focus */
 function renderWordList(){
   const listEl = document.getElementById('wlist');
@@ -845,7 +890,7 @@ function renderWordList(){
     const pos = posOf(e) ? `<span class="wpos">${esc(posOf(e))}</span>` : '';
     const badge = (e.srcTags||[]).filter(t=>t!=='general').map(t=>`<span class="srcbadge sb-${t}">${t==='actie'?'A':'G'}</span>`).join('');
     return `<div class="wrow" onclick="hap();openWord(${i})">
-        <div><div class="nl">${e.a?esc(e.a)+' ':''}${esc(e.w)} ${pos}${badge}</div><div class="en">${meaning}</div></div>
+        <div><div class="nl">${e.a?esc(e.a)+' ':''}${esc(e.w)} ${pos}${badge}${spkBtn(i)}</div><div class="en">${meaning}</div></div>
         <div class="dot ${s}" title="${s}"></div>
       </div>`;
   }).join('') || '<div class="empty">No words match.</div>';
@@ -916,7 +961,7 @@ function render(){
       <div class="card" tabindex="0" role="button" aria-label="Flip card" onclick="flip()">
         <div class="card-tag"><span>${esc(e.t||'word')}${e.a?` &#183; ${esc(e.a)}`:''}</span><span>${status.toUpperCase()}</span></div>
         <div class="card-body">
-          <div class="word-nl">${esc(e.w)}</div>
+          <div class="word-nl">${esc(e.w)}${spkBtn(queue[qPos])}</div>
           <div class="rankline">${rankTxt}</div>
           ${e.books&&e.books.length?`<div class="rankline booktag">&#128218; ${bookTag(e)}</div>`:''}
           ${flipped ? back : `<div class="word-hint">Tap to reveal meaning, forms, examples &amp; related words</div>`}
@@ -966,7 +1011,7 @@ function render(){
         <div class="card">
           <div class="card-tag"><span>${esc(e.t||'word')}${e.a?` &#183; ${esc(e.a)}`:''}</span><span>${s.toUpperCase()}</span></div>
           <div class="card-body">
-            <div class="word-nl">${esc(e.w)}</div>
+            <div class="word-nl">${esc(e.w)}${spkBtn(wordView)}</div>
             ${body}
           </div>
         </div>
@@ -1123,7 +1168,7 @@ function render(){
 /* ============ OFFLINE (service worker) ============ */
 if('serviceWorker' in navigator){
   const swCode = `
-    const C = 'dutch5k-v8';
+    const C = 'dutch5k-v9';
     self.addEventListener('install', e => { self.skipWaiting(); });
     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
     self.addEventListener('fetch', e => {
