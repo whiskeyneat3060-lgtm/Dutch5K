@@ -73,7 +73,7 @@ Export/Import JSON backup lives in the Progress tab. There is no server; losing 
 Three tabs: **Learn** (flashcards, flip, Again/Learning/Know-it, Skip), **Words** (search, list, detail cards),
 **Progress** (stats, daily goal, streak, 14-day history, POS breakdown, backup, **theme picker**).
 
-**Themes (v45 — three genuinely different LAYOUTS, not just palettes):** chosen from the **Theme** box at the
+**Themes (v47 — three genuinely different LAYOUTS, not just palettes):** chosen from the **Theme** box at the
 bottom of Progress. Content and progress are identical across all three; the DOM is untouched — each theme is
 pure CSS scoped to `html[data-theme="<id>"]`, so a theme re-skins *structure* (nav placement, type, spacing,
 card language), not only colour. The three:
@@ -97,15 +97,18 @@ How it works:
   + any structural rules) and an entry in the `THEMES` array in JS (`{id,name,desc,sw:[3 swatch colours]}`). The
   picker renders itself from that array; `setTheme(id)` → `applyTheme(id)` (sets/removes `data-theme`, updates
   the `theme-color` meta), persists `dutch5k-theme`, re-renders.
-- **Blank-on-tap bug (fixed v45, hardened v46):** on Android Chrome / iOS WebKit an element could stay in the DOM
-  but go unpainted after a tab tap — first themed rounded+shadowed cards, then (v45→v46) the **nav bar itself**,
-  which vanished even in the default theme. Two root causes: (a) `nav{overflow:hidden}` — removed, nav is no
-  longer in the `.stats,.actions,.filters{overflow:hidden}` rule; and (b) the first fix toggled `#main`'s
-  `display:none`, which reflows the body flex column and knocked the sibling `<nav>` out. `render()` is now a
-  thin wrapper around `renderMain()` + `paintFix()`; **paintFix toggles `visibility` (not `display`) on both
-  `nav` and `#main`** for every theme — visibility keeps every flex child in layout, so the repaint nudge no
-  longer disturbs siblings. Do **not** switch this back to `display`, and keep it running for all themes. Prefer
-  solid/opaque values over `backdrop-filter` on re-rendered subtrees.
+- **Nav-bar-vanishing bug (fixed for good in v47):** on Android Chrome the whole tab bar disappeared after a tab
+  tap and only a page refresh brought it back — re-rendering `#main` dropped the nav's paint. JS repaint nudges
+  (display/visibility toggles in v45/v46) did **not** cure it and a stuck toggle could leave nav hidden. The
+  real fix is pure CSS: the base `nav{}` rule is now `position:sticky; top:0; -webkit-transform:translateZ(0);
+  transform:translateZ(0)` (+ `z-index:20; background:var(--paper)`), which promotes nav to its **own GPU
+  compositing layer** so its pixels are cached independently and survive `#main` re-renders. `render()` does no
+  repaint hack at all now (paintFix removed). `nav` was also taken out of the `overflow:hidden` rule. Midnight's
+  nav overrides this with `position:fixed; top:auto; bottom:14px` (a floating bottom pill — still its own layer).
+- **Buttons need an explicit text colour:** `<button>` does not inherit `color`, so unstyled buttons fall back to
+  UA black — invisible on Midnight. A base `button{ color:var(--ink); }` rule (just under `body`) tokenises it;
+  coloured/active buttons (`.btn-know`, `.filters button.active`, `.genbtn`, …) set their own colour and win on
+  specificity. If you add a new button, you usually don't need a colour — it inherits the theme ink now.
 - **Anti-flash:** a tiny synchronous `<script>` at the end of `<head>` reads `dutch5k-theme` from localStorage
   (JSON-encoded, e.g. `"midnight"`) and sets `data-theme` before first paint; `init()` re-applies it
   authoritatively. Keep the paper hexes in that script and in `applyTheme()`'s `theme-color` line in sync with

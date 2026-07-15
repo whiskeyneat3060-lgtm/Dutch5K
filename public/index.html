@@ -26,6 +26,10 @@
     font-family:var(--font-body); color:var(--ink); background:var(--paper);
     display:flex; flex-direction:column; min-height:100vh;
   }
+  /* Buttons don't inherit `color` — without this they fall back to the UA default
+     black, which is invisible on dark themes (Midnight). Tokenise it here; the
+     coloured/active buttons set their own colour with higher specificity and win. */
+  button{ color:var(--ink); }
   header{
     border-bottom:var(--rule); padding:14px 16px;
     display:flex; align-items:center; justify-content:space-between; gap:12px;
@@ -35,7 +39,14 @@
   .counter{font-family:var(--font-head); font-weight:700; font-size:13px; text-align:right; line-height:1.2;}
   .counter small{display:block; font-weight:400; font-size:10px; letter-spacing:1px; text-transform:uppercase; color:var(--muted);}
 
-  nav{display:flex; border-bottom:var(--rule);}
+  /* position:sticky + translateZ(0) force nav onto its own compositing layer, so its
+     paint survives #main re-renders (fixes the tab bar vanishing after a tap on
+     Android Chrome). Sticky also keeps the tabs reachable when the page scrolls. */
+  nav{
+    display:flex; border-bottom:var(--rule);
+    position:sticky; top:0; z-index:20; background:var(--paper);
+    -webkit-transform:translateZ(0); transform:translateZ(0);
+  }
   nav button{
     flex:1; padding:12px 4px; background:var(--paper); border:none; border-right:var(--rule);
     font-family:var(--font-head); font-weight:700; font-size:13px; text-transform:uppercase;
@@ -268,7 +279,7 @@
   html[data-theme="midnight"] .counter small{ letter-spacing:1.4px; }
   /* floating bottom pill nav */
   html[data-theme="midnight"] nav{
-    position:fixed; left:50%; transform:translateX(-50%); bottom:14px; z-index:50;
+    position:fixed; top:auto; left:50%; transform:translateX(-50%); bottom:14px; z-index:50;
     width:min(440px,92vw); border:1px solid var(--line); border-radius:22px;
     background:#161829e6; box-shadow:0 14px 36px rgba(0,0,0,.55); padding:6px; gap:6px;
   }
@@ -334,7 +345,7 @@
   html[data-theme="sepia"] .counter{ text-align:center; }
   html[data-theme="sepia"] .counter small{ letter-spacing:2px; }
   /* running-head text tabs */
-  html[data-theme="sepia"] nav{ border-bottom:1px solid var(--line); background:transparent; justify-content:center; gap:24px; padding:4px 0; }
+  html[data-theme="sepia"] nav{ border-bottom:1px solid var(--line); background:var(--paper); justify-content:center; gap:24px; padding:4px 0; }
   html[data-theme="sepia"] nav button{
     flex:0 0 auto; border:none; background:transparent; color:var(--muted);
     font-family:var(--font-head); font-weight:400; font-size:15px; text-transform:none;
@@ -5851,26 +5862,14 @@ async function setWordStatus(idx, status){
   render();
 }
 
-/* Wrapper: after every (re)render, force a LAYOUT-SAFE repaint. On Android Chrome /
-   iOS WebKit an element can stay in the DOM but go unpainted after a tab tap — both
-   the nav bar and themed rounded+shadowed cards did this ("blank until refresh").
-   We toggle `visibility` (not `display`): visibility keeps every element in the flex
-   layout, so nudging #main no longer reflows the body column and knocks the sibling
-   <nav> out. Nudge nav too, because the tab bar vanished even in the default theme.
-   Runs for all themes; it's a couple of style writes + one layout read. */
+/* The nav bar used to vanish after a tab tap and only a page refresh brought it
+   back — an Android-Chrome/WebKit compositing bug where re-rendering #main dropped
+   the nav's paint. JS repaint nudges (display/visibility toggles) didn't cure it and
+   a stuck toggle could leave nav hidden. The real fix is pure CSS: nav is promoted
+   to its own GPU layer + made position:sticky (see the `nav{…}` rule), so its pixels
+   are cached independently and survive #main re-renders. render() therefore does no
+   repaint hack at all. */
 function render(){
-  renderMain();
-  paintFix();
-}
-function paintFix(){
-  [document.querySelector('nav'), document.getElementById('main')].forEach(el=>{
-    if(!el) return;
-    el.style.visibility = 'hidden';
-    void el.offsetHeight;      // force sync layout so the flip back is a fresh paint
-    el.style.visibility = '';
-  });
-}
-function renderMain(){
   const c = counts();
   document.getElementById('hdrCount').textContent = `${c.learned} / ${GOAL}`;
   ['learn','words','progress'].forEach(t=>{
@@ -6129,7 +6128,7 @@ function renderMain(){
 /* ============ OFFLINE (service worker) ============ */
 if('serviceWorker' in navigator){
   const swCode = `
-    const C = 'dutch5k-v46';
+    const C = 'dutch5k-v47';
     self.addEventListener('install', e => { self.skipWaiting(); });
     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
     self.addEventListener('fetch', e => {
