@@ -65,13 +65,33 @@ Both books are Adi's own copies. Only vocabulary lists were extracted — no boo
 ## Storage (all client-side, no backend)
 
 `Store` adapter wraps `window.storage` (Claude artifacts) with a `localStorage` fallback.
-Keys: `dutch5k-progress`, `dutch5k-enriched`, `dutch5k-plan`, `dutch5k-streak`, `dutch5k-remind`.
+Keys: `dutch5k-progress`, `dutch5k-enriched`, `dutch5k-plan`, `dutch5k-streak`, `dutch5k-remind`, `dutch5k-theme`.
 Export/Import JSON backup lives in the Progress tab. There is no server; losing localStorage loses progress.
 
 ## Features
 
 Three tabs: **Learn** (flashcards, flip, Again/Learning/Know-it, Skip), **Words** (search, list, detail cards),
-**Progress** (stats, daily goal, streak, 14-day history, POS breakdown, backup).
+**Progress** (stats, daily goal, streak, 14-day history, POS breakdown, backup, **theme picker**).
+
+**Themes (v44):** a full re-skin of the app, chosen from the **Theme** box at the bottom of Progress. Three
+options: **Minimalistic** (the original Mondrian — black rules, red/blue/yellow, Archivo/Inter, sharp corners;
+this is the default and uses *no* `data-theme` attribute), **Midnight** (dark, rounded, soft-shadowed, Inter,
+blue/pink accents), **Sepia** (warm cream + serif Georgia, terracotta/teal, book-like). Content and progress
+are identical across themes — only CSS custom properties change. How it works:
+- The palette/structure is driven by tokens in `:root` — `--ink` (text), `--line` (border colour, split out
+  from ink so themes can differ), `--paper`/`--grey`/`--card-bg` (surfaces), `--red/--blue/--yellow`, `--muted`/
+  `--muted2`/`--faint` (secondary text + faint borders), `--radius`, `--shadow`, `--font-head`/`--font-body`,
+  `--accent`. The old hard-coded greys (`#666/#999/#555/#444/#888/#ccc`), the `'Archivo'`/`'Inter'` font names,
+  and `solid var(--ink)` borders were all replaced with these tokens, so a theme = a token override block.
+- A theme is `html[data-theme="<id>"]{ …token overrides… }` near the bottom of the `<style>` (just above the
+  THEMES comment). **To add a theme:** add a token block there + push a few readability overrides if it's dark
+  (active-tab/filter fills use `var(--ink)` as a *background* with white text — override those, see Midnight),
+  then add an entry to the `THEMES` array in JS (`{id,name,desc,sw:[3 swatch colours]}`). The picker renders
+  itself from that array; `setTheme(id)` calls `applyTheme(id)`, persists `dutch5k-theme`, re-renders.
+- `applyTheme()` sets/removes the `data-theme` attribute on `<html>` and updates the `theme-color` meta.
+- **Anti-flash:** a tiny synchronous `<script>` at the end of `<head>` reads `dutch5k-theme` from localStorage
+  (JSON-encoded, e.g. `"midnight"`) and sets `data-theme` before first paint, so returning users don't flash
+  the default theme while the async `init()` load runs. `init()` re-applies it authoritatively.
 
 Filters in both Learn and Words: **status** (new/learning/learned), **POS** (verb/noun/adjective/...),
 **source** (All / General 5K / Nederlands in Gang / Nederlands in Actie). Book words show A/G badges
