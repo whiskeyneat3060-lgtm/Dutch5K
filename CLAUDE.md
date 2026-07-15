@@ -142,6 +142,20 @@ filters work, and a known enriched word (e.g. `bereiken`) shows Forms + Examples
 Push `public/index.html` to `main`. Cloudflare Workers Builds runs `npx wrangler deploy` and the site
 updates in ~60s. The worker name in `wrangler.jsonc` (`drop-a757014e-97c`) must not change — it's the URL.
 
+> **Deploy verification (learned the hard way — do this every time):** Cloudflare deploys **only from
+> `main`**. Pushing to the feature branch (`claude/new-session-dk52ob`) does **nothing** for the live site.
+> A commit can sit on the feature branch for sessions and never go live — that's exactly what happened to
+> the theme switcher (built + pushed to the feature branch, but `main` lagged behind, so users saw no
+> theme option). **After every push, confirm the change is actually on `main`**, don't trust that the push
+> landed where it deploys from:
+> ```
+> git fetch origin main -q
+> git show origin/main:public/index.html | grep -c "<a token unique to your change>"   # e.g. dutch5k-theme, the new cache vNN
+> git log --oneline origin/main -1                                                       # should be your commit
+> ```
+> If `origin/main` isn't at your commit, push it: `git push origin claude/new-session-dk52ob:main`
+> (fast-forwards when `main` is an ancestor). Always push to **both** the feature branch **and** `main`.
+
 ## Open work
 
 1. **Example sentences for textbook words — DONE** (hand-written into `BOOKEX`, no API used). All 1,234
