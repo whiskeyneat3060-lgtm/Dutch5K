@@ -141,5 +141,11 @@ updates in ~60s. The worker name in `wrangler.jsonc` (`drop-a757014e-97c`) must 
    filter (or dropping them from `FREQ`) would be the real fix — ties into item 4.
 3. Gang words (and the hand-added Actie words) have only meaning + one example — no forms/synonyms.
 4. Adi mentioned wanting a premium gate for the API key rather than pasting one in.
-5. Frequency list is corpus-based (includes `website`, `twitter`, `http`, names, abbreviations) — a
-   spoken-Dutch or CEFR-level tag, or a junk filter, was discussed but not built (see item 2's junk note).
+5. Frequency-list junk filter — **DONE (first pass)**. A curated `JUNK` set (defined just above
+   `buildDeck`, ~354 words) drops corpus noise from the deck: proper names, brands, foreign places,
+   standalone abbreviations, and English tokens that duplicate a Dutch word. `buildDeck()` skips them in
+   the `FREQ` loop (`if(JUNK.has(w)) return;`), so they never enter `deck`/counts. Conservative by design:
+   anything with a real meaning/example or textbook membership was kept (units like `km`, loanwords like
+   `app`/`tv`, countries, Dutch place names all stay). To extend, add words to `JUNK` — but first run the
+   validator idea in `scratchpad` (flag any candidate that has a meaning/example/book tag before removing).
+   Deck dropped 6,100 → 5,754. A CEFR/spoken-Dutch level tag is still unbuilt.

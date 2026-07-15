@@ -1819,12 +1819,18 @@ const GENEX = {
   /* --GENEX-APPEND-- */
 };
 
+/* Corpus junk filtered out of the deck: proper names, brands, foreign places, standalone
+   abbreviations, and English words that duplicate a Dutch term. Conservative list — anything
+   with a real meaning/example or textbook membership was kept. See CLAUDE.md open work. */
+const JUNK = new Set(["aa","about","ac","alan","ali","alice","all","am","amanda","american","and","andrew","android","andy","angeles","anne","apple","association","at","award","away","back","bart","bbc","be","beach","berlijn","bert","bill","billy","blue","bo","bob","book","boy","boys","brian","brown","business","bv","by","ca","cameron","carl","carlos","cbs","cc","cda","center","centre","charles","charlie","charlotte","chicago","chris","clinton","cnn","co","cool","costa","cover","cv","dance","daniel","danny","dave","davis","day","deal","del","dennis","design","di","dick","dirk","do","doc","donald","dr","du","dutch","earth","east","ed","eddie","edward","ek","elizabeth","ellen","emma","end","eric","erik","et","eur","europe","event","ex","face","facebook","fashion","fc","fifa","first","fm","food","for","foundation","fox","francisco","fred","free","from","fun","game","gary","geert","george","get","girl","girls","good","google","gordon","grand","great","green","group","haha","han","hans","happy","harry","have","hendrik","henk","henry","her","here","herman","hey","hi","hitler","ho","home","hot","house","how","hr","http","https","hugo","id","ie","ii","iii","il","institute","ipad","jack","jackson","james","jan","jansen","jay","jean","jeroen","jesse","jim","jimmy","joe","johan","johannes","john","johnny","johnson","jonathan","jones","joost","jordan","jos","joseph","jr","juan","julia","just","kees","kelly","kennedy","kevin","king","knvb","lab","laura","lee","leo","li","like","linda","line","lisa","little","lol","london","louis","lucas","luther","mac","manchester","marc","marcel","marco","mario","martin","mary","master","may","mercedes","michael","michel","microsoft","mike","miss","mo","more","mr","ms","music","my","münchen","nasa","nathan","national","nelson","netflix","new","nick","night","nina","no","norman","not","now","nr","obama","off","old","on","one","or","oscar","out","patrick","paul","people","philips","piet","pieter","play","power","pro","psv","pvda","ray","real","research","review","richard","rick","rio","road","robert","robin","roger","roma","ron","ronald","roy","royal","rt","rtl","sam","samsung","samuel","san","sara","sarah","sc","scott","se","sea","simon","sir","skype","smith","so","society","south","sp","st","state","steve","steven","story","street","style","support","sydney","taylor","that","the","theo","this","thomas","tim","times","to","tom","tony","tweet","tweets","twitter","un","union","university","va","vi","victor","vincent","vn","voice","vs","vvd","wall","walter","washington","what","white","who","wilders","will","william","williams","wim","windows","with","wk","wow","www","xxx","yeah","you","your","youtube"]);
+
 function buildDeck(){
   deck = []; byId = {};
   const seedByWord = {};
   SEED.forEach(s => { (seedByWord[s.w.toLowerCase()] = seedByWord[s.w.toLowerCase()] || []).push(s); });
   const placed = new Set();
   FREQ.forEach((w, i) => {
+    if(JUNK.has(w)) return; // drop corpus junk (names, brands, abbreviations, English tokens)
     const hits = seedByWord[w];
     if(hits){
       hits.forEach(s => {
@@ -2738,7 +2744,7 @@ function render(){
 /* ============ OFFLINE (service worker) ============ */
 if('serviceWorker' in navigator){
   const swCode = `
-    const C = 'dutch5k-v21';
+    const C = 'dutch5k-v22';
     self.addEventListener('install', e => { self.skipWaiting(); });
     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
     self.addEventListener('fetch', e => {
