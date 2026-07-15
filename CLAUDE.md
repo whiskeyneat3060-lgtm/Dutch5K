@@ -133,8 +133,8 @@ updates in ~60s. The worker name in `wrangler.jsonc` (`drop-a757014e-97c`) must 
 2. **Meanings + examples for GENERAL 5K words — IN PROGRESS** (hand-written into `GENEX`, no API). Of the
    ~3,965 non-book words, **944 had no meaning and ~3,006 more had a meaning but no example** (~3,950 total
    needing an example). Working through them **highest-frequency first** (see `scratchpad`/`gen_all.json`
-   worklist, rank-sorted). **Done so far: through ~batch 12 (~1,820 general words, frequency ranks up
-   to ~1900); deck-with-examples ≈ 3,945; ~1,720 general words remain.** Method per batch (~150 words): `node rework.js` to regenerate the
+   worklist, rank-sorted). **Done so far: through ~batch 15 (~2,270 general words, frequency ranks up
+   to ~2200); deck-with-examples ≈ 4,397; ~1,255 general words remain.** Method per batch (~150 words): `node rework.js` to regenerate the
    rank-sorted `gen_all.json` worklist from the current deck (drops done + junk), read the next slice,
    author `scratchpad/genex_batch.json` = `[{w,m?,nl,en,junk?}]` (object `m` overrides FreeDict's wrong
    inflected-form glosses; omit `m` if the gloss is fine), then `node genex_build.js` (maps to exact keys,
