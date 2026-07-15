@@ -130,11 +130,13 @@ updates in ~60s. The worker name in `wrangler.jsonc` (`drop-a757014e-97c`) must 
    `Eigen vocabulaire`, and words with a stray `` bell char, plus the `verb ‒ past ‒ perfect` principal-part
    table lines and glossary-malformed lemmas (headwords containing `‒`, `/`, or `(...)`). Those headword
    strings are broken data — to cover them, repair the headword in `BOOKS` first, then add to `BOOKEX`.
-2. **Meanings + examples for GENERAL 5K words — IN PROGRESS** (hand-written into `GENEX`, no API). Of the
-   ~3,965 non-book words, **944 had no meaning and ~3,006 more had a meaning but no example** (~3,950 total
-   needing an example). Working through them **highest-frequency first** (see `scratchpad`/`gen_all.json`
-   worklist, rank-sorted). **Done so far: through batch 23 (cache v42); deck-with-examples ≈ 5,468;
-   ~117 general words remain.** Method per batch (~150 words): `node rework.js` to regenerate the
+2. **Meanings + examples for GENERAL 5K words — DONE** (hand-written into `GENEX`, no API). Every general
+   (non-book) 5K frequency word that survives the junk filter now has both an English meaning and a
+   hand-written B1 example sentence. Completed in 24 rank-ordered batches; **`node rework.js` now reports
+   `0 remaining` and deck-with-examples ≈ 5,570** (cache v43). The only entries left without content are
+   the ~23 book extraction artifacts noted in item 1 (broken headwords, intentionally skipped). The
+   method below is preserved so any future top-ups are reproducible. Method per batch (~150 words):
+   `node rework.js` to regenerate the
    rank-sorted `gen_all.json` worklist from the current deck (drops done + junk), read the next slice,
    author `scratchpad/genex_batch.json` = `[{w,m?,nl,en,junk?}]` (object `m` overrides FreeDict's wrong
    inflected-form glosses; omit `m` if the gloss is fine), then `node genex_build.js` (maps to exact keys,
