@@ -97,12 +97,15 @@ How it works:
   + any structural rules) and an entry in the `THEMES` array in JS (`{id,name,desc,sw:[3 swatch colours]}`). The
   picker renders itself from that array; `setTheme(id)` → `applyTheme(id)` (sets/removes `data-theme`, updates
   the `theme-color` meta), persists `dutch5k-theme`, re-renders.
-- **Blank-on-tap bug (fixed v45):** dark rounded cards (`border-radius` + `box-shadow` + `overflow:hidden`) could
-  stay in the DOM but go unpainted on mobile WebKit after `#main`'s subtree was swapped on a tab tap — the
-  section looked blank until a manual refresh. `render()` is now a thin wrapper around `renderMain()` that, for
-  any non-default theme, forces a synchronous reflow on `#main` (`display:none; void offsetHeight; display:''`)
-  so the browser repaints. Do **not** remove this wrapper. If you add heavy effects (backdrop-filter, big
-  shadows) prefer solid/opaque values over `backdrop-filter` on re-rendered subtrees.
+- **Blank-on-tap bug (fixed v45, hardened v46):** on Android Chrome / iOS WebKit an element could stay in the DOM
+  but go unpainted after a tab tap — first themed rounded+shadowed cards, then (v45→v46) the **nav bar itself**,
+  which vanished even in the default theme. Two root causes: (a) `nav{overflow:hidden}` — removed, nav is no
+  longer in the `.stats,.actions,.filters{overflow:hidden}` rule; and (b) the first fix toggled `#main`'s
+  `display:none`, which reflows the body flex column and knocked the sibling `<nav>` out. `render()` is now a
+  thin wrapper around `renderMain()` + `paintFix()`; **paintFix toggles `visibility` (not `display`) on both
+  `nav` and `#main`** for every theme — visibility keeps every flex child in layout, so the repaint nudge no
+  longer disturbs siblings. Do **not** switch this back to `display`, and keep it running for all themes. Prefer
+  solid/opaque values over `backdrop-filter` on re-rendered subtrees.
 - **Anti-flash:** a tiny synchronous `<script>` at the end of `<head>` reads `dutch5k-theme` from localStorage
   (JSON-encoded, e.g. `"midnight"`) and sets `data-theme` before first paint; `init()` re-applies it
   authoritatively. Keep the paper hexes in that script and in `applyTheme()`'s `theme-color` line in sync with

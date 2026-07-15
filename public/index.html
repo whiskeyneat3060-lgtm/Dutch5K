@@ -212,7 +212,9 @@
     border-radius:var(--radius);
   }
   .card,.genbox,.stats,.plan-box{ background:var(--card-bg); box-shadow:var(--shadow); }
-  .stats,.actions,.filters,nav{ overflow:hidden; }   /* keep inner rules inside rounded corners */
+  .stats,.actions,.filters{ overflow:hidden; }   /* keep inner rules inside rounded corners */
+  /* NB: nav is deliberately NOT clipped here — overflow:hidden on nav triggered an
+     Android-Chrome repaint glitch where the whole tab bar vanished after a tab tap. */
   input[type=search],input[type=password],input[type=text],input[type=date]{
     background:var(--card-bg); color:var(--ink);
   }
@@ -234,9 +236,10 @@
   .themebtn.active .tcheck{opacity:1;}
 
   /* Each theme below is a whole different LAYOUT, not just a repaint: different
-     type, spacing, nav placement and card language. The blank-on-tap bug that dark
-     rounded cards used to cause is handled in JS (paintFix() forces a repaint after
-     every render); every text colour here is tokenised so nothing stays black. */
+     type, spacing, nav placement and card language. The blank-on-tap bug (nav bar
+     and themed cards going unpainted after a tab tap) is handled in JS by paintFix()
+     — a layout-safe visibility toggle on nav + #main after every render. Every text
+     colour here is tokenised so nothing stays black. */
 
   /* ================================================================
      MIDNIGHT — a modern dark mobile app.
@@ -5848,17 +5851,24 @@ async function setWordStatus(idx, status){
   render();
 }
 
-/* Wrapper: after every (re)render, nudge a repaint. Themed cards (rounded +
-   box-shadow + overflow:hidden) can stay in the DOM but go unpainted on mobile
-   WebKit after #main's subtree is swapped — the section looked "blank" until a
-   manual refresh. Forcing a synchronous reflow makes the browser repaint it.
-   Only runs off the default theme, which never had the bug. */
+/* Wrapper: after every (re)render, force a LAYOUT-SAFE repaint. On Android Chrome /
+   iOS WebKit an element can stay in the DOM but go unpainted after a tab tap — both
+   the nav bar and themed rounded+shadowed cards did this ("blank until refresh").
+   We toggle `visibility` (not `display`): visibility keeps every element in the flex
+   layout, so nudging #main no longer reflows the body column and knocks the sibling
+   <nav> out. Nudge nav too, because the tab bar vanished even in the default theme.
+   Runs for all themes; it's a couple of style writes + one layout read. */
 function render(){
   renderMain();
-  if(theme!=='minimalistic'){
-    const m = document.getElementById('main');
-    if(m){ m.style.display='none'; void m.offsetHeight; m.style.display=''; }
-  }
+  paintFix();
+}
+function paintFix(){
+  [document.querySelector('nav'), document.getElementById('main')].forEach(el=>{
+    if(!el) return;
+    el.style.visibility = 'hidden';
+    void el.offsetHeight;      // force sync layout so the flip back is a fresh paint
+    el.style.visibility = '';
+  });
 }
 function renderMain(){
   const c = counts();
@@ -6119,7 +6129,7 @@ function renderMain(){
 /* ============ OFFLINE (service worker) ============ */
 if('serviceWorker' in navigator){
   const swCode = `
-    const C = 'dutch5k-v45';
+    const C = 'dutch5k-v46';
     self.addEventListener('install', e => { self.skipWaiting(); });
     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
     self.addEventListener('fetch', e => {
