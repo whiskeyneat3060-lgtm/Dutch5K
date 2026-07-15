@@ -47,10 +47,12 @@ Progress and enrichment are keyed on `id`. **Never change the id scheme without 
 
 - **Nederlands in Actie** (11 chapters, 1,236 entries incl. 201 idioms): extracted from the PDF's
   text layer (`Vocabulaire hoofdstuk N` glossary pages). 823 fully enriched via the Anthropic API.
-  ~413 still lack examples — the €5 API credit ran out mid-run.
+  The rest (meanings and/or examples) were **hand-written into `BOOKEX`** — Actie now has examples for
+  every real word (and meanings for the ~257 that lacked one), except 23 extraction artifacts.
 - **Nederlands in Gang** (18 chapters, 997 words): the book PDF is a *scan* with no text layer.
   Do NOT try to OCR it — the vocab came from the publisher's official Dutch→German word list
-  (klett-sprachen.de), translated to English. All have meanings; none have example sentences yet.
+  (klett-sprachen.de), translated to English. All have meanings, and **all 825 now have a hand-written
+  example sentence** (in `BOOKEX`). Gang words still have no forms/synonyms.
 
 Both books are Adi's own copies. Only vocabulary lists were extracted — no book sentences reproduced.
 
@@ -116,14 +118,13 @@ updates in ~60s. The worker name in `wrangler.jsonc` (`drop-a757014e-97c`) must 
 
 ## Open work
 
-1. **Add example sentences to textbook words** (Adi's request, in progress — hand-written into `BOOKEX`,
-   no API needed). **1,234 book words** shipped without examples. **Done so far: Nederlands in Actie
-   H1–H4** (the 38 words that already had a meaning). **Remaining:** the rest of Actie (~371, incl. ~257
-   that *also* lack a meaning — add the meaning in the same `BOOKEX`-adjacent pass) and all of Gang (~831).
-   Next batch: continue Actie by chapter (H5 onward), then Gang. Skip extraction artifacts like `taptap`,
-   `Eigen vocabulaire`, and words with a stray `` bell char. ~413 Actie / 997 Gang originally lacked
-   meanings/examples; those *meanings* still ideally want API enrichment, but examples are being hand-added.
-2. Gang words have no forms/synonyms.
+1. **Example sentences for textbook words — DONE** (hand-written into `BOOKEX`, no API used). All 1,234
+   book words that shipped without examples now have one, and `BOOKEX` also filled meanings for the ~257
+   Actie words that lacked one. **Only 23 extraction artifacts are intentionally skipped:** `taptap`,
+   `Eigen vocabulaire`, and words with a stray `` bell char, plus the `verb ‒ past ‒ perfect` principal-part
+   table lines and glossary-malformed lemmas (headwords containing `‒`, `/`, or `(...)`). Those headword
+   strings are broken data — to cover them, repair the headword in `BOOKS` first, then add to `BOOKEX`.
+2. Gang words (and the hand-added Actie words) have only meaning + one example — no forms/synonyms.
 3. Adi mentioned wanting a premium gate for the API key rather than pasting one in.
 4. Frequency list is corpus-based (includes `website`, `twitter`, `http`) — a spoken-Dutch or
    CEFR-level tag was discussed but not built.
