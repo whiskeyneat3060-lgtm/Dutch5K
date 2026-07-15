@@ -133,12 +133,16 @@ updates in ~60s. The worker name in `wrangler.jsonc` (`drop-a757014e-97c`) must 
 2. **Meanings + examples for GENERAL 5K words — IN PROGRESS** (hand-written into `GENEX`, no API). Of the
    ~3,965 non-book words, **944 had no meaning and ~3,006 more had a meaning but no example** (~3,950 total
    needing an example). Working through them **highest-frequency first** (see `scratchpad`/`gen_all.json`
-   worklist, rank-sorted). **Done so far: the top ~150 by frequency** (batch 1). Method per batch: pull the
-   next slice of `gen_all.json`, author `[{w,m?,nl,en,junk?}]`, run `genex_build.js` → `genex_insert.js` →
-   `verify.js`, bump cache, commit+push. **~350–400 of the 944 no-meaning words are corpus junk** (English
-   words, abbreviations, proper names, places, brands like `the`, `http`, `fc`, `john`, `berlijn`, `obama`)
-   — mark these `junk:true` so they're skipped; do NOT fabricate Dutch meanings for them. A "hide junk"
-   filter (or dropping them from `FREQ`) would be the real fix — ties into item 4.
+   worklist, rank-sorted). **Done so far: through ~batch 6 (~918 words, frequency ranks up to ~1400);
+   deck-with-examples ≈ 3,040.** Method per batch (~150 words): `node rework.js` to regenerate the
+   rank-sorted `gen_all.json` worklist from the current deck (drops done + junk), read the next slice,
+   author `scratchpad/genex_batch.json` = `[{w,m?,nl,en,junk?}]` (object `m` overrides FreeDict's wrong
+   inflected-form glosses; omit `m` if the gloss is fine), then `node genex_build.js` (maps to exact keys,
+   apostrophe-safe) → `node genex_insert.js` (inserts at the `--GENEX-APPEND--` anchor + syntax-checks) →
+   `node verify.js`, bump the `dutch5k-vNN` cache, commit+push both branches. Corpus junk (names, brands,
+   places, abbreviations, English tokens) is **not** given fake content — mark `junk:true` AND, for
+   stragglers that keep resurfacing, add them to the `JUNK-EXTRA` / `JUNK-EXTRA2` `.forEach(w=>JUNK.add(w))`
+   lines just above `buildDeck` (see item 5). All scratchpad scripts are regenerable from this description.
 3. Gang words (and the hand-added Actie words) have only meaning + one example — no forms/synonyms.
 4. Adi mentioned wanting a premium gate for the API key rather than pasting one in.
 5. Frequency-list junk filter — **DONE (first pass)**. A curated `JUNK` set (defined just above
