@@ -1508,6 +1508,165 @@ const BOOKEX = {
   /* --BOOKEX-APPEND-- */
 };
 
+/* Hand-written meanings/examples for general (non-book) frequency words that shipped without them.
+   Keyed by the bare lowercase word (= the frequency-stub id). Value is [[dutch,english],...] for
+   words that already have a meaning (example only), or {m, ex} when the word also needs a meaning
+   (the object m overrides FreeDict's wrong homograph gloss, e.g. kan/moet/mee). Corpus junk
+   (English words, abbreviations, names, places, brands) is deliberately NOT given fake content.
+   Applied as an overlay in buildDeck(). Grow per session — see "Open work" in CLAUDE.md. */
+const GENEX = {
+  "is": [["Amsterdam is de hoofdstad van Nederland.","Amsterdam is the capital of the Netherlands."]],
+  "door": [["We lopen door het park.","We walk through the park."]],
+  "was": [["Gisteren was het koud.","Yesterday it was cold."]],
+  "heeft": [["Zij heeft twee katten.","She has two cats."]],
+  "kan": {"m":"can; to be able to (form of kunnen)","ex":[["Ik kan goed zwemmen.","I can swim well."]]},
+  "meer": {"m":"more; lake","ex":[["Ik wil graag meer weten.","I'd like to know more."]]},
+  "wordt": [["Het wordt morgen warmer.","It's getting warmer tomorrow."]],
+  "heb": [["Ik heb honger.","I'm hungry."]],
+  "worden": [["Kinderen worden snel groot.","Children grow up fast."]],
+  "ben": [["Ik ben moe.","I'm tired."]],
+  "me": [["Kun je me helpen?","Can you help me?"]],
+  "moet": {"m":"must; have to (form of moeten)","ex":[["Ik moet nu naar huis.","I have to go home now."]]},
+  "mensen": [["Er waren veel mensen op het feest.","There were many people at the party."]],
+  "werd": {"m":"became; was (form of worden)","ex":[["Hij werd ziek tijdens de reis.","He became ill during the trip."]]},
+  "gaat": [["Hoe gaat het met je?","How are you?"]],
+  "onze": [["Onze buren zijn heel aardig.","Our neighbours are very kind."]],
+  "wil": [["Ik wil een kopje koffie.","I want a cup of coffee."]],
+  "zich": [["Hij wast zich elke ochtend.","He washes himself every morning."]],
+  "zou": [["Ik zou graag willen komen.","I would like to come."]],
+  "had": [["Ik had gisteren geen tijd.","I had no time yesterday."]],
+  "hun": [["De kinderen pakken hun jassen.","The children grab their coats."]],
+  "nieuwe": [["Ik koop een nieuwe fiets.","I'm buying a new bike."]],
+  "zal": [["Ik zal je morgen bellen.","I'll call you tomorrow."]],
+  "komt": [["Hij komt om acht uur.","He's coming at eight o'clock."]],
+  "wij": [["Wij gaan vanavond naar de film.","We're going to the cinema tonight."]],
+  "mee": {"m":"along; with","ex":[["Ga je met ons mee?","Are you coming along with us?"]]},
+  "staat": [["De vaas staat op de tafel.","The vase is on the table."]],
+  "alle": [["Alle winkels zijn vandaag open.","All the shops are open today."]],
+  "zij": [["Zij woont in Utrecht.","She lives in Utrecht."]],
+  "ga": {"m":"go (form of gaan)","ex":[["Ik ga morgen naar Amsterdam.","I'm going to Amsterdam tomorrow."]]},
+  "waren": {"m":"were (form of zijn)","ex":[["We waren gisteren de hele dag thuis.","We were home all day yesterday."]]},
+  "tijdens": [["Tijdens de vakantie regende het veel.","During the holiday it rained a lot."]],
+  "tussen": [["De bakker zit tussen de bank en de school.","The baker is between the bank and the school."]],
+  "weet": [["Ik weet het antwoord niet.","I don't know the answer."]],
+  "waarom": [["Waarom ben je zo laat?","Why are you so late?"]],
+  "grote": [["In de grote kamer staat een piano.","In the big room there's a piano."]],
+  "af": [["Mijn huiswerk is bijna af.","My homework is almost finished."]],
+  "uur": [["De les duurt een uur.","The lesson lasts an hour."]],
+  "zie": [["Ik zie je morgen weer.","I'll see you again tomorrow."]],
+  "bent": [["Jij bent altijd te laat.","You are always late."]],
+  "maakt": [["Zij maakt elke dag het eten klaar.","She prepares the food every day."]],
+  "hele": [["Ik heb de hele dag gewerkt.","I worked all day."]],
+  "uw": [["Kan ik uw naam noteren?","Can I write down your name?"]],
+  "werden": {"m":"became; were (form of worden)","ex":[["De kinderen werden moe na de wandeling.","The children got tired after the walk."]]},
+  "zit": [["De kat zit op de bank.","The cat is sitting on the sofa."]],
+  "hebt": [["Je hebt gelijk.","You're right."]],
+  "kinderen": [["Hun kinderen spelen in de tuin.","Their children play in the garden."]],
+  "kunt": [["U kunt hier betalen.","You can pay here."]],
+  "toe": {"m":"towards; shut","ex":[["We lopen naar het strand toe.","We're walking towards the beach."]]},
+  "deel": {"m":"part; section","ex":[["Dit is het moeilijkste deel van de les.","This is the hardest part of the lesson."]]},
+  "mag": [["Mag ik hier zitten?","May I sit here?"]],
+  "nederland": [["Nederland is een klein land.","The Netherlands is a small country."]],
+  "nodig": [["Ik heb hulp nodig.","I need help."]],
+  "vind": [["Ik vind dit een goed idee.","I think this is a good idea."]],
+  "doet": [["Wat doet hij voor werk?","What does he do for work?"]],
+  "beter": [["Vandaag voel ik me beter.","Today I feel better."]],
+  "zegt": [["Hij zegt altijd de waarheid.","He always tells the truth."]],
+  "denk": [["Ik denk dat het gaat regenen.","I think it's going to rain."]],
+  "gemaakt": {"m":"made (form of maken)","ex":[["Wie heeft dit lekkere eten gemaakt?","Who made this tasty food?"]]},
+  "houden": [["Wij houden van reizen.","We love travelling."]],
+  "kwam": {"m":"came (form of komen)","ex":[["Zij kwam te laat op de vergadering.","She came late to the meeting."]]},
+  "beste": {"m":"best; dear","ex":[["Dit is het beste restaurant van de stad.","This is the best restaurant in town."]]},
+  "per": [["De trein rijdt twee keer per uur.","The train runs twice an hour."]],
+  "elke": [["Ik drink elke ochtend thee.","I drink tea every morning."]],
+  "gebruikt": {"m":"used (form of gebruiken)","ex":[["Deze machine wordt veel gebruikt.","This machine is used a lot."]]},
+  "gezien": {"m":"seen (form of zien)","ex":[["Heb je die film al gezien?","Have you seen that film yet?"]]},
+  "ging": {"m":"went (form of gaan)","ex":[["Hij ging vroeg naar bed.","He went to bed early."]]},
+  "jaren": [["We wonen hier al jaren.","We've lived here for years."]],
+  "lijkt": [["Het lijkt vandaag mooi weer.","The weather looks nice today."]],
+  "paar": [["Ik heb nog een paar vragen.","I have a few more questions."]],
+  "doe": {"m":"do (form of doen)","ex":[["Ik doe de deur even dicht.","I'll just close the door."]]},
+  "kijk": {"m":"look; watch (form of kijken)","ex":[["Kijk, daar loopt een eend!","Look, there's a duck!"]]},
+  "leuk": [["Wat een leuk feest!","What a nice party!"]],
+  "achter": [["De tuin is achter het huis.","The garden is behind the house."]],
+  "gedaan": {"m":"done (form of doen)","ex":[["Ik heb mijn best gedaan.","I did my best."]]},
+  "geeft": {"m":"gives (form of geven)","ex":[["Zij geeft les op een basisschool.","She teaches at a primary school."]]},
+  "ten": {"m":"to; at (in set phrases like 'ten slotte')","ex":[["Ten slotte bedankte hij iedereen.","Finally he thanked everyone."]]},
+  "hadden": {"m":"had (form of hebben)","ex":[["We hadden een fijne vakantie.","We had a lovely holiday."]]},
+  "kon": {"m":"could (form of kunnen)","ex":[["Ik kon je niet verstaan.","I couldn't understand you."]]},
+  "rond": [["We zitten rond de tafel.","We're sitting around the table."]],
+  "wilt": [["Wat wilt u drinken?","What would you like to drink?"]],
+  "kleine": [["In het kleine dorp is één winkel.","In the small village there's one shop."]],
+  "online": [["Ik heb de kaartjes online gekocht.","I bought the tickets online."]],
+  "moment": [["Wacht een moment, alsjeblieft.","Wait a moment, please."]],
+  "vrouwen": [["Veel vrouwen werken in de zorg.","Many women work in healthcare."]],
+  "ligt": [["Het boek ligt op de tafel.","The book is lying on the table."]],
+  "manier": [["Dit is een makkelijke manier om te leren.","This is an easy way to learn."]],
+  "enkele": [["Er zijn nog enkele plaatsen vrij.","There are still a few seats free."]],
+  "geweest": {"m":"been (form of zijn)","ex":[["Ben je ooit in Parijs geweest?","Have you ever been to Paris?"]]},
+  "kun": [["Kun je me helpen?","Can you help me?"]],
+  "zei": {"m":"said (form of zeggen)","ex":[["Hij zei dat hij later zou komen.","He said he would come later."]]},
+  "mannen": [["De mannen spelen samen voetbal.","The men play football together."]],
+  "oude": {"m":"old (form of oud)","ex":[["In het dorp staat een oude kerk.","In the village there's an old church."]]},
+  "september": [["In september begint de school weer.","In September school starts again."]],
+  "ter": {"m":"to; at (in set phrases like 'ter ere van')","ex":[["Ter ere van zijn verjaardag gaven we een feest.","In honour of his birthday we threw a party."]]},
+  "enige": [["Hij is de enige die Nederlands spreekt.","He is the only one who speaks Dutch."]],
+  "gebruik": [["Ik maak veel gebruik van de app.","I use the app a lot."]],
+  "hoop": {"m":"hope; heap","ex":[["We hebben de hoop nog niet opgegeven.","We haven't given up hope yet."]]},
+  "minder": [["Vandaag heb ik minder werk.","Today I have less work."]],
+  "beetje": [["Wil je een beetje melk in je koffie?","Do you want a little milk in your coffee?"]],
+  "dingen": [["Er zijn nog veel dingen te doen.","There are still many things to do."]],
+  "groep": [["Onze groep bestaat uit tien studenten.","Our group consists of ten students."]],
+  "later": [["Ik bel je later terug.","I'll call you back later."]],
+  "maart": [["In maart wordt het weer warmer.","In March it gets warmer again."]],
+  "ziet": {"m":"sees (form of zien)","ex":[["Zij ziet niet goed zonder bril.","She can't see well without glasses."]]},
+  "school": {"m":"school","ex":[["Mijn kinderen gaan naar school in Almere.","My children go to school in Almere."]]},
+  "den": [["In het bos groeien veel dennen.","Many pine trees grow in the forest."]],
+  "krijgt": [["Zij krijgt morgen bezoek.","She's getting visitors tomorrow."]],
+  "mooie": [["Wat een mooie foto!","What a beautiful photo!"]],
+  "zoek": [["Ik zoek mijn sleutels.","I'm looking for my keys."]],
+  "blijft": [["Hij blijft vanavond thuis.","He's staying home tonight."]],
+  "hen": [["Ik heb hen gisteren gezien.","I saw them yesterday."]],
+  "onderzoek": [["De dokter doet een onderzoek.","The doctor is doing an examination."]],
+  "vier": [["Ik heb vier broers.","I have four brothers."]],
+  "zorgen": [["Maak je geen zorgen, het komt goed.","Don't worry, it'll be fine."]],
+  "amsterdam": [["Amsterdam heeft veel grachten.","Amsterdam has many canals."]],
+  "april": [["In april bloeien de tulpen.","In April the tulips bloom."]],
+  "nederlandse": [["De Nederlandse taal is niet makkelijk.","The Dutch language isn't easy."]],
+  "probleem": [["We hebben een klein probleem.","We have a small problem."]],
+  "vindt": [["Zij vindt het leuk om te koken.","She likes to cook."]],
+  "zouden": {"m":"would (form of zullen)","ex":[["We zouden graag komen.","We would like to come."]]},
+  "maak": {"m":"make (form of maken)","ex":[["Ik maak elke dag een wandeling.","I take a walk every day."]]},
+  "vast": [["Hij komt vast te laat.","He'll surely be late."]],
+  "vrienden": [["Ik ga met vrienden op vakantie.","I'm going on holiday with friends."]],
+  "zeer": {"m":"very; sore","ex":[["Het was een zeer mooie dag.","It was a very beautiful day."]]},
+  "zuid": [["We wonen in Amsterdam-Zuid.","We live in Amsterdam South."]],
+  "moest": {"m":"had to (form of moeten)","ex":[["Ik moest gisteren overwerken.","I had to work overtime yesterday."]]},
+  "werkt": [["De lift werkt niet.","The lift isn't working."]],
+  "amerikaanse": [["Zij kijkt graag naar Amerikaanse films.","She likes watching American films."]],
+  "moeder": [["Mijn moeder kookt heerlijk.","My mother cooks deliciously."]],
+  "regio": [["In deze regio wonen veel boeren.","Many farmers live in this region."]],
+  "vijf": [["De winkel opent om vijf uur.","The shop opens at five o'clock."]],
+  "der": {"m":"of the; to the (formal, form of de)","ex":[["Dat is een teken der tijden.","That's a sign of the times."]]},
+  "foto's": [["Ik heb veel foto's van de reis gemaakt.","I took many photos of the trip."]],
+  "oktober": [["In oktober vallen de bladeren.","In October the leaves fall."]],
+  "verhaal": [["Oma vertelt een mooi verhaal.","Grandma tells a lovely story."]],
+  "meest": [["Dit is de meest gestelde vraag.","This is the most asked question."]],
+  "grootste": [["Rotterdam heeft de grootste haven van Europa.","Rotterdam has the largest port in Europe."]],
+  "hand": [["Hij geeft me een hand.","He shakes my hand."]],
+  "november": [["In november wordt het vroeg donker.","In November it gets dark early."]],
+  "bestaat": [["Water bestaat uit waterstof en zuurstof.","Water consists of hydrogen and oxygen."]],
+  "echte": [["Dit is een echte diamant.","This is a real diamond."]],
+  "kreeg": {"m":"got; received (form of krijgen)","ex":[["Zij kreeg een cadeau voor haar verjaardag.","She got a present for her birthday."]]},
+  "zoon": [["Hun zoon studeert in Groningen.","Their son studies in Groningen."]],
+  "hoofd": [["Ik heb pijn in mijn hoofd.","I have a pain in my head."]],
+  "minuten": [["De bus komt over tien minuten.","The bus comes in ten minutes."]],
+  "vond": {"m":"found; thought (form of vinden)","ex":[["Ik vond de film erg mooi.","I thought the film was very good."]]},
+  "zorg": [["Zij werkt in de zorg.","She works in healthcare."]],
+  "zowel": [["Zowel mijn broer als mijn zus komt.","Both my brother and my sister are coming."]],
+  /* --GENEX-APPEND-- */
+};
+
 function buildDeck(){
   deck = []; byId = {};
   const seedByWord = {};
@@ -1601,6 +1760,20 @@ function buildDeck(){
       if(spec.t && !ent.t){ ent.t = spec.t; }
       if(spec.a && !ent.a){ ent.a = spec.a; }
     }
+    if(ex && ex.length && (!ent.ex || !ent.ex.length)){ ent.ex = ex; }
+    if(ent.m) ent.hasMeaning = true;
+    if(ent.ex && ent.ex.length) ent.rich = true;
+  });
+
+  // Overlay hand-written meanings/examples for general (non-book) frequency words.
+  // GENEX keyed by the bare-word id. Value is [[nl,en],...] (example only) or {m, ex}
+  // (object m overrides a wrong/missing dictionary gloss).
+  Object.keys(GENEX).forEach(w => {
+    const ent = byId[w] || deck.find(e => e.w.toLowerCase()===w && (!e.books || !e.books.length));
+    if(!ent) return;
+    const spec = GENEX[w];
+    const ex = Array.isArray(spec) ? spec : spec.ex;
+    if(!Array.isArray(spec) && spec.m){ ent.m = spec.m; }
     if(ex && ex.length && (!ent.ex || !ent.ex.length)){ ent.ex = ex; }
     if(ent.m) ent.hasMeaning = true;
     if(ent.ex && ent.ex.length) ent.rich = true;
@@ -2413,7 +2586,7 @@ function render(){
 /* ============ OFFLINE (service worker) ============ */
 if('serviceWorker' in navigator){
   const swCode = `
-    const C = 'dutch5k-v19';
+    const C = 'dutch5k-v20';
     self.addEventListener('install', e => { self.skipWaiting(); });
     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
     self.addEventListener('fetch', e => {

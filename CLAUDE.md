@@ -27,8 +27,14 @@ There is also a small **fifth blob, `BOOKEX`** (defined just above `buildDeck`):
 sentences for textbook words that shipped without them. Keyed by `"<src>:<word-lowercase>"` (the same
 key the `BOOKS` merge uses), value `[[dutch, english], …]`. `buildDeck()` applies it as an overlay —
 sets `ex`, `rich`, `hasMeaning` on the matching deck entry — so we never edit the giant `BOOKS` line.
-**This is the place to add examples going forward**: append entries to `BOOKEX`, don't touch `BOOKS`.
+**This is the place to add examples going forward** for *book* words: append to `BOOKEX`, don't touch `BOOKS`.
 It only fills words that have no examples yet, so it's safe to append to.
+
+There is a **sixth blob, `GENEX`** (just below `BOOKEX`): the same idea for *general* (non-book) 5K
+frequency words. Keyed by the **bare lowercase word** (= the frequency-stub id), value `[[dutch,english],…]`
+(example only) or `{m, ex}` when the word also needs a meaning — and the object `m` *overrides* FreeDict's
+wrong homograph gloss (e.g. `kan`→"jug" should be "can", `moet`→"blot" should be "must", `mee`→"mead").
+`buildDeck()` applies it after `BOOKEX`. **Corpus junk is deliberately NOT given fake content** (see Open work).
 
 `buildDeck()` merges all four into `deck[]`. Every entry has a stable `id`:
 - curated/enriched: `"word|type"` (homographs like `eten` verb vs noun must not collide)
@@ -124,7 +130,16 @@ updates in ~60s. The worker name in `wrangler.jsonc` (`drop-a757014e-97c`) must 
    `Eigen vocabulaire`, and words with a stray `` bell char, plus the `verb ‒ past ‒ perfect` principal-part
    table lines and glossary-malformed lemmas (headwords containing `‒`, `/`, or `(...)`). Those headword
    strings are broken data — to cover them, repair the headword in `BOOKS` first, then add to `BOOKEX`.
-2. Gang words (and the hand-added Actie words) have only meaning + one example — no forms/synonyms.
-3. Adi mentioned wanting a premium gate for the API key rather than pasting one in.
-4. Frequency list is corpus-based (includes `website`, `twitter`, `http`) — a spoken-Dutch or
-   CEFR-level tag was discussed but not built.
+2. **Meanings + examples for GENERAL 5K words — IN PROGRESS** (hand-written into `GENEX`, no API). Of the
+   ~3,965 non-book words, **944 had no meaning and ~3,006 more had a meaning but no example** (~3,950 total
+   needing an example). Working through them **highest-frequency first** (see `scratchpad`/`gen_all.json`
+   worklist, rank-sorted). **Done so far: the top ~150 by frequency** (batch 1). Method per batch: pull the
+   next slice of `gen_all.json`, author `[{w,m?,nl,en,junk?}]`, run `genex_build.js` → `genex_insert.js` →
+   `verify.js`, bump cache, commit+push. **~350–400 of the 944 no-meaning words are corpus junk** (English
+   words, abbreviations, proper names, places, brands like `the`, `http`, `fc`, `john`, `berlijn`, `obama`)
+   — mark these `junk:true` so they're skipped; do NOT fabricate Dutch meanings for them. A "hide junk"
+   filter (or dropping them from `FREQ`) would be the real fix — ties into item 4.
+3. Gang words (and the hand-added Actie words) have only meaning + one example — no forms/synonyms.
+4. Adi mentioned wanting a premium gate for the API key rather than pasting one in.
+5. Frequency list is corpus-based (includes `website`, `twitter`, `http`, names, abbreviations) — a
+   spoken-Dutch or CEFR-level tag, or a junk filter, was discussed but not built (see item 2's junk note).
