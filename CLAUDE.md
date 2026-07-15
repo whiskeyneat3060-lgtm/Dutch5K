@@ -73,25 +73,40 @@ Export/Import JSON backup lives in the Progress tab. There is no server; losing 
 Three tabs: **Learn** (flashcards, flip, Again/Learning/Know-it, Skip), **Words** (search, list, detail cards),
 **Progress** (stats, daily goal, streak, 14-day history, POS breakdown, backup, **theme picker**).
 
-**Themes (v44):** a full re-skin of the app, chosen from the **Theme** box at the bottom of Progress. Three
-options: **Minimalistic** (the original Mondrian — black rules, red/blue/yellow, Archivo/Inter, sharp corners;
-this is the default and uses *no* `data-theme` attribute), **Midnight** (dark, rounded, soft-shadowed, Inter,
-blue/pink accents), **Sepia** (warm cream + serif Georgia, terracotta/teal, book-like). Content and progress
-are identical across themes — only CSS custom properties change. How it works:
-- The palette/structure is driven by tokens in `:root` — `--ink` (text), `--line` (border colour, split out
-  from ink so themes can differ), `--paper`/`--grey`/`--card-bg` (surfaces), `--red/--blue/--yellow`, `--muted`/
-  `--muted2`/`--faint` (secondary text + faint borders), `--radius`, `--shadow`, `--font-head`/`--font-body`,
-  `--accent`. The old hard-coded greys (`#666/#999/#555/#444/#888/#ccc`), the `'Archivo'`/`'Inter'` font names,
-  and `solid var(--ink)` borders were all replaced with these tokens, so a theme = a token override block.
-- A theme is `html[data-theme="<id>"]{ …token overrides… }` near the bottom of the `<style>` (just above the
-  THEMES comment). **To add a theme:** add a token block there + push a few readability overrides if it's dark
-  (active-tab/filter fills use `var(--ink)` as a *background* with white text — override those, see Midnight),
-  then add an entry to the `THEMES` array in JS (`{id,name,desc,sw:[3 swatch colours]}`). The picker renders
-  itself from that array; `setTheme(id)` calls `applyTheme(id)`, persists `dutch5k-theme`, re-renders.
-- `applyTheme()` sets/removes the `data-theme` attribute on `<html>` and updates the `theme-color` meta.
+**Themes (v45 — three genuinely different LAYOUTS, not just palettes):** chosen from the **Theme** box at the
+bottom of Progress. Content and progress are identical across all three; the DOM is untouched — each theme is
+pure CSS scoped to `html[data-theme="<id>"]`, so a theme re-skins *structure* (nav placement, type, spacing,
+card language), not only colour. The three:
+- **Minimalistic** (default, *no* `data-theme` attribute) — the original Mondrian: black rules, red/blue/yellow
+  blocks, Archivo/Inter, sharp corners, tab bar on top.
+- **Midnight** — a modern dark mobile app: ambient gradient background, big rounded glowing cards, Inter, and a
+  **floating pill nav fixed at the bottom** (`nav{position:fixed;bottom}`, `main` gets `padding-bottom:98px` to
+  clear it). Active tab is a blue→violet gradient pill.
+- **Sepia** — a printed book: serif Georgia, a **narrow centred cream page** (`main{max-width:520px}`) with a
+  faint paper-grain background, a centred title-page header, and a **running-head text nav** (underline for the
+  active tab, no filled buttons). Cards become ruled entries (top/bottom rules, no box); the headword is large
+  italic serif; the Words list reads like a dictionary.
+
+How it works:
+- Palette/structure is driven by tokens in `:root` — `--ink`/`--line`/`--paper`/`--grey`/`--card-bg`,
+  `--red/--blue/--yellow`, `--muted`/`--muted2`/`--faint`, `--radius`, `--shadow`, `--font-head`/`--font-body`,
+  `--accent`. A theme overrides those tokens **and** adds scoped structural rules (nav/header/card/main). All
+  text colours are tokenised so nothing stays black on a dark ground; where a coloured block needs dark text
+  (e.g. yellow `.chip.ant`/`.btn-learning` in Midnight) there's an explicit override.
+- **To add a theme:** add a `html[data-theme="<id>"]{…}` block near the bottom of the `<style>` (token overrides
+  + any structural rules) and an entry in the `THEMES` array in JS (`{id,name,desc,sw:[3 swatch colours]}`). The
+  picker renders itself from that array; `setTheme(id)` → `applyTheme(id)` (sets/removes `data-theme`, updates
+  the `theme-color` meta), persists `dutch5k-theme`, re-renders.
+- **Blank-on-tap bug (fixed v45):** dark rounded cards (`border-radius` + `box-shadow` + `overflow:hidden`) could
+  stay in the DOM but go unpainted on mobile WebKit after `#main`'s subtree was swapped on a tab tap — the
+  section looked blank until a manual refresh. `render()` is now a thin wrapper around `renderMain()` that, for
+  any non-default theme, forces a synchronous reflow on `#main` (`display:none; void offsetHeight; display:''`)
+  so the browser repaints. Do **not** remove this wrapper. If you add heavy effects (backdrop-filter, big
+  shadows) prefer solid/opaque values over `backdrop-filter` on re-rendered subtrees.
 - **Anti-flash:** a tiny synchronous `<script>` at the end of `<head>` reads `dutch5k-theme` from localStorage
-  (JSON-encoded, e.g. `"midnight"`) and sets `data-theme` before first paint, so returning users don't flash
-  the default theme while the async `init()` load runs. `init()` re-applies it authoritatively.
+  (JSON-encoded, e.g. `"midnight"`) and sets `data-theme` before first paint; `init()` re-applies it
+  authoritatively. Keep the paper hexes in that script and in `applyTheme()`'s `theme-color` line in sync with
+  each theme's `--paper` (Midnight `#0d0e15`, Sepia `#f3ead6`).
 
 Filters in both Learn and Words: **status** (new/learning/learned), **POS** (verb/noun/adjective/...),
 **source** (All / General 5K / Nederlands in Gang / Nederlands in Actie). Book words show A/G badges

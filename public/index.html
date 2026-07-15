@@ -233,47 +233,127 @@
   .themebtn .tcheck{font-family:var(--font-head); font-weight:900; font-size:18px; color:var(--accent); opacity:0; flex-shrink:0;}
   .themebtn.active .tcheck{opacity:1;}
 
-  /* ---------- MIDNIGHT: dark, rounded, modern ---------- */
+  /* Each theme below is a whole different LAYOUT, not just a repaint: different
+     type, spacing, nav placement and card language. The blank-on-tap bug that dark
+     rounded cards used to cause is handled in JS (paintFix() forces a repaint after
+     every render); every text colour here is tokenised so nothing stays black. */
+
+  /* ================================================================
+     MIDNIGHT — a modern dark mobile app.
+     Floating pill nav at the bottom (thumb reach), airy header, big soft
+     rounded cards on an ambient gradient. Sans-serif, generous spacing.
+     ================================================================ */
   html[data-theme="midnight"]{
-    --ink:#e7eaf3; --paper:#0f1018; --grey:#1b1d2a;
-    --red:#ff5d73; --blue:#5b8cff; --yellow:#ffd166;
-    --line:#2c2f40;
+    --ink:#e8ebf7; --paper:#0d0e15; --grey:#1a1c2b;
+    --red:#ff6b81; --blue:#6c8cff; --yellow:#ffd166;
+    --line:#2a2d42;
     --rule:1px solid var(--line);
-    --muted:#9aa0b8; --muted2:#6d7288; --faint:#2c2f40;
-    --radius:14px; --card-bg:#171927; --shadow:0 8px 24px rgba(0,0,0,.4);
+    --muted:#a2a8c4; --muted2:#767c9c; --faint:#2a2d42;
+    --radius:18px; --card-bg:#161829; --shadow:0 10px 30px rgba(0,0,0,.45);
     --font-head:'Inter',sans-serif; --font-body:'Inter',sans-serif;
-    --accent:#5b8cff;
+    --accent:#6c8cff;
   }
-  html[data-theme="midnight"] .logo{font-weight:800; letter-spacing:0;}
-  html[data-theme="midnight"] .word-nl{font-weight:800;}
+  html[data-theme="midnight"] body{
+    background:
+      radial-gradient(1100px 560px at 82% -12%, rgba(108,140,255,.18), transparent 60%),
+      radial-gradient(820px 480px at -12% 18%, rgba(255,107,129,.12), transparent 55%),
+      var(--paper);
+    background-attachment:fixed;
+  }
+  html[data-theme="midnight"] header{ border-bottom:none; padding:20px 18px 8px; }
+  html[data-theme="midnight"] .logo{ font-weight:800; letter-spacing:-.5px; font-size:22px; }
+  html[data-theme="midnight"] .counter small{ letter-spacing:1.4px; }
+  /* floating bottom pill nav */
+  html[data-theme="midnight"] nav{
+    position:fixed; left:50%; transform:translateX(-50%); bottom:14px; z-index:50;
+    width:min(440px,92vw); border:1px solid var(--line); border-radius:22px;
+    background:#161829e6; box-shadow:0 14px 36px rgba(0,0,0,.55); padding:6px; gap:6px;
+  }
+  html[data-theme="midnight"] nav button{
+    border:none; border-radius:16px; background:transparent; color:var(--muted);
+    padding:13px 4px; letter-spacing:.4px;
+  }
+  html[data-theme="midnight"] nav button.active{
+    background:linear-gradient(135deg,var(--blue),#8a6bff); color:#fff;
+    box-shadow:0 6px 18px rgba(108,140,255,.42);
+  }
+  html[data-theme="midnight"] main{ padding-bottom:98px; }   /* clear the floating nav */
+  html[data-theme="midnight"] .card-tag{
+    border-bottom:1px solid var(--line);
+    background:linear-gradient(135deg, rgba(108,140,255,.16), transparent 70%);
+  }
+  html[data-theme="midnight"] .word-nl{ font-weight:800; }
   html[data-theme="midnight"] .filters button.active,
   html[data-theme="midnight"] .posfilters button.active{ background:var(--blue); color:#fff; border-color:var(--blue); }
-  html[data-theme="midnight"] nav button.active{ background:var(--blue); color:#fff; }
-  html[data-theme="midnight"] .toast{ background:#e7eaf3; color:#0f1018; }
+  /* dark text on the light/coloured blocks so labels stay legible */
+  html[data-theme="midnight"] .chip.ant,
+  html[data-theme="midnight"] .actions button.btn-learning,
+  html[data-theme="midnight"] .planchip:hover{ color:#0d0e15; }
+  html[data-theme="midnight"] .toast{ background:#e8ebf7; color:#0d0e15; }
   html[data-theme="midnight"] .c-yellow{ color:var(--yellow); }
+  html[data-theme="midnight"] .c-red{ color:var(--red); }
   html[data-theme="midnight"] .dot.new,
-  html[data-theme="midnight"] .m-new{ background:#2c2f40; }
+  html[data-theme="midnight"] .m-new{ background:#2a2d42; }
   html[data-theme="midnight"] .histcell.lvl1{background:#26406e;}
   html[data-theme="midnight"] .histcell.lvl2{background:#3a63b0;}
 
-  /* ---------- SEPIA: warm paper, serif, book-like ---------- */
+  /* ================================================================
+     SEPIA — a printed book / paper dictionary.
+     Narrow centred reading column, serif face, a title-page header and a
+     running-head text nav (underline for the active tab, no filled tabs).
+     Cards become ruled entries instead of boxes; the headword is set in
+     large italic serif. Warm cream with a faint paper grain.
+     ================================================================ */
   html[data-theme="sepia"]{
-    --ink:#3b2f24; --paper:#f4ecdb; --grey:#e8ddc6;
-    --red:#a8442a; --blue:#3f6f6f; --yellow:#b98a1e;
-    --line:#c9b892;
-    --rule:2px solid var(--line);
-    --muted:#7a6b54; --muted2:#9a8a6f; --faint:#d7c9a8;
-    --radius:8px; --card-bg:#faf4e6; --shadow:0 2px 10px rgba(90,70,40,.14);
+    --ink:#3a2e22; --paper:#f3ead6; --grey:#e8dcc2;
+    --red:#9c3b23; --blue:#3f6f6f; --yellow:#b6851b;
+    --line:#cdbb92;
+    --rule:1px solid var(--line);
+    --muted:#7c6c52; --muted2:#9a8a6f; --faint:#ddceac;
+    --radius:0px; --card-bg:transparent; --shadow:none;
     --font-head:'Georgia','Times New Roman',serif;
     --font-body:'Georgia','Times New Roman',serif;
-    --accent:#a8442a;
+    --accent:#9c3b23;
   }
-  html[data-theme="sepia"] .logo,
-  html[data-theme="sepia"] .word-nl,
-  html[data-theme="sepia"] nav button,
-  html[data-theme="sepia"] .card-tag,
-  html[data-theme="sepia"] .sec-h,
-  html[data-theme="sepia"] .lbl{ letter-spacing:0; }
+  html[data-theme="sepia"] body{
+    background:
+      repeating-linear-gradient(0deg, rgba(120,90,50,.028) 0 2px, transparent 2px 5px),
+      var(--paper);
+  }
+  html[data-theme="sepia"] main{ max-width:520px; padding:24px 22px 60px; }
+  /* title-page header */
+  html[data-theme="sepia"] header{
+    flex-direction:column; gap:3px; text-align:center; justify-content:center;
+    border-bottom:1px solid var(--line); padding:22px 18px;
+  }
+  html[data-theme="sepia"] .logo{ font-size:26px; letter-spacing:.5px; font-weight:400; }
+  html[data-theme="sepia"] .logo span{ color:var(--accent); }
+  html[data-theme="sepia"] .counter{ text-align:center; }
+  html[data-theme="sepia"] .counter small{ letter-spacing:2px; }
+  /* running-head text tabs */
+  html[data-theme="sepia"] nav{ border-bottom:1px solid var(--line); background:transparent; justify-content:center; gap:24px; padding:4px 0; }
+  html[data-theme="sepia"] nav button{
+    flex:0 0 auto; border:none; background:transparent; color:var(--muted);
+    font-family:var(--font-head); font-weight:400; font-size:15px; text-transform:none;
+    letter-spacing:.4px; padding:9px 2px; border-bottom:2px solid transparent;
+  }
+  html[data-theme="sepia"] nav button.active{
+    color:var(--ink); background:transparent; border-bottom:2px solid var(--accent); font-style:italic;
+  }
+  /* ruled entries instead of boxed cards */
+  html[data-theme="sepia"] .card{
+    border:none; border-top:2px solid var(--line); border-bottom:2px solid var(--line);
+    background:transparent; min-height:auto; padding:4px 0;
+  }
+  html[data-theme="sepia"] .card-tag{ border-bottom:1px solid var(--faint); }
+  html[data-theme="sepia"] .word-nl{ font-family:var(--font-head); font-weight:400; font-style:italic; font-size:46px; letter-spacing:0; }
+  html[data-theme="sepia"] .word-en{ font-style:italic; }
+  html[data-theme="sepia"] .wrow{ border:none; border-bottom:1px solid var(--line); }
+  html[data-theme="sepia"] .wlist .wrow:last-of-type{ border-bottom:1px solid var(--line); }
+  html[data-theme="sepia"] .wdetail{ background:var(--grey); }
+  html[data-theme="sepia"] .filters button.active,
+  html[data-theme="sepia"] .posfilters button.active{ background:var(--accent); color:var(--paper); border-color:var(--accent); }
+  html[data-theme="sepia"] .actions button.btn-know{ color:#fff; }
 </style>
 <script>
 /* Anti-flash: apply the saved theme before first paint. Store keeps values JSON-encoded
@@ -355,9 +435,9 @@ let theme = 'minimalistic';   // active UI theme id (persisted as dutch5k-theme)
 /* Theme catalogue for the Progress-tab picker. `id` matches the html[data-theme] value
    ('minimalistic' = the default, no attribute). `sw` = 3 swatch colours for the preview chip. */
 const THEMES = [
-  {id:'minimalistic', name:'Minimalistic', desc:'Mondrian blocks, bold black rules, sharp corners.', sw:['#FFFFFF','#DD0100','#225095']},
-  {id:'midnight',     name:'Midnight',     desc:'Dark, rounded and modern with soft glowing accents.', sw:['#0f1018','#5b8cff','#ff5d73']},
-  {id:'sepia',        name:'Sepia',        desc:'Warm paper tones and a serif face — reads like a book.', sw:['#f4ecdb','#a8442a','#3f6f6f']},
+  {id:'minimalistic', name:'Minimalistic', desc:'Mondrian grid — bold black rules, primary blocks, sharp corners, tabs on top.', sw:['#FFFFFF','#DD0100','#225095']},
+  {id:'midnight',     name:'Midnight',     desc:'Dark mobile app — big rounded cards, ambient glow, a floating pill nav at the bottom.', sw:['#0d0e15','#6c8cff','#ff6b81']},
+  {id:'sepia',        name:'Sepia',        desc:'Printed book — serif type, a narrow cream page, ruled entries and a running-head text menu.', sw:['#f3ead6','#9c3b23','#3f6f6f']},
 ];
 const GOAL = 5000;
 const POS_LABELS = {verb:'Verbs', noun:'Nouns', adjective:'Adjectives', adverb:'Adverbs', pronoun:'Pronouns', preposition:'Prepositions', conjunction:'Conjunctions', number:'Numbers', expression:'Expressions', article:'Articles'};
@@ -5405,7 +5485,7 @@ function applyTheme(t){
   if(t==='minimalistic') root.removeAttribute('data-theme');
   else root.setAttribute('data-theme', t);
   // keep the mobile browser chrome in sync with the app background
-  const bg = t==='midnight' ? '#0f1018' : t==='sepia' ? '#f4ecdb' : '#FFFFFF';
+  const bg = t==='midnight' ? '#0d0e15' : t==='sepia' ? '#f3ead6' : '#FFFFFF';
   let meta = document.querySelector('meta[name="theme-color"]');
   if(!meta){ meta=document.createElement('meta'); meta.name='theme-color'; document.head.appendChild(meta); }
   meta.setAttribute('content', bg);
@@ -5768,7 +5848,19 @@ async function setWordStatus(idx, status){
   render();
 }
 
+/* Wrapper: after every (re)render, nudge a repaint. Themed cards (rounded +
+   box-shadow + overflow:hidden) can stay in the DOM but go unpainted on mobile
+   WebKit after #main's subtree is swapped — the section looked "blank" until a
+   manual refresh. Forcing a synchronous reflow makes the browser repaint it.
+   Only runs off the default theme, which never had the bug. */
 function render(){
+  renderMain();
+  if(theme!=='minimalistic'){
+    const m = document.getElementById('main');
+    if(m){ m.style.display='none'; void m.offsetHeight; m.style.display=''; }
+  }
+}
+function renderMain(){
   const c = counts();
   document.getElementById('hdrCount').textContent = `${c.learned} / ${GOAL}`;
   ['learn','words','progress'].forEach(t=>{
@@ -6027,7 +6119,7 @@ function render(){
 /* ============ OFFLINE (service worker) ============ */
 if('serviceWorker' in navigator){
   const swCode = `
-    const C = 'dutch5k-v44';
+    const C = 'dutch5k-v45';
     self.addEventListener('install', e => { self.skipWaiting(); });
     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
     self.addEventListener('fetch', e => {
