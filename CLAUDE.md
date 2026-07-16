@@ -66,21 +66,25 @@ uses `not_found_handling:"single-page-application"`, so any *referenced* file th
 `index.html` with the wrong content-type = broken icon; every icon must be a real file). Social scrapers
 also need a real image URL for `og:image`, not a data URI.
 
-**Logo = Mondrian** (on-brand: white paper, thick black rules, red/blue/yellow blocks — big red top-left,
-blue + yellow in the bottom row). Regenerate all assets with `scratchpad/make_icons.py` (pure Pillow, draws
-rectangles directly — no SVG rasteriser needed; `pip install Pillow`). Files it writes to `public/`:
-`favicon.ico` (16/32/48), `favicon-32.png`, `apple-touch-icon.png` (180, iOS home screen),
-`icon-192.png`, `icon-512.png`, `icon-maskable-512.png` (logo shrunk to 72% on white so Android's circular
-mask never clips it), `og-image.png` (1200×630 share card). Hand-written vector `public/favicon.svg` and
-`public/site.webmanifest` (name/short_name/icons/`display:standalone`) are committed directly.
+**Logo = tulip-book badge** (Adi-supplied art): a circular badge — black ring, red/white/blue tulip whose
+petals are an open book, arc text "DUTCH / VOCAB TRAINER / 5000 WORDS", two stars. Used **only** for the
+browser tab / home-screen icon / link-share card — **never inside the app UI** (the app stays Mondrian).
+The source PNG is a wide banner; `scratchpad/make_icons.py` (pure Pillow; `pip install Pillow numpy`) crops
+just the **circular part** (detected centre ≈ (511,284), outer ring radius ≈ 207), circle-masks it
+anti-aliased, and composites it onto **white** so every tile is a clean white square with the ringed badge
+centred. Files it writes to `public/`: `favicon.ico` (16/32/48), `favicon-32.png`,
+`apple-touch-icon.png` (180, iOS home screen), `icon-192.png`, `icon-512.png`,
+`icon-maskable-512.png` (badge shrunk to ~78% so Android's circular mask never clips ring/text),
+`og-image.png` (1200×630 share card: badge left + tagline right), and `favicon.svg` (the 180 tile embedded
+as a data-URI `<image>`). `public/site.webmanifest` (name/short_name/icons/`display:standalone`) is
+committed directly. **To change the logo:** drop the new art path into `make_icons.py`'s `SRC`, adjust
+`CX/CY/R` to the new circle, rerun, bump the SW cache, redeploy.
 
 Wired in `<head>` (after `<title>`): `<link>` icon/apple-touch-icon/manifest + PWA meta
 (`theme-color`, `apple-mobile-web-app-*`, `application-name`) + Open Graph/Twitter tags pointing at
 `/og-image.png`. The **static `<meta name="theme-color">`** is now what `applyTheme()` finds & updates per
 theme (before v48 the JS created it on the fly). og:image uses a **relative** URL (resolves against page URL
-on modern unfurlers); swap to an absolute URL if a platform needs one. **Editing the logo:** change the
-`BLOCKS`/`VLINES`/`HLINES` composition in `make_icons.py`, rerun it, mirror the same rects in `favicon.svg`,
-bump the SW cache, redeploy.
+on modern unfurlers); swap to an absolute URL if a platform needs one.
 
 ## Storage (client-side, no backend)
 
