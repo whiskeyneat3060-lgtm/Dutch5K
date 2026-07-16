@@ -3,8 +3,11 @@
 Single-file Dutch vocab trainer. Mondrian design (black rules, red/blue/yellow blocks).
 Owner Adi: B1 Dutch learner in Almere, toward conversational fluency.
 
-> **Convention (Adi):** every app change updates this `CLAUDE.md` in the same commit — features,
-> gotchas, cache bumps. Sessions get cleared; this file is the project's only memory.
+> **Convention (Adi):** this `CLAUDE.md` is the project's only memory (sessions get cleared), so it
+> should track features, gotchas, and cache bumps — but **never edit it automatically.** After each
+> feature, **ask Adi** whether to update this file. Likewise **never push to `main` automatically**
+> (that deploys live) — after each feature, **ask** whether to push to `main`. Develop + push on the
+> feature branch freely; `main` and md edits are opt-in per change.
 
 ## Architecture — read first
 
@@ -162,16 +165,18 @@ enriched word (`bereiken`) shows Forms + Examples + Synonyms.
 Push `public/index.html` to `main`. Workers Builds runs `npx wrangler deploy`, live ~60s. Worker name in
 `wrangler.jsonc` (`drop-a757014e-97c`) must not change — it's the URL.
 
-> **Deploy verification (do every time):** Cloudflare deploys **only from `main`**. Pushing the feature branch
-> (`claude/new-session-dk52ob`) does nothing for the live site — a commit can sit there unshipped (happened to
-> the theme switcher). After every push, confirm it's on `main`:
+> **Never push to `main` automatically — ask Adi first** (pushing `main` deploys live). Develop and push
+> on the feature branch as normal; only push `main` once Adi says so.
+>
+> **Deploy verification (only after an approved `main` push):** Cloudflare deploys **only from `main`**.
+> Pushing the feature branch alone does nothing for the live site — a commit can sit there unshipped
+> (happened to the theme switcher). So once Adi approves and you push `main`, confirm it landed:
 > ```
 > git fetch origin main -q
 > git show origin/main:public/index.html | grep -c "<token unique to your change>"   # e.g. dutch5k-theme, new cache vNN
 > git log --oneline origin/main -1                                                     # should be your commit
 > ```
-> If not there: `git push origin claude/new-session-dk52ob:main` (fast-forwards when `main` is ancestor).
-> Always push **both** feature branch **and** `main`.
+> If not there: `git push origin <feature-branch>:main` (fast-forwards when `main` is ancestor).
 
 ## Open work
 
