@@ -279,6 +279,8 @@
   .themebtn .tmeta{flex:1;}
   .themebtn .tcheck{font-family:var(--font-head); font-weight:900; font-size:18px; color:var(--accent); opacity:0; flex-shrink:0;}
   .themebtn.active .tcheck{opacity:1;}
+  /* Language picker reuses the theme-button layout; the "swatch" is a two-letter code tile */
+  .themebtn .langcode{display:flex; flex-shrink:0; width:46px; height:30px; border:2px solid var(--line); border-radius:calc(var(--radius) * .5); align-items:center; justify-content:center; font-family:var(--font-head); font-weight:800; font-size:13px; letter-spacing:1px; background:var(--card-bg); color:var(--ink);}
 
   /* Each theme below is a whole different LAYOUT, not just a repaint: different
      type, spacing, nav placement and card language. The blank-on-tap bug (nav bar
@@ -446,7 +448,7 @@ const Store = {
       try{ await window.storage.set(k, JSON.stringify(v)); }catch(e){ console.error(e); }
       return;
     }
-    try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){ toast('Storage full &#8212; export your progress'); }
+    try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){ toast(T('Storage full — export your progress')); }
   }
 };
 
@@ -488,17 +490,272 @@ const THEMES = [
   {id:'midnight',     name:'Midnight',     desc:'Dark mobile app — big rounded cards, ambient glow, a floating pill nav at the bottom.', sw:['#0d0e15','#6c8cff','#ff6b81']},
   {id:'sepia',        name:'Sepia',        desc:'Printed book — serif type, a narrow cream page, ruled entries and a running-head text menu.', sw:['#f3ead6','#9c3b23','#3f6f6f']},
 ];
+
+/* ============ APP LANGUAGE (i18n) ============ */
+/* The app teaches Dutch; everything ELSE (menus, meanings, example translations) can be shown
+   in another language. Two layers:
+   - UI strings: hand-written dictionaries below (keyed by the exact English string), via T().
+   - Content (word meanings + example translations + odd runtime strings): a per-language map
+     "English string -> translated string" in /i18n/<id>.json (~machine-translated offline),
+     fetched on demand, cached by the service worker, applied at render time via ct().
+   Dutch words, forms, synonyms and the app name are never translated. English needs no files. */
+const LANGS = [
+  {id:'en', name:'English',  code:'EN', desc:'Interface and translations in English (default).'},
+  {id:'fr', name:'Français', code:'FR', desc:'Interface et traductions en français.'},
+  {id:'it', name:'Italiano', code:'IT', desc:'Interfaccia e traduzioni in italiano.'},
+  {id:'es', name:'Español',  code:'ES', desc:'Interfaz y traducciones en español.'},
+];
+let lang = 'en';       // active app language id (persisted as dutch5k-lang)
+let CT = null;         // content dictionary for the active language (null = English)
+const CTCACHE = {};    // language id -> loaded content dictionary
+
+const UI = {
+fr:{
+  'Words learned':'Mots appris', 'Learn':'Apprendre', 'Words':'Mots', 'Overview':'Aperçu',
+  'Shuffle On':'Mélange activé', 'Shuffle Off':'Mélange désactivé',
+  'All types':'Tous les types', 'Verbs':'Verbes', 'Nouns':'Noms', 'Adjectives':'Adjectifs', 'Adverbs':'Adverbes', 'Pronouns':'Pronoms', 'Prepositions':'Prépositions', 'Conjunctions':'Conjonctions', 'Numbers':'Nombres', 'Expressions':'Expressions', 'Articles':'Articles',
+  'All sources':'Toutes les sources', 'General 5K':'5K général',
+  'No words left in this round with these filters.':'Plus aucun mot dans cette série avec ces filtres.', 'Try “All”.':'Essayez « Tous ».',
+  '#{n} most frequent':'n°{n} le plus fréquent', 'curated extra':'extra sélectionné', 'textbook word':'mot du manuel',
+  'verb':'verbe', 'noun':'nom', 'adjective':'adjectif', 'adverb':'adverbe', 'pronoun':'pronom', 'preposition':'préposition', 'conjunction':'conjonction', 'number':'nombre', 'expression':'expression', 'article':'article', 'particle':'particule', 'word':'mot',
+  'all':'tous', 'new':'nouveau', 'learning':'en cours', 'learned':'appris',
+  'Tap to reveal meaning, forms, examples &amp; related words':'Touchez pour voir le sens, les formes, les exemples et les mots liés',
+  'Forms':'Formes', 'Examples':'Exemples', 'Synonyms':'Synonymes', 'Antonyms':'Antonymes',
+  'Object':'Objet', 'Possessive':'Possessif', 'Stressed':'Tonique', 'Present':'Présent', 'Past':'Passé', 'Perfect':'Parfait', 'Plural':'Pluriel', 'Comparative':'Comparatif', 'Superlative':'Superlatif', 'Note':'Note', 'Diminutive':'Diminutif', 'Feminine':'Féminin', 'Past sg/pl':'Passé sg/pl', 'Informal':'Informel', 'Formal':'Formel',
+  'More examples and grammar forms are being added.':"D'autres exemples et formes grammaticales seront ajoutés.",
+  'Preparing this card…':'Préparation de cette carte…', 'Preparing…':'Préparation…', 'Not translated yet':'Pas encore traduit',
+  'Again':'Encore', 'Learning':'En cours', 'Know it':'Je sais', 'Skip for now':"Passer pour l'instant", 'Show answer':'Voir la réponse', 'Skip':'Passer', 'Flip card':'Retourner la carte',
+  'Card {a} of {b} in this round · {c} words in deck':'Carte {a} sur {b} dans cette série · {c} mots au total',
+  'Today: {n} learned · streak {s}':"Aujourd'hui : {n} appris · série {s}",
+  'blue = learned, yellow = learning, white = new':'bleu = appris, jaune = en cours, blanc = nouveau',
+  'Hear pronunciation in Dutch':'Écouter la prononciation en néerlandais',
+  'Search Dutch or English…':'Rechercher en néerlandais ou en français…',
+  'tap to open':'touchez pour ouvrir', 'No words match.':'Aucun mot ne correspond.',
+  'Show more ({n} remaining)':'Afficher plus ({n} restants)', '{n} words':'{n} mots', '1 word':'1 mot',
+  'Back':'Retour', 'Back to list':'Retour à la liste',
+  'Meaning will be added when you add an API key, or from the app online.':"Le sens sera ajouté avec une clé API, ou depuis l'app en ligne.",
+  'Learned':'Appris', 'Still learning':'En cours', 'Not started':'Pas commencé', 'Of 5,000 goal':"De l'objectif de 5 000",
+  "Today's plan":'Plan du jour', 'words today':"mots aujourd'hui", 'day streak':'jours de suite',
+  "At {n}/day you'll reach 5,000 in about {d} days (~{date}).":'À {n}/jour, vous atteindrez 5 000 dans environ {d} jours (~{date}).',
+  'To hit 5,000 by {date}, learn about {n}/day ({d} days left).':"Pour atteindre 5 000 d'ici le {date}, apprenez environ {n}/jour ({d} jours restants).",
+  'Daily goal complete — nice work!':'Objectif du jour atteint — bravo !', 'Study now':'Étudier maintenant',
+  'Edit plan':'Modifier le plan', 'Remove':'Supprimer',
+  'Daily reminders on':'Rappels quotidiens activés', 'Turn on daily reminders':'Activer les rappels quotidiens',
+  'Set a daily goal':'Fixez un objectif quotidien',
+  'Pick how many words to learn per day (or a target date), and the app tracks your streak and shows exactly how many to do each day.':"Choisissez combien de mots apprendre par jour (ou une date cible) ; l'app suit votre série et indique exactement combien en faire chaque jour.",
+  'Words per day':'Mots par jour', 'Or reach 5,000 by a date':'Ou atteindre 5 000 pour une date', 'Set target date':'Définir la date cible',
+  'Pick a date or tap a number above':'Choisissez une date ou touchez un nombre ci-dessus',
+  'Last 14 days':'Les 14 derniers jours',
+  'Each square is a day; darker means more words learned. Learn at least one word a day to keep your streak alive.':'Chaque carré est un jour ; plus il est foncé, plus vous avez appris de mots. Apprenez au moins un mot par jour pour garder votre série.',
+  'By word type':'Par type de mot', 'Tap a type to study or browse just those words.':'Touchez un type pour étudier ou parcourir uniquement ces mots.',
+  'Your deck':'Votre paquet',
+  '{d} words total, all available offline. {m} have English meanings and {f} also have example sentences, grammar forms and synonyms.':"{d} mots au total, tous disponibles hors ligne. {m} ont un sens traduit et {f} ont aussi des phrases d'exemple, des formes grammaticales et des synonymes.",
+  '{n} words across {c} chapters — filter by source in Learn or Words to study just these.':'{n} mots répartis sur {c} chapitres — filtrez par source dans Apprendre ou Mots pour étudier uniquement ceux-ci.',
+  'Everything works with no internet connection once the app has loaded.':"Tout fonctionne sans connexion Internet une fois l'app chargée.",
+  'Backup':'Sauvegarde',
+  'Your progress lives in this browser. Export a backup before switching phones, then import it there.':'Votre progression vit dans ce navigateur. Exportez une sauvegarde avant de changer de téléphone, puis importez-la là-bas.',
+  'Export':'Exporter', 'Import':'Importer',
+  'Theme':'Thème', 'Change how the whole app looks. Your words and progress stay exactly the same.':"Changez l'apparence de toute l'app. Vos mots et votre progression restent exactement les mêmes.",
+  'Mondrian grid — bold black rules, primary blocks, sharp corners, tabs on top.':'Grille Mondrian — traits noirs épais, blocs primaires, angles nets, onglets en haut.',
+  'Dark mobile app — big rounded cards, ambient glow, a floating pill nav at the bottom.':'App mobile sombre — grandes cartes arrondies, halo ambiant, navigation flottante en bas.',
+  'Printed book — serif type, a narrow cream page, ruled entries and a running-head text menu.':'Livre imprimé — caractères serif, page crème étroite, entrées réglées et menu texte en haut.',
+  'App language':"Langue de l'app",
+  'Meanings, example translations and menus switch to your language — the Dutch words stay Dutch.':'Les sens, les traductions des exemples et les menus passent dans votre langue — les mots néerlandais restent en néerlandais.',
+  'Could not load this language — check your connection and try again.':'Impossible de charger cette langue — vérifiez votre connexion et réessayez.',
+  'Shuffle on · strategic mix of new words':'Mélange activé · mixage stratégique des nouveaux mots',
+  'Shuffle off · frequency order':'Mélange désactivé · ordre de fréquence',
+  'Daily goal reached: {n} words!':'Objectif du jour atteint : {n} mots !',
+  'Storage full — export your progress':'Stockage plein — exportez votre progression',
+  'Notifications not supported on this device':'Notifications non prises en charge sur cet appareil',
+  'Reminder permission denied':'Autorisation de rappel refusée',
+  'Progress imported':'Progression importée',
+  'Import failed — not a valid backup file':"Échec de l'import — fichier de sauvegarde non valide",
+  "Time for today's words! Keep your streak going.":"C'est l'heure des mots du jour ! Gardez votre série.",
+  "Pronunciation isn't supported on this device":"La prononciation n'est pas prise en charge sur cet appareil",
+  'Card preparation failed — check your API key in Progress':'Échec de préparation de la carte — vérifiez votre clé API',
+},
+it:{
+  'Words learned':'Parole apprese', 'Learn':'Impara', 'Words':'Parole', 'Overview':'Panoramica',
+  'Shuffle On':'Casuale attivato', 'Shuffle Off':'Casuale disattivato',
+  'All types':'Tutti i tipi', 'Verbs':'Verbi', 'Nouns':'Sostantivi', 'Adjectives':'Aggettivi', 'Adverbs':'Avverbi', 'Pronouns':'Pronomi', 'Prepositions':'Preposizioni', 'Conjunctions':'Congiunzioni', 'Numbers':'Numeri', 'Expressions':'Espressioni', 'Articles':'Articoli',
+  'All sources':'Tutte le fonti', 'General 5K':'5K generale',
+  'No words left in this round with these filters.':'Nessuna parola rimasta in questo giro con questi filtri.', 'Try “All”.':'Prova «Tutte».',
+  '#{n} most frequent':'n. {n} più frequente', 'curated extra':'extra curato', 'textbook word':'parola del libro di testo',
+  'verb':'verbo', 'noun':'sostantivo', 'adjective':'aggettivo', 'adverb':'avverbio', 'pronoun':'pronome', 'preposition':'preposizione', 'conjunction':'congiunzione', 'number':'numero', 'expression':'espressione', 'article':'articolo', 'particle':'particella', 'word':'parola',
+  'all':'tutte', 'new':'nuova', 'learning':'in corso', 'learned':'appresa',
+  'Tap to reveal meaning, forms, examples &amp; related words':'Tocca per vedere significato, forme, esempi e parole collegate',
+  'Forms':'Forme', 'Examples':'Esempi', 'Synonyms':'Sinonimi', 'Antonyms':'Contrari',
+  'Object':'Oggetto', 'Possessive':'Possessivo', 'Stressed':'Tonica', 'Present':'Presente', 'Past':'Passato', 'Perfect':'Perfetto', 'Plural':'Plurale', 'Comparative':'Comparativo', 'Superlative':'Superlativo', 'Note':'Nota', 'Diminutive':'Diminutivo', 'Feminine':'Femminile', 'Past sg/pl':'Passato sg/pl', 'Informal':'Informale', 'Formal':'Formale',
+  'More examples and grammar forms are being added.':'Altri esempi e forme grammaticali sono in arrivo.',
+  'Preparing this card…':'Preparazione della scheda…', 'Preparing…':'Preparazione…', 'Not translated yet':'Non ancora tradotto',
+  'Again':'Ancora', 'Learning':'In corso', 'Know it':'La so', 'Skip for now':'Salta per ora', 'Show answer':'Mostra risposta', 'Skip':'Salta', 'Flip card':'Gira la scheda',
+  'Card {a} of {b} in this round · {c} words in deck':'Scheda {a} di {b} in questo giro · {c} parole nel mazzo',
+  'Today: {n} learned · streak {s}':'Oggi: {n} apprese · serie {s}',
+  'blue = learned, yellow = learning, white = new':'blu = apprese, giallo = in corso, bianco = nuove',
+  'Hear pronunciation in Dutch':'Ascolta la pronuncia in olandese',
+  'Search Dutch or English…':'Cerca in olandese o italiano…',
+  'tap to open':'tocca per aprire', 'No words match.':'Nessuna parola corrisponde.',
+  'Show more ({n} remaining)':'Mostra altre ({n} rimanenti)', '{n} words':'{n} parole', '1 word':'1 parola',
+  'Back':'Indietro', 'Back to list':"Torna all'elenco",
+  'Meaning will be added when you add an API key, or from the app online.':"Il significato sarà aggiunto con una chiave API o dall'app online.",
+  'Learned':'Apprese', 'Still learning':'In corso', 'Not started':'Da iniziare', 'Of 5,000 goal':"Dell'obiettivo di 5.000",
+  "Today's plan":'Piano di oggi', 'words today':'parole oggi', 'day streak':'giorni di fila',
+  "At {n}/day you'll reach 5,000 in about {d} days (~{date}).":'A {n}/giorno raggiungerai 5.000 in circa {d} giorni (~{date}).',
+  'To hit 5,000 by {date}, learn about {n}/day ({d} days left).':'Per arrivare a 5.000 entro il {date}, impara circa {n}/giorno ({d} giorni rimasti).',
+  'Daily goal complete — nice work!':'Obiettivo di oggi raggiunto — ottimo lavoro!', 'Study now':'Studia ora',
+  'Edit plan':'Modifica piano', 'Remove':'Rimuovi',
+  'Daily reminders on':'Promemoria giornalieri attivi', 'Turn on daily reminders':'Attiva i promemoria giornalieri',
+  'Set a daily goal':'Imposta un obiettivo giornaliero',
+  'Pick how many words to learn per day (or a target date), and the app tracks your streak and shows exactly how many to do each day.':"Scegli quante parole imparare al giorno (o una data obiettivo): l'app segue la tua serie e mostra esattamente quante farne ogni giorno.",
+  'Words per day':'Parole al giorno', 'Or reach 5,000 by a date':'Oppure raggiungi 5.000 entro una data', 'Set target date':'Imposta la data obiettivo',
+  'Pick a date or tap a number above':'Scegli una data o tocca un numero qui sopra',
+  'Last 14 days':'Ultimi 14 giorni',
+  'Each square is a day; darker means more words learned. Learn at least one word a day to keep your streak alive.':'Ogni quadrato è un giorno; più è scuro, più parole hai imparato. Impara almeno una parola al giorno per mantenere la serie.',
+  'By word type':'Per tipo di parola', 'Tap a type to study or browse just those words.':'Tocca un tipo per studiare o sfogliare solo quelle parole.',
+  'Your deck':'Il tuo mazzo',
+  '{d} words total, all available offline. {m} have English meanings and {f} also have example sentences, grammar forms and synonyms.':'{d} parole in totale, tutte disponibili offline. {m} hanno un significato tradotto e {f} hanno anche frasi di esempio, forme grammaticali e sinonimi.',
+  '{n} words across {c} chapters — filter by source in Learn or Words to study just these.':'{n} parole in {c} capitoli — filtra per fonte in Impara o Parole per studiare solo queste.',
+  'Everything works with no internet connection once the app has loaded.':"Tutto funziona senza connessione Internet una volta caricata l'app.",
+  'Backup':'Backup',
+  'Your progress lives in this browser. Export a backup before switching phones, then import it there.':'I tuoi progressi vivono in questo browser. Esporta un backup prima di cambiare telefono, poi importalo lì.',
+  'Export':'Esporta', 'Import':'Importa',
+  'Theme':'Tema', 'Change how the whole app looks. Your words and progress stay exactly the same.':"Cambia l'aspetto dell'intera app. Le tue parole e i tuoi progressi restano identici.",
+  'Mondrian grid — bold black rules, primary blocks, sharp corners, tabs on top.':'Griglia Mondrian — righe nere decise, blocchi primari, angoli netti, schede in alto.',
+  'Dark mobile app — big rounded cards, ambient glow, a floating pill nav at the bottom.':'App mobile scura — grandi schede arrotondate, bagliore ambientale, barra flottante in basso.',
+  'Printed book — serif type, a narrow cream page, ruled entries and a running-head text menu.':'Libro stampato — caratteri serif, stretta pagina color crema, voci rigate e menu testuale in alto.',
+  'App language':"Lingua dell'app",
+  'Meanings, example translations and menus switch to your language — the Dutch words stay Dutch.':'Significati, traduzioni degli esempi e menu passano nella tua lingua — le parole olandesi restano in olandese.',
+  'Could not load this language — check your connection and try again.':'Impossibile caricare questa lingua — controlla la connessione e riprova.',
+  'Shuffle on · strategic mix of new words':'Casuale attivato · mix strategico di parole nuove',
+  'Shuffle off · frequency order':'Casuale disattivato · ordine di frequenza',
+  'Daily goal reached: {n} words!':'Obiettivo di oggi raggiunto: {n} parole!',
+  'Storage full — export your progress':'Memoria piena — esporta i tuoi progressi',
+  'Notifications not supported on this device':'Notifiche non supportate su questo dispositivo',
+  'Reminder permission denied':'Permesso per i promemoria negato',
+  'Progress imported':'Progressi importati',
+  'Import failed — not a valid backup file':'Importazione non riuscita — file di backup non valido',
+  "Time for today's words! Keep your streak going.":'È ora delle parole di oggi! Mantieni la serie.',
+  "Pronunciation isn't supported on this device":'La pronuncia non è supportata su questo dispositivo',
+  'Card preparation failed — check your API key in Progress':'Preparazione della scheda non riuscita — controlla la chiave API',
+},
+es:{
+  'Words learned':'Palabras aprendidas', 'Learn':'Aprender', 'Words':'Palabras', 'Overview':'Resumen',
+  'Shuffle On':'Aleatorio activado', 'Shuffle Off':'Aleatorio desactivado',
+  'All types':'Todos los tipos', 'Verbs':'Verbos', 'Nouns':'Sustantivos', 'Adjectives':'Adjetivos', 'Adverbs':'Adverbios', 'Pronouns':'Pronombres', 'Prepositions':'Preposiciones', 'Conjunctions':'Conjunciones', 'Numbers':'Números', 'Expressions':'Expresiones', 'Articles':'Artículos',
+  'All sources':'Todas las fuentes', 'General 5K':'5K general',
+  'No words left in this round with these filters.':'No quedan palabras en esta ronda con estos filtros.', 'Try “All”.':'Prueba «Todas».',
+  '#{n} most frequent':'n.º {n} más frecuente', 'curated extra':'extra seleccionado', 'textbook word':'palabra del libro',
+  'verb':'verbo', 'noun':'sustantivo', 'adjective':'adjetivo', 'adverb':'adverbio', 'pronoun':'pronombre', 'preposition':'preposición', 'conjunction':'conjunción', 'number':'número', 'expression':'expresión', 'article':'artículo', 'particle':'partícula', 'word':'palabra',
+  'all':'todas', 'new':'nueva', 'learning':'en curso', 'learned':'aprendida',
+  'Tap to reveal meaning, forms, examples &amp; related words':'Toca para ver el significado, las formas, los ejemplos y las palabras relacionadas',
+  'Forms':'Formas', 'Examples':'Ejemplos', 'Synonyms':'Sinónimos', 'Antonyms':'Antónimos',
+  'Object':'Objeto', 'Possessive':'Posesivo', 'Stressed':'Tónica', 'Present':'Presente', 'Past':'Pasado', 'Perfect':'Perfecto', 'Plural':'Plural', 'Comparative':'Comparativo', 'Superlative':'Superlativo', 'Note':'Nota', 'Diminutive':'Diminutivo', 'Feminine':'Femenino', 'Past sg/pl':'Pasado sg/pl', 'Informal':'Informal', 'Formal':'Formal',
+  'More examples and grammar forms are being added.':'Se están añadiendo más ejemplos y formas gramaticales.',
+  'Preparing this card…':'Preparando esta tarjeta…', 'Preparing…':'Preparando…', 'Not translated yet':'Aún sin traducir',
+  'Again':'Otra vez', 'Learning':'Aprendiendo', 'Know it':'Me la sé', 'Skip for now':'Saltar por ahora', 'Show answer':'Mostrar respuesta', 'Skip':'Saltar', 'Flip card':'Girar la tarjeta',
+  'Card {a} of {b} in this round · {c} words in deck':'Tarjeta {a} de {b} en esta ronda · {c} palabras en el mazo',
+  'Today: {n} learned · streak {s}':'Hoy: {n} aprendidas · racha {s}',
+  'blue = learned, yellow = learning, white = new':'azul = aprendidas, amarillo = en curso, blanco = nuevas',
+  'Hear pronunciation in Dutch':'Escuchar la pronunciación en neerlandés',
+  'Search Dutch or English…':'Buscar en neerlandés o español…',
+  'tap to open':'toca para abrir', 'No words match.':'Ninguna palabra coincide.',
+  'Show more ({n} remaining)':'Mostrar más ({n} restantes)', '{n} words':'{n} palabras', '1 word':'1 palabra',
+  'Back':'Atrás', 'Back to list':'Volver a la lista',
+  'Meaning will be added when you add an API key, or from the app online.':'El significado se añadirá con una clave API o desde la app en línea.',
+  'Learned':'Aprendidas', 'Still learning':'En curso', 'Not started':'Sin empezar', 'Of 5,000 goal':'Del objetivo de 5.000',
+  "Today's plan":'Plan de hoy', 'words today':'palabras hoy', 'day streak':'días seguidos',
+  "At {n}/day you'll reach 5,000 in about {d} days (~{date}).":'A {n}/día alcanzarás 5.000 en unos {d} días (~{date}).',
+  'To hit 5,000 by {date}, learn about {n}/day ({d} days left).':'Para llegar a 5.000 antes del {date}, aprende unas {n}/día (quedan {d} días).',
+  'Daily goal complete — nice work!':'Objetivo diario cumplido — ¡buen trabajo!', 'Study now':'Estudiar ahora',
+  'Edit plan':'Editar plan', 'Remove':'Quitar',
+  'Daily reminders on':'Recordatorios diarios activados', 'Turn on daily reminders':'Activar recordatorios diarios',
+  'Set a daily goal':'Fija un objetivo diario',
+  'Pick how many words to learn per day (or a target date), and the app tracks your streak and shows exactly how many to do each day.':'Elige cuántas palabras aprender al día (o una fecha objetivo); la app sigue tu racha y muestra exactamente cuántas hacer cada día.',
+  'Words per day':'Palabras al día', 'Or reach 5,000 by a date':'O llega a 5.000 para una fecha', 'Set target date':'Fijar fecha objetivo',
+  'Pick a date or tap a number above':'Elige una fecha o toca un número arriba',
+  'Last 14 days':'Últimos 14 días',
+  'Each square is a day; darker means more words learned. Learn at least one word a day to keep your streak alive.':'Cada cuadrado es un día; cuanto más oscuro, más palabras aprendidas. Aprende al menos una palabra al día para mantener tu racha.',
+  'By word type':'Por tipo de palabra', 'Tap a type to study or browse just those words.':'Toca un tipo para estudiar o explorar solo esas palabras.',
+  'Your deck':'Tu mazo',
+  '{d} words total, all available offline. {m} have English meanings and {f} also have example sentences, grammar forms and synonyms.':'{d} palabras en total, todas disponibles sin conexión. {m} tienen significado traducido y {f} también tienen frases de ejemplo, formas gramaticales y sinónimos.',
+  '{n} words across {c} chapters — filter by source in Learn or Words to study just these.':'{n} palabras en {c} capítulos — filtra por fuente en Aprender o Palabras para estudiar solo estas.',
+  'Everything works with no internet connection once the app has loaded.':'Todo funciona sin conexión a Internet una vez cargada la app.',
+  'Backup':'Copia de seguridad',
+  'Your progress lives in this browser. Export a backup before switching phones, then import it there.':'Tu progreso vive en este navegador. Exporta una copia antes de cambiar de teléfono y luego impórtala allí.',
+  'Export':'Exportar', 'Import':'Importar',
+  'Theme':'Tema', 'Change how the whole app looks. Your words and progress stay exactly the same.':'Cambia el aspecto de toda la app. Tus palabras y tu progreso quedan exactamente igual.',
+  'Mondrian grid — bold black rules, primary blocks, sharp corners, tabs on top.':'Cuadrícula Mondrian — líneas negras gruesas, bloques primarios, esquinas rectas, pestañas arriba.',
+  'Dark mobile app — big rounded cards, ambient glow, a floating pill nav at the bottom.':'App móvil oscura — tarjetas grandes redondeadas, brillo ambiental, barra flotante abajo.',
+  'Printed book — serif type, a narrow cream page, ruled entries and a running-head text menu.':'Libro impreso — tipografía serif, página crema estrecha, entradas con renglones y menú de texto arriba.',
+  'App language':'Idioma de la app',
+  'Meanings, example translations and menus switch to your language — the Dutch words stay Dutch.':'Los significados, las traducciones de los ejemplos y los menús pasan a tu idioma — las palabras neerlandesas siguen en neerlandés.',
+  'Could not load this language — check your connection and try again.':'No se pudo cargar este idioma — comprueba tu conexión e inténtalo de nuevo.',
+  'Shuffle on · strategic mix of new words':'Aleatorio activado · mezcla estratégica de palabras nuevas',
+  'Shuffle off · frequency order':'Aleatorio desactivado · orden de frecuencia',
+  'Daily goal reached: {n} words!':'¡Objetivo diario alcanzado: {n} palabras!',
+  'Storage full — export your progress':'Almacenamiento lleno — exporta tu progreso',
+  'Notifications not supported on this device':'Notificaciones no compatibles con este dispositivo',
+  'Reminder permission denied':'Permiso de recordatorio denegado',
+  'Progress imported':'Progreso importado',
+  'Import failed — not a valid backup file':'Error al importar — el archivo de copia no es válido',
+  "Time for today's words! Keep your streak going.":'¡Hora de las palabras de hoy! Mantén tu racha.',
+  "Pronunciation isn't supported on this device":'La pronunciación no es compatible con este dispositivo',
+  'Card preparation failed — check your API key in Progress':'Error al preparar la tarjeta — revisa tu clave API',
+},
+};
+
+/* UI string translation. Key = the exact English string; {x} placeholders are
+   substituted AFTER lookup so translations can reorder them. Falls back to English. */
+function T(s, vars){
+  let out = (lang!=='en' && UI[lang] && UI[lang][s]) || s;
+  if(vars) for(const k in vars) out = out.split('{'+k+'}').join(vars[k]);
+  return out;
+}
+/* Content translation (word meanings, example translations): looks the English string up
+   in the loaded language pack. Unknown strings (e.g. fresh API enrichment) stay English. */
+function ct(s){ return (s && CT && CT[s]) || s; }
+/* Locale for date formatting: follow the app language, else the device default */
+function langLocale(){ return lang==='en' ? undefined : lang; }
+
+async function loadLangDict(id){
+  if(id==='en') return null;
+  if(CTCACHE[id]) return CTCACHE[id];
+  const r = await fetch('/i18n/'+id+'.json');
+  if(!r.ok) throw new Error('lang pack http '+r.status);
+  const d = await r.json();
+  CTCACHE[id] = d;
+  return d;
+}
+/* Nav + header live outside #main, so re-label them explicitly on language change */
+function applyNavLang(){
+  const set=(id,txt)=>{ const el=document.getElementById(id); if(el) el.textContent=txt; };
+  set('tabLearn', T('Learn')); set('tabWords', T('Words')); set('tabProgress', T('Overview'));
+  const s=document.querySelector('header .counter small'); if(s) s.textContent = T('Words learned');
+}
+async function setLang(id){
+  hap();
+  if(!LANGS.some(l=>l.id===id)) id='en';
+  if(id!=='en'){
+    try{ CT = await loadLangDict(id); }
+    catch(e){ toast(T('Could not load this language — check your connection and try again.')); return; }
+  } else { CT = null; }
+  lang = id;
+  await Store.set('dutch5k-lang', id);
+  applyNavLang();
+  render();
+}
+
 const GOAL = 5000;
 const POS_LABELS = {verb:'Verbs', noun:'Nouns', adjective:'Adjectives', adverb:'Adverbs', pronoun:'Pronouns', preposition:'Prepositions', conjunction:'Conjunctions', number:'Numbers', expression:'Expressions', article:'Articles'};
 
 /* Shared filter definitions so the Learn and Words tabs stay consistent (same options + order). */
 const POS_FILTER = ['all','verb','noun','adjective','adverb','pronoun','preposition','conjunction','number','expression'];
 function posFilterButtons(active, handler){
-  return POS_FILTER.map(p=>`<button data-p="${p}" class="${active===p?'active':''}" onclick="hap();${handler}('${p}')">${p==='all'?'All types':(POS_LABELS[p]||p)}</button>`).join('');
+  return POS_FILTER.map(p=>`<button data-p="${p}" class="${active===p?'active':''}" onclick="hap();${handler}('${p}')">${p==='all'?T('All types'):T(POS_LABELS[p]||p)}</button>`).join('');
 }
 // Source options in canonical order: All, General, Gang, Actie (book sources shown only if present in the deck).
 function srcFilterOpts(){
-  const o = [['all','All sources'],['general','General 5K']];
+  const o = [['all',T('All sources')],['general',T('General 5K')]];
   if(bookChapters('gang').length) o.push(['gang','Nederlands in Gang']);
   if(bookChapters('actie').length) o.push(['actie','Nederlands in Actie']);
   return o;
@@ -5378,6 +5635,13 @@ async function init(){
   remindOn = (await Store.get('dutch5k-remind')) || false;
   learnShuffle = (await Store.get('dutch5k-shuffle')) || false;
   applyTheme((await Store.get('dutch5k-theme')) || 'minimalistic');
+  lang = (await Store.get('dutch5k-lang')) || 'en';
+  if(!LANGS.some(l=>l.id===lang)) lang = 'en';
+  applyNavLang();
+  if(lang!=='en'){
+    // Load the content pack without blocking first paint; instant when the SW has it cached.
+    loadLangDict(lang).then(d=>{ CT=d; render(); }).catch(e=>console.error('lang pack', e));
+  }
   buildDeck();
   await migrate();
   buildDeck(); // rebuild with any migrated enrichment applied
@@ -5506,7 +5770,7 @@ async function toggleShuffle(){
   skipped = new Set();
   buildQueue();
   render();
-  toast(learnShuffle ? '&#128256; Shuffle on &#183; strategic mix of new words' : 'Shuffle off &#183; frequency order');
+  toast(learnShuffle ? '&#128256; ' + T('Shuffle on · strategic mix of new words') : T('Shuffle off · frequency order'));
 }
 function toast(msg){
   const t=document.getElementById('toast');
@@ -5530,7 +5794,7 @@ async function recordLearned(){
   } else if(streak.count === 0){ streak.count = 1; streak.lastStudied = t; }
   await Store.set('dutch5k-streak', streak);
   // if a daily goal is met, celebrate once
-  if(plan && streak.history[t] === plan.perDay){ hap(30); toast('&#127881; Daily goal reached: '+plan.perDay+' words!'); }
+  if(plan && streak.history[t] === plan.perDay){ hap(30); toast('&#127881; ' + T('Daily goal reached: {n} words!', {n:plan.perDay})); }
 }
 function todayCount(){ return (streak && streak.history[todayStr()]) || 0; }
 function currentStreak(){
@@ -5572,10 +5836,10 @@ async function setTheme(t){
 /* Local reminder via Notification API (best-effort; browsers throttle background timers) */
 async function enableReminders(){
   hap();
-  if(!('Notification' in window)){ toast('Notifications not supported on this device'); return; }
+  if(!('Notification' in window)){ toast(T('Notifications not supported on this device')); return; }
   const perm = await Notification.requestPermission();
-  if(perm==='granted'){ remindOn=true; toast('Daily reminders on'); await Store.set('dutch5k-remind', true); scheduleReminder(); }
-  else toast('Reminder permission denied');
+  if(perm==='granted'){ remindOn=true; toast(T('Daily reminders on')); await Store.set('dutch5k-remind', true); scheduleReminder(); }
+  else toast(T('Reminder permission denied'));
   render();
 }
 function scheduleReminder(){
@@ -5585,7 +5849,7 @@ function scheduleReminder(){
     // fire a gentle in-session check: if it's past 19:00 and no study today, notify now
     const now=new Date();
     if(now.getHours()>=19 && todayCount()===0){
-      try{ new Notification('Dutch 5K', {body:'Time for today\u2019s words! Keep your streak going.'}); }catch(e){}
+      try{ new Notification('Dutch 5K', {body:T("Time for today's words! Keep your streak going.")}); }catch(e){}
     }
   });
 }
@@ -5668,7 +5932,7 @@ async function maybeEnrichAhead(force){
     render();
   }catch(e){
     console.error(e); enrichInFlight = false;
-    toast('Card preparation failed &#8212; check your API key in Progress');
+    toast(T('Card preparation failed — check your API key in Progress'));
   }
 }
 
@@ -5740,8 +6004,8 @@ function importData(){
       await Store.set('dutch5k-progress', progress);
       await Store.set('dutch5k-enriched', enriched);
       buildDeck(); buildQueue(); render();
-      toast('Progress imported');
-    }catch(e){ toast('Import failed \u2014 not a valid backup file'); }
+      toast(T('Progress imported'));
+    }catch(e){ toast(T('Import failed \u2014 not a valid backup file')); }
   };
   inp.click();
 }
@@ -5754,7 +6018,7 @@ function mondrianStrip(c){
   const pl = Math.max((c.learned/total)*100, c.learned?2:0);
   const pg = Math.max((c.learning/total)*100, c.learning?2:0);
   const pn = Math.max(100-pl-pg, 0);
-  return `<div class="mstrip" title="blue = learned, yellow = learning, white = new">
+  return `<div class="mstrip" title="${T('blue = learned, yellow = learning, white = new')}">
     ${c.learned?`<div class="m-learned" style="width:${pl}%"></div>`:''}
     ${c.learning?`<div class="m-learning" style="width:${pg}%"></div>`:''}
     <div class="m-new" style="width:${pn}%"></div>
@@ -5763,7 +6027,7 @@ function mondrianStrip(c){
 
 function formsHtml(e){
   if(!Array.isArray(e.f) || !e.f.length) return '';
-  return `<div class="section"><div class="sec-h">Forms</div>` + e.f.map(p=>`<div class="frow"><b>${esc(p[0])}</b> ${esc(p[1])}</div>`).join('') + `</div>`;
+  return `<div class="section"><div class="sec-h">${T('Forms')}</div>` + e.f.map(p=>`<div class="frow"><b>${esc(T(p[0]))}</b> ${esc(p[1])}</div>`).join('') + `</div>`;
 }
 
 /* Find a deck index for a Dutch word (prefers an entry that has a meaning) */
@@ -5789,7 +6053,7 @@ function relRow(word, kind){
   const mean = relatedMeaning(word);
   const label = kind==='syn' ? '=' : '&#8800;';
   const cls = kind==='syn' ? 'rel-syn' : 'rel-ant';
-  const meanHtml = mean ? `<span class="rel-m">${esc(mean)}</span>` : '';
+  const meanHtml = mean ? `<span class="rel-m">${esc(ct(mean))}</span>` : '';
   if(idx>=0){
     return `<div class="rel ${cls}" onclick="hap();openWord(${idx},true)"><span class="rel-w">${label} ${esc(word)}</span>${meanHtml}<span class="rel-go">&#8250;</span></div>`;
   }
@@ -5801,17 +6065,17 @@ function synAntHtml(e){
   if(!syn.length && !ant.length) return '';
   let out = '';
   if(syn.length){
-    out += `<div class="section"><div class="sec-h">Synonyms</div>` + syn.map(s=>relRow(s,'syn')).join('') + `</div>`;
+    out += `<div class="section"><div class="sec-h">${T('Synonyms')}</div>` + syn.map(s=>relRow(s,'syn')).join('') + `</div>`;
   }
   if(ant.length){
-    out += `<div class="section"><div class="sec-h">Antonyms</div>` + ant.map(s=>relRow(s,'ant')).join('') + `</div>`;
+    out += `<div class="section"><div class="sec-h">${T('Antonyms')}</div>` + ant.map(s=>relRow(s,'ant')).join('') + `</div>`;
   }
   return out;
 }
 function examplesHtml(e){
   if(!e.ex || !e.ex.length) return '';
-  return `<div class="section"><div class="sec-h">Examples</div>` +
-    e.ex.map(sn=>`<div class="sentence">${esc(sn[0])}<em>${esc(sn[1])}</em></div>`).join('') + `</div>`;
+  return `<div class="section"><div class="sec-h">${T('Examples')}</div>` +
+    e.ex.map(sn=>`<div class="sentence">${esc(sn[0])}<em>${esc(ct(sn[1]))}</em></div>`).join('') + `</div>`;
 }
 /* Legacy chip view kept for compact contexts */
 function chipsHtml(e){
@@ -5841,7 +6105,7 @@ function hap(ms){ try{ if(navigator.vibrate) navigator.vibrate(ms||10); }catch(e
 
 /* Pronunciation via the browser's Dutch text-to-speech voice (offline, no deps). */
 const SPK_SVG='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 5V4L8 9H4z" fill="currentColor"/><path d="M15.5 8.5c1.6 1.2 1.6 5.8 0 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M18 6c3 2.2 3 9.8 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
-function spkBtn(idx){ return `<button class="spk" title="Hear pronunciation in Dutch" aria-label="Hear pronunciation in Dutch" onclick="speak(${idx},event)">${SPK_SVG}</button>`; }
+function spkBtn(idx){ return `<button class="spk" title="${T('Hear pronunciation in Dutch')}" aria-label="${T('Hear pronunciation in Dutch')}" onclick="speak(${idx},event)">${SPK_SVG}</button>`; }
 let _nlVoice=null;
 function _loadNlVoice(){
   try{
@@ -5859,7 +6123,7 @@ function speak(idx, ev){
   hap();
   const word = (deck[idx] && deck[idx].w) || '';
   if(!word) return;
-  if(!('speechSynthesis' in window)){ toast("Pronunciation isn't supported on this device"); return; }
+  if(!('speechSynthesis' in window)){ toast(T("Pronunciation isn't supported on this device")); return; }
   try{
     window.speechSynthesis.cancel();
     document.querySelectorAll('.spk.speaking').forEach(b=>b.classList.remove('speaking'));
@@ -5890,23 +6154,23 @@ function renderWordList(){
     if(filter!=='all' && s!==filter) continue;
     if(posFilter!=='all' && posOf(e)!==posFilter) continue;
     if(srcFilter!=='all' && !inSource(e, srcFilter)) continue;
-    if(q && !(e.w.toLowerCase().includes(q) || (e.m||'').toLowerCase().includes(q))) continue;
+    if(q && !(e.w.toLowerCase().includes(q) || (e.m||'').toLowerCase().includes(q) || (CT && ct(e.m||'').toLowerCase().includes(q)))) continue;
     list.push(i);
   }
   const shown = list.slice(0, listLimit);
   listEl.innerHTML = shown.map(i=>{
     const e = deck[i]; const s = progress[e.id]||'new';
-    const meaning = (e.rich || e.hasMeaning) ? esc(e.m) : (e.books&&e.books.length ? 'tap to open' : `#${e.rank} &#183; tap to open`);
-    const pos = posOf(e) ? `<span class="wpos">${esc(posOf(e))}</span>` : '';
+    const meaning = (e.rich || e.hasMeaning) ? esc(ct(e.m)) : (e.books&&e.books.length ? T('tap to open') : `#${e.rank} &#183; ${T('tap to open')}`);
+    const pos = posOf(e) ? `<span class="wpos">${esc(T(posOf(e)))}</span>` : '';
     const badge = (e.srcTags||[]).filter(t=>t!=='general').map(t=>`<span class="srcbadge sb-${t}">${t==='actie'?'A':'G'}</span>`).join('');
     return `<div class="wrow" onclick="hap();openWord(${i})">
         <div><div class="nl">${e.a?esc(e.a)+' ':''}${esc(e.w)} ${pos}${badge}${spkBtn(i)}</div><div class="en">${meaning}</div></div>
-        <div class="dot ${s}" title="${s}"></div>
+        <div class="dot ${s}" title="${T(s)}"></div>
       </div>`;
-  }).join('') || '<div class="empty">No words match.</div>';
+  }).join('') || `<div class="empty">${T('No words match.')}</div>`;
   moreEl.innerHTML = list.length > listLimit
-    ? `<button class="loadmore" onclick="hap();listLimit+=300;renderWordList();">Show more (${list.length - listLimit} remaining)</button>`
-    : `<div class="deckinfo">${list.length} word${list.length===1?'':'s'}</div>`;
+    ? `<button class="loadmore" onclick="hap();listLimit+=300;renderWordList();">${T('Show more ({n} remaining)', {n:list.length - listLimit})}</button>`
+    : `<div class="deckinfo">${list.length===1 ? T('1 word') : T('{n} words', {n:list.length})}</div>`;
 }
 
 /* Mark status from the Words detail card; stay on the card so you can keep reading */
@@ -5940,55 +6204,55 @@ function render(){
     // Source filter bar — only if book sources are loaded
     const srcBar = srcFilterOpts().length>2 ? `<div class="srcfilters posfilters posscroll learn-pos">${srcFilterButtons(learnSrc,'setLearnSrc')}</div>` : '';
     // Shuffle toggle — off = frequency order (default), on = strategic mix of new words
-    const shuffleBar = `<div class="posfilters learn-pos shuffle-bar"><button class="shuffle-btn${learnShuffle?' active':''}" aria-pressed="${learnShuffle}" onclick="toggleShuffle()">&#128256; Shuffle ${learnShuffle?'On':'Off'}</button></div>`;
+    const shuffleBar = `<div class="posfilters learn-pos shuffle-bar"><button class="shuffle-btn${learnShuffle?' active':''}" aria-pressed="${learnShuffle}" onclick="toggleShuffle()">&#128256; ${learnShuffle?T('Shuffle On'):T('Shuffle Off')}</button></div>`;
     if(!queue.length){
-      main.innerHTML = shuffleBar + posBar + srcBar + `<div class="empty">No words left in this round with these filters.<br>Try “All”.</div>`;
+      main.innerHTML = shuffleBar + posBar + srcBar + `<div class="empty">${T('No words left in this round with these filters.')}<br>${T('Try “All”.')}</div>`;
       return;
     }
     const e = deck[queue[qPos]];
     const status = progress[e.id] || 'new';
-    const rankTxt = e.rank ? `#${e.rank} most frequent` : (e.books&&e.books.length ? bookTag(e) : 'curated extra');
+    const rankTxt = e.rank ? T('#{n} most frequent', {n:e.rank}) : (e.books&&e.books.length ? bookTag(e) : T('curated extra'));
     let back;
     if(e.rich){
       back = `
-        <div class="word-en">${esc(e.m)}</div>
+        <div class="word-en">${esc(ct(e.m))}</div>
         ${formsHtml(e)}
         ${examplesHtml(e)}
         ${synAntHtml(e)}`;
     } else if(e.hasMeaning){
       back = `
-        <div class="word-en">${esc(e.m)}</div>
+        <div class="word-en">${esc(ct(e.m))}</div>
         ${synAntHtml(e)}
-        <div class="word-hint" style="margin-top:14px">More examples and grammar forms are being added.</div>`;
+        <div class="word-hint" style="margin-top:14px">${T('More examples and grammar forms are being added.')}</div>`;
     } else if(enrichInFlight){
-      back = `<div class="word-en">Preparing this card&#8230;</div>`;
+      back = `<div class="word-en">${T('Preparing this card…')}</div>`;
     } else {
-      back = `<div class="word-en">Not translated yet</div>`;
+      back = `<div class="word-en">${T('Not translated yet')}</div>`;
     }
-    const dailyLine = plan ? `<div class="deckinfo">Today: <b>${todayCount()}</b>${plan.perDay?` / ${plan.perDay}`:''} learned &#183; streak <b>${currentStreak()}</b> &#128293;</div>` : '';
+    const dailyLine = plan ? `<div class="deckinfo">${T('Today: {n} learned · streak {s}', {n:`<b>${todayCount()}</b>${plan.perDay?` / ${plan.perDay}`:''}`, s:`<b>${currentStreak()}</b>`})} &#128293;</div>` : '';
     main.innerHTML = shuffleBar + posBar + srcBar + `
       ${mondrianStrip(c)}
-      <div class="card" tabindex="0" role="button" aria-label="Flip card" onclick="flip()">
-        <div class="card-tag"><span>${esc(e.t||'word')}${e.a?` &#183; ${esc(e.a)}`:''}</span><span>${status.toUpperCase()}</span></div>
+      <div class="card" tabindex="0" role="button" aria-label="${T('Flip card')}" onclick="flip()">
+        <div class="card-tag"><span>${esc(T(e.t||'word'))}${e.a?` &#183; ${esc(e.a)}`:''}</span><span>${T(status).toUpperCase()}</span></div>
         <div class="card-body">
           <div class="word-nl">${esc(e.w)}${spkBtn(queue[qPos])}</div>
           <div class="rankline">${rankTxt}</div>
           ${e.books&&e.books.length?`<div class="rankline booktag">&#128218; ${bookTag(e)}</div>`:''}
-          ${flipped ? back : `<div class="word-hint">Tap to reveal meaning, forms, examples &amp; related words</div>`}
+          ${flipped ? back : `<div class="word-hint">${T('Tap to reveal meaning, forms, examples &amp; related words')}</div>`}
         </div>
       </div>
       ${flipped ? `
       <div class="actions">
-        <button class="btn-again" onclick="event&&event.stopPropagation();hap();mark('again')">&#10007; Again</button>
-        <button class="btn-learning" onclick="event&&event.stopPropagation();hap();mark('learning')">&#8776; Learning</button>
-        <button class="btn-know" onclick="event&&event.stopPropagation();hap();mark('learned')">&#10003; Know it</button>
+        <button class="btn-again" onclick="event&&event.stopPropagation();hap();mark('again')">&#10007; ${T('Again')}</button>
+        <button class="btn-learning" onclick="event&&event.stopPropagation();hap();mark('learning')">&#8776; ${T('Learning')}</button>
+        <button class="btn-know" onclick="event&&event.stopPropagation();hap();mark('learned')">&#10003; ${T('Know it')}</button>
       </div>
-      <div class="actions"><button class="btn-skip" onclick="event&&event.stopPropagation();skipCard()">&#8631; Skip for now</button></div>` : `
+      <div class="actions"><button class="btn-skip" onclick="event&&event.stopPropagation();skipCard()">&#8631; ${T('Skip for now')}</button></div>` : `
       <div class="actions">
-        <button onclick="flip()">Show answer</button>
-        <button class="btn-skip" onclick="event&&event.stopPropagation();skipCard()">&#8631; Skip</button>
+        <button onclick="flip()">${T('Show answer')}</button>
+        <button class="btn-skip" onclick="event&&event.stopPropagation();skipCard()">&#8631; ${T('Skip')}</button>
       </div>`}
-      <div class="deckinfo">Card ${qPos+1} of ${queue.length} in this round &#183; ${c.total} words in deck</div>
+      <div class="deckinfo">${T('Card {a} of {b} in this round · {c} words in deck', {a:qPos+1, b:queue.length, c:c.total})}</div>
       ${dailyLine}
     `;
   }
@@ -5998,37 +6262,37 @@ function render(){
     if(wordView !== null && deck[wordView]){
       const e = deck[wordView];
       const s = progress[e.id] || 'new';
-      const rankTxt = e.rank ? `#${e.rank} most frequent` : (e.books&&e.books.length ? 'textbook word' : 'curated extra');
+      const rankTxt = e.rank ? T('#{n} most frequent', {n:e.rank}) : (e.books&&e.books.length ? T('textbook word') : T('curated extra'));
       const bookLine = e.books&&e.books.length ? `<div class="rankline booktag">&#128218; ${bookTag(e)}</div>` : '';
       let body;
       if(e.rich || e.hasMeaning){
         body = `
-          <div class="word-en">${esc(e.m || '')}</div>
+          <div class="word-en">${esc(ct(e.m || ''))}</div>
           <div class="rankline">${rankTxt}</div>
           ${bookLine}
           ${formsHtml(e)}
           ${examplesHtml(e)}
           ${synAntHtml(e)}
-          ${(!e.rich && e.hasMeaning && !(e.ex&&e.ex.length)) ? `<div class="word-hint" style="margin-top:14px">More examples and grammar forms are being added.</div>` : ''}`;
+          ${(!e.rich && e.hasMeaning && !(e.ex&&e.ex.length)) ? `<div class="word-hint" style="margin-top:14px">${T('More examples and grammar forms are being added.')}</div>` : ''}`;
       } else if(enrichInFlight){
-        body = `<div class="word-en">Preparing&#8230;</div><div class="rankline">${rankTxt}</div>${bookLine}`;
+        body = `<div class="word-en">${T('Preparing…')}</div><div class="rankline">${rankTxt}</div>${bookLine}`;
       } else {
-        body = `<div class="word-en">Not translated yet</div><div class="rankline">${rankTxt}</div>${bookLine}<div class="word-hint" style="margin-top:12px">Meaning will be added when you add an API key, or from the app online.</div>`;
+        body = `<div class="word-en">${T('Not translated yet')}</div><div class="rankline">${rankTxt}</div>${bookLine}<div class="word-hint" style="margin-top:12px">${T('Meaning will be added when you add an API key, or from the app online.')}</div>`;
       }
-      const backLabel = wordViewStack.length ? '&#8592; Back' : '&#8592; Back to list';
+      const backLabel = wordViewStack.length ? `&#8592; ${T('Back')}` : `&#8592; ${T('Back to list')}`;
       main.innerHTML = `
         <button class="loadmore" style="margin-top:0;margin-bottom:14px" onclick="backFromWord()">${backLabel}</button>
         <div class="card">
-          <div class="card-tag"><span>${esc(e.t||'word')}${e.a?` &#183; ${esc(e.a)}`:''}</span><span>${s.toUpperCase()}</span></div>
+          <div class="card-tag"><span>${esc(T(e.t||'word'))}${e.a?` &#183; ${esc(e.a)}`:''}</span><span>${T(s).toUpperCase()}</span></div>
           <div class="card-body">
             <div class="word-nl">${esc(e.w)}${spkBtn(wordView)}</div>
             ${body}
           </div>
         </div>
         <div class="actions">
-          <button class="btn-again" onclick="hap();setWordStatus(${wordView},'again')">&#10007; Again</button>
-          <button class="btn-learning" onclick="hap();setWordStatus(${wordView},'learning')">&#8776; Learning</button>
-          <button class="btn-know" onclick="hap();setWordStatus(${wordView},'learned')">&#10003; Know it</button>
+          <button class="btn-again" onclick="hap();setWordStatus(${wordView},'again')">&#10007; ${T('Again')}</button>
+          <button class="btn-learning" onclick="hap();setWordStatus(${wordView},'learning')">&#8776; ${T('Learning')}</button>
+          <button class="btn-know" onclick="hap();setWordStatus(${wordView},'learned')">&#10003; ${T('Know it')}</button>
         </div>`;
       return;
     }
@@ -6038,9 +6302,9 @@ function render(){
     const srcOpts = srcFilterOpts();
     const srcButtons = srcFilterButtons(srcFilter,'setSrcFilter');
     main.innerHTML = `
-      <input type="search" id="wordSearch" placeholder="Search Dutch or English&#8230;" autocomplete="off" value="${esc(search)}">
+      <input type="search" id="wordSearch" placeholder="${T('Search Dutch or English…')}" autocomplete="off" value="${esc(search)}">
       <div class="filters">
-        ${['all','new','learning','learned'].map(f=>`<button data-f="${f}" class="${filter===f?'active':''}" onclick="hap();setFilter('${f}')">${f}</button>`).join('')}
+        ${['all','new','learning','learned'].map(f=>`<button data-f="${f}" class="${filter===f?'active':''}" onclick="hap();setFilter('${f}')">${T(f)}</button>`).join('')}
       </div>
       ${srcOpts.length>2?`<div class="srcfilters posfilters posscroll">${srcButtons}</div>`:''}
       <div class="posfilters posscroll">${posButtons}</div>
@@ -6068,42 +6332,42 @@ function render(){
       if(plan.perDay>0){
         const days = Math.ceil(remainingWords / plan.perDay);
         const eta = new Date(Date.now() + days*86400000);
-        etaLine = `At ${plan.perDay}/day you'll reach 5,000 in about <b>${days}</b> days (~${eta.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'})}).`;
+        etaLine = T("At {n}/day you'll reach 5,000 in about {d} days (~{date}).", {n:plan.perDay, d:`<b>${days}</b>`, date:eta.toLocaleDateString(langLocale(),{month:'short',day:'numeric',year:'numeric'})});
       }
       if(plan.endDate){
         const daysLeft = Math.max(1, daysBetween(todayStr(), plan.endDate));
         const need = Math.ceil(remainingWords / daysLeft);
-        etaLine = `To hit 5,000 by ${new Date(plan.endDate).toLocaleDateString(undefined,{month:'short',day:'numeric'})}, learn about <b>${need}</b>/day (${daysLeft} days left).`;
+        etaLine = T('To hit 5,000 by {date}, learn about {n}/day ({d} days left).', {date:new Date(plan.endDate).toLocaleDateString(langLocale(),{month:'short',day:'numeric'}), n:`<b>${need}</b>`, d:daysLeft});
       }
       const done = tc; const goalN = plan.perDay || (plan.endDate ? Math.ceil((GOAL-c.learned)/Math.max(1,daysBetween(todayStr(),plan.endDate))) : 10);
       const barPct = Math.min(100, Math.round(done/goalN*100));
       planBox = `
       <div class="genbox plan-box">
-        <h3>Today's plan</h3>
-        <div class="daily-head"><div><div class="daily-num">${done} <span>/ ${goalN}</span></div><div class="lbl">words today</div></div>
-          <div class="streak-badge">&#128293; ${st}<small>day streak</small></div></div>
+        <h3>${T("Today's plan")}</h3>
+        <div class="daily-head"><div><div class="daily-num">${done} <span>/ ${goalN}</span></div><div class="lbl">${T('words today')}</div></div>
+          <div class="streak-badge">&#128293; ${st}<small>${T('day streak')}</small></div></div>
         <div class="progbar"><div class="progbar-fill" style="width:${barPct}%"></div></div>
         <p style="margin-top:12px">${etaLine}</p>
-        ${done>=goalN?`<div class="keyok" style="margin-top:8px">&#10003; Daily goal complete &#8212; nice work!</div>`:`<button class="genbtn" style="margin-top:10px" onclick="hap();setTab('learn')">Study now &#8594;</button>`}
+        ${done>=goalN?`<div class="keyok" style="margin-top:8px">&#10003; ${T('Daily goal complete — nice work!')}</div>`:`<button class="genbtn" style="margin-top:10px" onclick="hap();setTab('learn')">${T('Study now')} &#8594;</button>`}
         <div class="rowbtns" style="margin-top:10px">
-          <button onclick="hap();editPlan()">Edit plan</button>
-          <button onclick="hap();clearPlan()">Remove</button>
+          <button onclick="hap();editPlan()">${T('Edit plan')}</button>
+          <button onclick="hap();clearPlan()">${T('Remove')}</button>
         </div>
-        ${('Notification' in window) ? `<button class="loadmore" style="margin-top:10px" onclick="enableReminders()">${remindOn?'&#10003; Daily reminders on':'&#128276; Turn on daily reminders'}</button>` : ''}
+        ${('Notification' in window) ? `<button class="loadmore" style="margin-top:10px" onclick="enableReminders()">${remindOn?'&#10003; '+T('Daily reminders on'):'&#128276; '+T('Turn on daily reminders')}</button>` : ''}
       </div>`;
     } else {
       planBox = `
       <div class="genbox plan-box">
-        <h3>Set a daily goal</h3>
-        <p>Pick how many words to learn per day (or a target date), and the app tracks your streak and shows exactly how many to do each day.</p>
+        <h3>${T('Set a daily goal')}</h3>
+        <p>${T('Pick how many words to learn per day (or a target date), and the app tracks your streak and shows exactly how many to do each day.')}</p>
         <div class="plan-form">
-          <label>Words per day</label>
+          <label>${T('Words per day')}</label>
           <div class="chiprow">
             ${[5,10,15,20,30].map(n=>`<button class="planchip" onclick="hap();savePlan(${n},null)">${n}</button>`).join('')}
           </div>
-          <label style="margin-top:12px">Or reach 5,000 by a date</label>
+          <label style="margin-top:12px">${T('Or reach 5,000 by a date')}</label>
           <input type="date" id="planDate" min="${todayStr()}">
-          <button class="genbtn" style="margin-top:10px" onclick="hap();const d=document.getElementById('planDate').value; if(d) savePlan(0,d); else toast('Pick a date or tap a number above');">Set target date</button>
+          <button class="genbtn" style="margin-top:10px" onclick="hap();const d=document.getElementById('planDate').value; if(d) savePlan(0,d); else toast(T('Pick a date or tap a number above'));">${T('Set target date')}</button>
         </div>
       </div>`;
     }
@@ -6116,7 +6380,7 @@ function render(){
       const ds = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
       const n = hist[ds]||0;
       const lvl = n===0?0:n<5?1:n<10?2:3;
-      histCells += `<div class="histcell lvl${lvl}" title="${ds}: ${n} words"></div>`;
+      histCells += `<div class="histcell lvl${lvl}" title="${ds}: ${n===1?T('1 word'):T('{n} words',{n:n})}"></div>`;
     }
 
     // POS breakdown
@@ -6125,7 +6389,7 @@ function render(){
     const posRows = posOrder.filter(p=>cbp[p]).map(p=>{
       const d=cbp[p]; const pc=Math.round(d.learned/d.total*100);
       return `<div class="posrow" onclick="hap();posFilter='${p}';setTab('words')">
-        <span class="posname">${POS_LABELS[p]||p}</span>
+        <span class="posname">${T(POS_LABELS[p]||p)}</span>
         <span class="posbar"><span class="posbar-fill" style="width:${pc}%"></span></span>
         <span class="poscount">${d.learned}/${d.total}</span></div>`;
     }).join('');
@@ -6133,51 +6397,64 @@ function render(){
     main.innerHTML = `
       ${mondrianStrip(c)}
       <div class="stats">
-        <div class="stat"><div class="num c-blue">${c.learned}</div><div class="lbl">Learned</div></div>
-        <div class="stat"><div class="num c-yellow">${c.learning}</div><div class="lbl">Still learning</div></div>
-        <div class="stat"><div class="num">${c.fresh}</div><div class="lbl">Not started</div></div>
-        <div class="stat"><div class="num c-red">${pct}%</div><div class="lbl">Of 5,000 goal</div></div>
+        <div class="stat"><div class="num c-blue">${c.learned}</div><div class="lbl">${T('Learned')}</div></div>
+        <div class="stat"><div class="num c-yellow">${c.learning}</div><div class="lbl">${T('Still learning')}</div></div>
+        <div class="stat"><div class="num">${c.fresh}</div><div class="lbl">${T('Not started')}</div></div>
+        <div class="stat"><div class="num c-red">${pct}%</div><div class="lbl">${T('Of 5,000 goal')}</div></div>
       </div>
 
       ${planBox}
 
       <div class="genbox">
-        <h3>Last 14 days</h3>
+        <h3>${T('Last 14 days')}</h3>
         <div class="histgrid">${histCells}</div>
-        <div class="note">Each square is a day; darker means more words learned. Learn at least one word a day to keep your streak alive.</div>
+        <div class="note">${T('Each square is a day; darker means more words learned. Learn at least one word a day to keep your streak alive.')}</div>
       </div>
 
       <div class="genbox">
-        <h3>By word type</h3>
+        <h3>${T('By word type')}</h3>
         <div class="posbreak">${posRows}</div>
-        <div class="note">Tap a type to study or browse just those words.</div>
+        <div class="note">${T('Tap a type to study or browse just those words.')}</div>
       </div>
 
       <div class="genbox">
-        <h3>Your deck</h3>
-        <p><b>${deck.length}</b> words total, all available offline. <b>${withMeaning}</b> have English meanings and <b>${full}</b> also have example sentences, grammar forms and synonyms.</p>
-        ${bookChapters('actie').length?`<p style="margin-top:6px">&#128218; <b>Nederlands in Actie</b>: ${deck.filter(e=>(e.srcTags||[]).includes('actie')).length} words across ${bookChapters('actie').length} chapters &#8212; filter by source in Learn or Words to study just these.</p>`:''}
-        ${bookChapters('gang').length?`<p style="margin-top:6px">&#128218; <b>Nederlands in Gang</b>: ${deck.filter(e=>(e.srcTags||[]).includes('gang')).length} words.</p>`:''}
-        <div class="note">Everything works with no internet connection once the app has loaded.</div>
+        <h3>${T('Your deck')}</h3>
+        <p>${T('{d} words total, all available offline. {m} have English meanings and {f} also have example sentences, grammar forms and synonyms.', {d:`<b>${deck.length}</b>`, m:`<b>${withMeaning}</b>`, f:`<b>${full}</b>`})}</p>
+        ${bookChapters('actie').length?`<p style="margin-top:6px">&#128218; <b>Nederlands in Actie</b>: ${T('{n} words across {c} chapters — filter by source in Learn or Words to study just these.', {n:deck.filter(e=>(e.srcTags||[]).includes('actie')).length, c:bookChapters('actie').length})}</p>`:''}
+        ${bookChapters('gang').length?`<p style="margin-top:6px">&#128218; <b>Nederlands in Gang</b>: ${T('{n} words', {n:deck.filter(e=>(e.srcTags||[]).includes('gang')).length})}.</p>`:''}
+        <div class="note">${T('Everything works with no internet connection once the app has loaded.')}</div>
       </div>
 
       <div class="genbox">
-        <h3>Backup</h3>
-        <p>Your progress lives in this browser. Export a backup before switching phones, then import it there.</p>
+        <h3>${T('Backup')}</h3>
+        <p>${T('Your progress lives in this browser. Export a backup before switching phones, then import it there.')}</p>
         <div class="rowbtns">
-          <button onclick="hap();exportData()">Export</button>
-          <button onclick="hap();importData()">Import</button>
+          <button onclick="hap();exportData()">${T('Export')}</button>
+          <button onclick="hap();importData()">${T('Import')}</button>
         </div>
       </div>
 
       <div class="genbox">
-        <h3>Theme</h3>
-        <p>Change how the whole app looks. Your words and progress stay exactly the same.</p>
+        <h3>${T('Theme')}</h3>
+        <p>${T('Change how the whole app looks. Your words and progress stay exactly the same.')}</p>
         <div class="themepick">
           ${THEMES.map(t=>`
             <button class="themebtn ${theme===t.id?'active':''}" onclick="setTheme('${t.id}')">
               <span class="swatch">${t.sw.map(c=>`<i style="background:${c}"></i>`).join('')}</span>
-              <span class="tmeta"><span class="tname">${t.name}</span><span class="tdesc">${t.desc}</span></span>
+              <span class="tmeta"><span class="tname">${t.name}</span><span class="tdesc">${T(t.desc)}</span></span>
+              <span class="tcheck">&#10003;</span>
+            </button>`).join('')}
+        </div>
+      </div>
+
+      <div class="genbox">
+        <h3>${T('App language')}</h3>
+        <p>${T('Meanings, example translations and menus switch to your language — the Dutch words stay Dutch.')}</p>
+        <div class="themepick">
+          ${LANGS.map(l=>`
+            <button class="themebtn ${lang===l.id?'active':''}" onclick="setLang('${l.id}')">
+              <span class="langcode">${l.code}</span>
+              <span class="tmeta"><span class="tname">${l.name}</span><span class="tdesc">${l.desc}</span></span>
               <span class="tcheck">&#10003;</span>
             </button>`).join('')}
         </div>
@@ -6188,7 +6465,7 @@ function render(){
 /* ============ OFFLINE (service worker) ============ */
 if('serviceWorker' in navigator){
   const swCode = `
-    const C = 'dutch5k-v50';
+    const C = 'dutch5k-v51';
     self.addEventListener('install', e => { self.skipWaiting(); });
     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
     self.addEventListener('fetch', e => {
