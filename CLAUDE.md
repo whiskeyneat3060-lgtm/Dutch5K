@@ -89,8 +89,8 @@ on modern unfurlers); swap to an absolute URL if a platform needs one.
 ## Storage (client-side, no backend)
 
 `Store` adapter wraps `window.storage` (Claude artifacts) with `localStorage` fallback. Keys:
-`dutch5k-progress`, `-enriched`, `-plan`, `-streak`, `-remind`, `-theme`. Export/Import JSON backup in
-Progress tab. No server; losing localStorage loses progress.
+`dutch5k-progress`, `-enriched`, `-plan`, `-streak`, `-remind`, `-theme`, `-shuffle`. Export/Import JSON
+backup in Progress tab. No server; losing localStorage loses progress.
 
 ## Features
 
@@ -125,6 +125,15 @@ How it works:
   `"midnight"`), sets `data-theme` before first paint; `init()` re-applies authoritatively. Keep paper hexes
   in that script AND in `applyTheme()`'s `theme-color` line synced with each `--paper` (Midnight `#0d0e15`,
   Sepia `#f3ead6`).
+
+**Shuffle (v49, opt-in):** `🔀 Shuffle Off/On` toggle button above the Learn filters (`toggleShuffle()`,
+`.shuffle-btn`, persisted `dutch5k-shuffle`, default **off**). Off = unchanged behaviour: fresh words in
+corpus-frequency order (most common first). On = *strategic* shuffle, not uniform — frequency-weighted
+randomisation (Efraimidis–Spirakis: key `random^log2(rank+2)`, sort desc) inside `buildQueue()`, so common
+words still tend to surface first but every session/rebuild draws a different varied set; rank-4000 rarities
+don't flood the front. Only affects the *fresh* segment (learning/learned were already shuffled). Composes
+with POS/source filters automatically — filters narrow the pool first, ordering happens after (verified:
+shuffled verb-only rounds work). Toggling rebuilds the queue and clears session skips.
 
 Filters in Learn + Words: **status** (new/learning/learned), **POS** (verb/noun/adj/...), **source**
 (All / General 5K / Gang / Actie). Book words show A/G badges + chapter tags ("Actie H3").
