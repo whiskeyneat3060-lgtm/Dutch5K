@@ -95,7 +95,13 @@ backup in Progress tab. No server; losing localStorage loses progress.
 ## Features
 
 Three tabs: **Learn** (flashcards, flip, Again/Learning/Know-it, Skip), **Words** (search, list, detail),
-**Progress** (stats, daily goal, streak, 14-day history, POS breakdown, backup, theme picker).
+**Overview** (stats, daily goal, streak, 14-day history, POS breakdown, backup, theme picker).
+
+> **Naming (v50):** the third tab is *displayed* as **Overview** (renamed from "Progress" — it holds
+> settings/backup/theme, not just progress). The **internal id stays `progress`** everywhere: `setTab('progress')`,
+> `tab==='progress'`, `id="tabProgress"`, and all `dutch5k-progress*` storage keys are unchanged (renaming them
+> would break saved progress). Only the visible nav button label at `<nav>` changed. This doc mostly still says
+> "Progress tab" for the internal id — read that as the Overview tab.
 
 **Themes (v47 — three different LAYOUTS, not just palettes):** picked from Theme box in Progress. Content
 identical across all three; DOM untouched — each theme is pure CSS scoped to `html[data-theme="<id>"]`,

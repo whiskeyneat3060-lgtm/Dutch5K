@@ -424,7 +424,7 @@
 <nav>
   <button id="tabLearn" class="active" onclick="setTab('learn')">Learn</button>
   <button id="tabWords" onclick="setTab('words')">Words</button>
-  <button id="tabProgress" onclick="setTab('progress')">Progress</button>
+  <button id="tabProgress" onclick="setTab('progress')">Overview</button>
 </nav>
 
 <main id="main"></main>
@@ -6188,7 +6188,7 @@ function render(){
 /* ============ OFFLINE (service worker) ============ */
 if('serviceWorker' in navigator){
   const swCode = `
-    const C = 'dutch5k-v49';
+    const C = 'dutch5k-v50';
     self.addEventListener('install', e => { self.skipWaiting(); });
     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
     self.addEventListener('fetch', e => {
