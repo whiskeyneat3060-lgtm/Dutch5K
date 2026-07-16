@@ -55,6 +55,30 @@ two older schemes; breaking ids silently destroys progress.
 
 Both books are Adi's copies; only vocab lists extracted, no book sentences reproduced.
 
+## App icons & link-share branding (v48)
+
+The app previously had **no icons/manifest** → phones showed a "W" letter tile on the home screen and
+link shares showed no image. Fixed by adding real asset files to `public/` (NOT data URIs — `wrangler.jsonc`
+uses `not_found_handling:"single-page-application"`, so any *referenced* file that doesn't exist returns
+`index.html` with the wrong content-type = broken icon; every icon must be a real file). Social scrapers
+also need a real image URL for `og:image`, not a data URI.
+
+**Logo = Mondrian** (on-brand: white paper, thick black rules, red/blue/yellow blocks — big red top-left,
+blue + yellow in the bottom row). Regenerate all assets with `scratchpad/make_icons.py` (pure Pillow, draws
+rectangles directly — no SVG rasteriser needed; `pip install Pillow`). Files it writes to `public/`:
+`favicon.ico` (16/32/48), `favicon-32.png`, `apple-touch-icon.png` (180, iOS home screen),
+`icon-192.png`, `icon-512.png`, `icon-maskable-512.png` (logo shrunk to 72% on white so Android's circular
+mask never clips it), `og-image.png` (1200×630 share card). Hand-written vector `public/favicon.svg` and
+`public/site.webmanifest` (name/short_name/icons/`display:standalone`) are committed directly.
+
+Wired in `<head>` (after `<title>`): `<link>` icon/apple-touch-icon/manifest + PWA meta
+(`theme-color`, `apple-mobile-web-app-*`, `application-name`) + Open Graph/Twitter tags pointing at
+`/og-image.png`. The **static `<meta name="theme-color">`** is now what `applyTheme()` finds & updates per
+theme (before v48 the JS created it on the fly). og:image uses a **relative** URL (resolves against page URL
+on modern unfurlers); swap to an absolute URL if a platform needs one. **Editing the logo:** change the
+`BLOCKS`/`VLINES`/`HLINES` composition in `make_icons.py`, rerun it, mirror the same rects in `favicon.svg`,
+bump the SW cache, redeploy.
+
 ## Storage (client-side, no backend)
 
 `Store` adapter wraps `window.storage` (Claude artifacts) with `localStorage` fallback. Keys:

@@ -4,6 +4,37 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dutch 5K &#8212; Vocab Trainer</title>
+<meta name="description" content="Learn the 5,000 most common Dutch words &#8212; flashcards, examples, offline.">
+<!-- App icons: favicon (browser tab), apple-touch-icon (iOS home screen),
+     manifest icons (Android home screen). Real files in /public — the Worker
+     serves them; referenced files must exist or SPA fallback returns the HTML. -->
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<!-- PWA / add-to-home-screen -->
+<meta name="theme-color" content="#ffffff">
+<meta name="application-name" content="Dutch 5K">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Dutch 5K">
+<!-- Link-share preview (Open Graph + Twitter). Relative image URL resolves
+     against the page URL on modern unfurlers; swap to an absolute URL if a
+     platform needs one. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Dutch 5K">
+<meta property="og:title" content="Dutch 5K &#8212; Vocab Trainer">
+<meta property="og:description" content="Learn the 5,000 most common Dutch words &#8212; flashcards, examples, offline.">
+<meta property="og:image" content="/og-image.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Dutch 5K — Mondrian-style vocab trainer">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Dutch 5K &#8212; Vocab Trainer">
+<meta name="twitter:description" content="Learn the 5,000 most common Dutch words &#8212; flashcards, examples, offline.">
+<meta name="twitter:image" content="/og-image.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -6128,7 +6159,7 @@ function render(){
 /* ============ OFFLINE (service worker) ============ */
 if('serviceWorker' in navigator){
   const swCode = `
-    const C = 'dutch5k-v47';
+    const C = 'dutch5k-v48';
     self.addEventListener('install', e => { self.skipWaiting(); });
     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
     self.addEventListener('fetch', e => {
