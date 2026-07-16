@@ -1,110 +1,95 @@
 #!/usr/bin/env python3
-"""Generate Mondrian-style app icons + share image for Dutch 5K.
-On-brand: white paper, thick black rules, red/blue/yellow blocks (see CLAUDE.md)."""
+"""Generate app icons + share image for Dutch 5K from the circular badge art
+(black ring, red/white/blue tulip-book, "DUTCH / VOCAB TRAINER / 5000 WORDS").
+Used ONLY for the browser tab / home-screen icon / link-share card — never
+inside the app UI. We crop the circular badge and composite it onto white so
+every tile is a clean white square with the ringed badge centred."""
 from PIL import Image, ImageDraw, ImageFont
-import os
+import os, io, base64
 
-OUT = os.path.join(os.path.dirname(__file__), "..", "public")
+HERE = os.path.dirname(__file__)
+OUT = os.path.join(HERE, "..", "public")
+SRC = "/root/.claude/uploads/2acb7ccb-aa59-5ad0-a9d9-445b4cf4cc16/8a538840-1784217318076.png"
 
-INK   = (17, 17, 17)     # #111
-PAPER = (255, 255, 255)
-RED   = (221, 1, 0)      # #DD0100
-BLUE  = (34, 80, 149)    # #225095
-YELLOW= (250, 201, 1)    # #FAC901
+# Detected: black ring centred at (511,284), outer radius ~207.
+CX, CY, R = 511, 284, 210
+WHITE = (255, 255, 255)
 
-# Mondrian composition in relative (0..1) coords: coloured blocks over a white
-# ground, then thick black rules drawn on top of the seams + outer frame.
-BLOCKS = [
-    (0.00, 0.00, 0.58, 0.60, RED),      # big red, top-left
-    (0.00, 0.60, 0.32, 1.00, BLUE),     # blue, bottom-left cell
-    (0.76, 0.60, 1.00, 1.00, YELLOW),   # yellow, bottom-right cell
-]
-# Connected grid: a full cross + two dividers in the bottom row, so every rule
-# meets another one (proper Mondrian, no floating segments).
-VLINES = [(0.58, 0.00, 1.00), (0.32, 0.60, 1.00), (0.76, 0.60, 1.00)]
-HLINES = [(0.60, 0.00, 1.00)]
+src = Image.open(SRC).convert("RGB")
 
+def badge_disk(out=1024):
+    """Circular crop of the badge (transparent outside the ring), anti-aliased."""
+    box = src.crop((CX - R, CY - R, CX + R, CY + R)).resize((out, out), Image.LANCZOS)
+    m = Image.new("L", (out * 4, out * 4), 0)
+    ImageDraw.Draw(m).ellipse([0, 0, out * 4 - 1, out * 4 - 1], fill=255)
+    m = m.resize((out, out), Image.LANCZOS)
+    disk = Image.new("RGBA", (out, out), (0, 0, 0, 0))
+    disk.paste(box, (0, 0), m)
+    return disk
 
-def draw_logo(size, line_frac=0.05, border=True):
-    img = Image.new("RGB", (size, size), PAPER)
-    d = ImageDraw.Draw(img)
-    lw = max(2, round(size * line_frac))
+DISK = badge_disk(1024)
 
-    def px(v): return round(v * size)
-
-    for x0, y0, x1, y1, col in BLOCKS:
-        d.rectangle([px(x0), px(y0), px(x1), px(y1)], fill=col)
-
-    for pos, a, b in VLINES:
-        d.rectangle([px(pos) - lw // 2, px(a), px(pos) + lw - lw // 2, px(b)], fill=INK)
-    for pos, a, b in HLINES:
-        d.rectangle([px(a), px(pos) - lw // 2, px(b), px(pos) + lw - lw // 2], fill=INK)
-
-    if border:
-        d.rectangle([0, 0, size - 1, size - 1], outline=INK, width=lw)
+def icon(size, scale=0.94):
+    img = Image.new("RGB", (size, size), WHITE)
+    inner = round(size * scale)
+    d = DISK.resize((inner, inner), Image.LANCZOS)
+    off = (size - inner) // 2
+    img.paste(d, (off, off), d)
     return img
 
-
 def save(img, name):
-    p = os.path.join(OUT, name)
-    img.save(p)
-    print("wrote", os.path.relpath(p))
+    img.save(os.path.join(OUT, name)); print("wrote", name)
 
+save(icon(512), "icon-512.png")
+save(icon(192), "icon-192.png")
+save(icon(180), "apple-touch-icon.png")
+save(icon(32), "favicon-32.png")
+# maskable: shrink to ~78% so Android's circular mask never clips the ring/text
+save(icon(512, 0.78), "icon-maskable-512.png")
 
-# Standard icons (with frame, tight)
-save(draw_logo(512), "icon-512.png")
-save(draw_logo(192), "icon-192.png")
-save(draw_logo(180), "apple-touch-icon.png")
-save(draw_logo(32), "favicon-32.png")
-
-# Maskable icon: safe zone — shrink logo to ~72% centred on white so Android's
-# circular/rounded mask never clips the composition.
-def maskable(size=512, scale=0.72):
-    bg = Image.new("RGB", (size, size), PAPER)
-    inner = round(size * scale)
-    logo = draw_logo(inner)
-    off = (size - inner) // 2
-    bg.paste(logo, (off, off))
-    return bg
-
-save(maskable(), "icon-maskable-512.png")
-
-# favicon.ico (multi-size)
-ico = draw_logo(64, line_frac=0.1)
+ico = icon(64, 0.96)
 ico.save(os.path.join(OUT, "favicon.ico"), sizes=[(16, 16), (32, 32), (48, 48)])
-print("wrote", "favicon.ico")
+print("wrote favicon.ico")
 
-# ---- Share image (Open Graph / Twitter) 1200x630 ----
+# ---- Share card 1200x630: badge left, tagline right ----
+def font(sz):
+    for c in ["/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"]:
+        if os.path.exists(c): return ImageFont.truetype(c, sz)
+    return ImageFont.load_default()
+
 def share():
     W, H = 1200, 630
-    img = Image.new("RGB", (W, H), PAPER)
+    img = Image.new("RGB", (W, H), WHITE)
     d = ImageDraw.Draw(img)
-    logo_size = 400
-    lx, ly = 80, (H - logo_size) // 2
-    img.paste(draw_logo(logo_size), (lx, ly))
-    # thick black divider rule
-    dx = lx + logo_size + 60
-    d.rectangle([dx, 120, dx + 9, H - 120], fill=INK)
+    bs = 460
+    img.paste(DISK.resize((bs, bs), Image.LANCZOS), (60, (H - bs) // 2), DISK.resize((bs, bs), Image.LANCZOS))
+    tx = 580
+    maxw = W - tx - 60
+    INK = (20, 20, 20)
+    RED = (196, 30, 40)
+    spec = [("Learn Dutch,", 68, INK), ("5,000 words at a time", 46, RED),
+            ("flashcards · examples · offline", 29, (110, 110, 110))]
 
-    def font(sz):
-        for cand in ["/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-                     "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"]:
-            if os.path.exists(cand):
-                return ImageFont.truetype(cand, sz)
-        return ImageFont.load_default()
-
-    tx = dx + 55
-    lines = [("Dutch 5K", 84, INK), ("Vocab Trainer", 46, RED),
-             ("5,000 words · flashcards · offline", 27, (90, 90, 90))]
-    # vertically centre the text block
-    gaps = [28, 26]
-    heights = [d.textbbox((0, 0), t, font=font(s))[3] for t, s, _ in lines]
-    total = sum(heights) + sum(gaps)
-    y = (H - total) // 2
-    for i, (t, s, col) in enumerate(lines):
-        d.text((tx, y), t, font=font(s), fill=col)
-        y += heights[i] + (gaps[i] if i < len(gaps) else 0)
+    def fit(t, sz):
+        while sz > 10 and d.textlength(t, font=font(sz)) > maxw:
+            sz -= 2
+        return font(sz)
+    fonts = [fit(t, s) for t, s, _ in spec]
+    gaps = [16, 30]
+    hs = [d.textbbox((0, 0), t, font=fn)[3] for (t, _, _), fn in zip(spec, fonts)]
+    y = (H - sum(hs) - sum(gaps)) // 2
+    for i, ((t, _, col), fn) in enumerate(zip(spec, fonts)):
+        d.text((tx, y), t, font=fn, fill=col)
+        y += hs[i] + (gaps[i] if i < len(gaps) else 0)
     return img
 
 save(share(), "og-image.png")
+
+# vector favicon: embed the disk PNG as a data URI
+buf = io.BytesIO(); icon(180, 0.96).save(buf, "PNG")
+b64 = base64.b64encode(buf.getvalue()).decode()
+with open(os.path.join(OUT, "favicon.svg"), "w") as f:
+    f.write('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180">'
+            '<image width="180" height="180" href="data:image/png;base64,%s"/></svg>' % b64)
+print("wrote favicon.svg")
 print("done")
