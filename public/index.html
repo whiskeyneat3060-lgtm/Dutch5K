@@ -209,6 +209,9 @@
   }
   .posfilters button.active{background:var(--ink); color:#fff;}
   .learn-pos{margin-top:0;}
+  .shuffle-bar{margin-bottom:10px;}
+  .shuffle-btn{letter-spacing:0.5px;}
+  .shuffle-btn.active{background:var(--blue); color:#fff; border-color:var(--blue);}
   .wpos{font-family:var(--font-body); font-weight:500; font-size:9px; text-transform:uppercase; letter-spacing:1px; color:var(--muted2); border:1px solid var(--faint); padding:1px 5px; vertical-align:middle;}
   .btn-skip{color:var(--muted); font-size:12px !important;}
 
@@ -470,6 +473,7 @@ let tab = 'learn';
 let queue = []; let qPos = 0; let flipped = false;
 let filter = 'all'; let posFilter = 'all'; let srcFilter = 'all'; let search = ''; let expanded = null; let listLimit = 100;
 let learnPos = 'all'; let learnSrc = 'all';     // filters for the Learn queue
+let learnShuffle = false;   // Learn queue: strategic shuffle of new words (persisted dutch5k-shuffle). off = frequency order
 let wordView = null;      // when set, Words tab shows a full card for this deck index
 let wordViewStack = [];   // for synonym/antonym hyperlink navigation (back button)
 let enrichInFlight = false;
@@ -5372,6 +5376,7 @@ async function init(){
   plan = (await Store.get('dutch5k-plan')) || null;
   streak = (await Store.get('dutch5k-streak')) || {count:0, lastStudied:null, history:{}};
   remindOn = (await Store.get('dutch5k-remind')) || false;
+  learnShuffle = (await Store.get('dutch5k-shuffle')) || false;
   applyTheme((await Store.get('dutch5k-theme')) || 'minimalistic');
   buildDeck();
   await migrate();
@@ -5388,7 +5393,8 @@ async function init(){
 /* ============ QUEUE ============ */
 let skipped = new Set();  // deck indices skipped this session, pushed to the back
 function buildQueue(){
-  const learning=[], fresh=[], learned=[];
+  const learning=[], learned=[];
+  let fresh=[];
   deck.forEach((e,i)=>{
     if(learnPos!=='all' && posOf(e)!==learnPos) return;
     if(learnSrc!=='all' && !inSource(e, learnSrc)) return;
@@ -5398,8 +5404,20 @@ function buildQueue(){
     else fresh.push(i);
   });
   shuffle(learning); shuffle(learned);
-  // new words come in frequency order: most common Dutch first
-  fresh.sort((a,b)=> (deck[a].rank||99999) - (deck[b].rank||99999));
+  if(learnShuffle){
+    // Strategic shuffle (opt-in): frequency-weighted randomisation (Efraimidis–Spirakis).
+    // Each fresh word gets key = random^log2(rank+2); we sort by key descending. Common words
+    // still surface first *on average* (small exponent → key spread wide, often high), but every
+    // session draws a different, varied set instead of replaying rank 1,2,3… — so you keep meeting
+    // new words. Rare corpus words (large exponent → key ~0) stay unlikely to jump the front.
+    fresh = fresh
+      .map(i=>({i, k: Math.pow(Math.random(), Math.log2((deck[i].rank||6000)+2))}))
+      .sort((a,b)=> b.k - a.k)
+      .map(o=>o.i);
+  } else {
+    // Default: new words come in frequency order: most common Dutch first
+    fresh.sort((a,b)=> (deck[a].rank||99999) - (deck[b].rank||99999));
+  }
   queue = [...learning, ...fresh, ...learned.slice(0, Math.max(3, Math.floor(learned.length*0.1)))];
   // move any skipped-this-session indices to the back
   if(skipped.size){
@@ -5481,6 +5499,15 @@ function setSrcFilter(s){
   } else render();
 }
 function setLearnSrc(s){ learnSrc=s; skipped=new Set(); buildQueue(); render(); }
+async function toggleShuffle(){
+  hap();
+  learnShuffle = !learnShuffle;
+  await Store.set('dutch5k-shuffle', learnShuffle);
+  skipped = new Set();
+  buildQueue();
+  render();
+  toast(learnShuffle ? '&#128256; Shuffle on &#183; strategic mix of new words' : 'Shuffle off &#183; frequency order');
+}
 function toast(msg){
   const t=document.getElementById('toast');
   t.innerHTML=msg; t.classList.add('show');
@@ -5912,8 +5939,10 @@ function render(){
     const posBar = `<div class="posfilters posscroll learn-pos">${posFilterButtons(learnPos,'setLearnPos')}</div>`;
     // Source filter bar — only if book sources are loaded
     const srcBar = srcFilterOpts().length>2 ? `<div class="srcfilters posfilters posscroll learn-pos">${srcFilterButtons(learnSrc,'setLearnSrc')}</div>` : '';
+    // Shuffle toggle — off = frequency order (default), on = strategic mix of new words
+    const shuffleBar = `<div class="posfilters learn-pos shuffle-bar"><button class="shuffle-btn${learnShuffle?' active':''}" aria-pressed="${learnShuffle}" onclick="toggleShuffle()">&#128256; Shuffle ${learnShuffle?'On':'Off'}</button></div>`;
     if(!queue.length){
-      main.innerHTML = posBar + srcBar + `<div class="empty">No words left in this round with these filters.<br>Try “All”.</div>`;
+      main.innerHTML = shuffleBar + posBar + srcBar + `<div class="empty">No words left in this round with these filters.<br>Try “All”.</div>`;
       return;
     }
     const e = deck[queue[qPos]];
@@ -5937,7 +5966,7 @@ function render(){
       back = `<div class="word-en">Not translated yet</div>`;
     }
     const dailyLine = plan ? `<div class="deckinfo">Today: <b>${todayCount()}</b>${plan.perDay?` / ${plan.perDay}`:''} learned &#183; streak <b>${currentStreak()}</b> &#128293;</div>` : '';
-    main.innerHTML = posBar + srcBar + `
+    main.innerHTML = shuffleBar + posBar + srcBar + `
       ${mondrianStrip(c)}
       <div class="card" tabindex="0" role="button" aria-label="Flip card" onclick="flip()">
         <div class="card-tag"><span>${esc(e.t||'word')}${e.a?` &#183; ${esc(e.a)}`:''}</span><span>${status.toUpperCase()}</span></div>
@@ -6159,7 +6188,7 @@ function render(){
 /* ============ OFFLINE (service worker) ============ */
 if('serviceWorker' in navigator){
   const swCode = `
-    const C = 'dutch5k-v48';
+    const C = 'dutch5k-v49';
     self.addEventListener('install', e => { self.skipWaiting(); });
     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
     self.addEventListener('fetch', e => {
