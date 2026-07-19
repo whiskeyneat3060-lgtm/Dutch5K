@@ -4,10 +4,16 @@ Single-file Dutch vocab trainer. Mondrian design (black rules, red/blue/yellow b
 Owner Adi: B1 Dutch learner in Almere, toward conversational fluency.
 
 > **Name (v59):** the app is called **"Dutch To Go"** (Adi: "same as AH to go, for familiarity").
-> The rename is *user-visible only* — title, header wordmark (`DUTCH·TO·GO`), PWA/OG/Twitter metas,
+> The rename is *user-visible only* — title, header wordmark, PWA/OG/Twitter metas,
 > manifest name/short_name, reminder-notification title, backup filename. Everything internal keeps
 > the old `dutch5k` name **on purpose**: storage keys (`dutch5k-*` — renaming wipes progress), SW
 > cache prefix (`dutch5k-vNN`), worker name (= URL), repo name, and this file's scripts/anchors.
+>
+> **v60 (Adi request):** title/og:title/twitter:title/og:image:alt + manifest `name` now carry the
+> CEFR range — "Dutch To Go — Vocab Trainer **(A0 → B2)**" (`short_name` stays plain "Dutch To Go";
+> the painted tagline in `og-image.png` was NOT regenerated). Header wordmark restyled AH-to-go
+> style: `DUTCH <span>to go</span>` — caps + lowercase italic `to go` via `.logo span` (red;
+> Sepia's accent override still applies). The old `DUTCH·TO·GO` dot form is gone.
 
 > **Convention (Adi):** this `CLAUDE.md` is the project's only memory (sessions get cleared), so it
 > should track features, gotchas, and cache bumps — but **never edit it automatically.** After each
@@ -147,6 +153,9 @@ How it works / gotchas:
   (language-neutral). New UI-dict keys (fr/it/es): the intro sentence, `{n} popular
   Dutch words…`; the old offline-flavoured keys were deleted. **v57 (Adi request):** the deck-counts line
   ("{d} words in total…") between intro and sources was removed, along with its UI-dict keys.
+  **v60 (Adi request):** the Actie line dropped "across {c} chapters — filter by source…" and now
+  reuses the `{n} words` key like Gang/Niveau (all three book lines identical in form); the unused
+  `{n} words across {c} chapters…` UI-dict keys (fr/it/es) were deleted.
 - **Compact pickers (v54, Adi request — keep them this way):** Theme = three **swatch-only chips in one
   row** (no name/desc text; theme name kept as `aria-label`/`title`); App language = four **code chips**
   (EN/FR/IT/ES, full name in `aria-label`/`title`). Both wrap via `.themepick{flex-wrap}`, share
