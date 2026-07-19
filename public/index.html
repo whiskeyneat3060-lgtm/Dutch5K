@@ -288,6 +288,40 @@
   /* Language picker reuses the theme-button layout; the "swatch" is a two-letter code tile */
   .themebtn .langcode{display:flex; flex-shrink:0; width:46px; height:30px; border:2px solid var(--line); border-radius:calc(var(--radius) * .5); align-items:center; justify-content:center; font-family:var(--font-head); font-weight:800; font-size:13px; letter-spacing:1px; background:var(--card-bg); color:var(--ink);}
 
+  /* ---- settings drawer (v53): hamburger in the header slides a panel in from the left.
+     Holds the one-time-setup boxes (Theme, App language, Backup, About) moved out of the
+     Progress tab. Lives outside .topbar/#main as a direct body child, so its own
+     transform never traps the themes' fixed elements and #main re-renders don't touch it. */
+  .hdr-left{display:flex; align-items:center; gap:12px; min-width:0;}
+  .menu-btn{
+    display:flex; flex-direction:column; justify-content:center; gap:4px; flex-shrink:0;
+    width:38px; height:38px; padding:9px 8px; background:var(--paper);
+    border:var(--rule); border-radius:calc(var(--radius) * .5); cursor:pointer;
+  }
+  .menu-btn span{display:block; height:3px; background:var(--ink);}
+  .scrim{
+    position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:58;
+    opacity:0; pointer-events:none; transition:opacity .25s;
+  }
+  .scrim.show{opacity:1; pointer-events:auto;}
+  .drawer{
+    position:fixed; top:0; bottom:0; left:0; z-index:60; width:min(340px,88vw);
+    background:var(--paper); border-right:var(--rule); padding:16px 16px 32px;
+    overflow-y:auto; -webkit-overflow-scrolling:touch;
+    transform:translateX(-105%); visibility:hidden;
+    transition:transform .28s ease, visibility 0s linear .28s;
+  }
+  .drawer.open{transform:none; visibility:visible; transition:transform .28s ease;}
+  .drawer-head{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    border-bottom:var(--rule); padding-bottom:12px;
+  }
+  .drawer-title{font-family:var(--font-head); font-weight:900; font-size:18px; text-transform:uppercase; letter-spacing:1px;}
+  .drawer-close{
+    width:36px; height:36px; flex-shrink:0; border:var(--rule); background:var(--paper);
+    border-radius:calc(var(--radius) * .5); font-size:15px; line-height:1; cursor:pointer; color:var(--ink);
+  }
+
   /* Each theme below is a whole different LAYOUT, not just a repaint: different
      type, spacing, nav placement and card language. The blank-on-tap bug (nav bar
      and themed cards going unpainted after a tab tap) is handled in JS by paintFix()
@@ -361,6 +395,11 @@
   html[data-theme="midnight"] .m-new{ background:#2a2d42; }
   html[data-theme="midnight"] .histcell.lvl1{background:#26406e;}
   html[data-theme="midnight"] .histcell.lvl2{background:#3a63b0;}
+  /* drawer: solid dark panel (no ambient gradient — it must read as a layer above the page) */
+  html[data-theme="midnight"] .menu-btn{background:transparent;}
+  html[data-theme="midnight"] .drawer{background:#12141f; box-shadow:24px 0 60px rgba(0,0,0,.55);}
+  html[data-theme="midnight"] .drawer-close{background:transparent;}
+  html[data-theme="midnight"] .scrim{background:rgba(0,0,0,.6);}
 
   /* ================================================================
      SEPIA — a printed book / paper dictionary.
@@ -425,6 +464,17 @@
   html[data-theme="sepia"] .filters button.active,
   html[data-theme="sepia"] .posfilters button.active{ background:var(--accent); color:var(--paper); border-color:var(--accent); }
   html[data-theme="sepia"] .actions button.btn-know{ color:#fff; }
+  /* drawer: title-page header is a centred column, so pin the hamburger to the corner */
+  html[data-theme="sepia"] header{ position:relative; }
+  html[data-theme="sepia"] .hdr-left{ justify-content:center; }
+  html[data-theme="sepia"] .menu-btn{ position:absolute; left:16px; top:50%; transform:translateY(-50%); background:transparent; border:1px solid var(--line); }
+  html[data-theme="sepia"] .drawer{
+    background:
+      repeating-linear-gradient(0deg, rgba(120,90,50,.028) 0 2px, transparent 2px 5px),
+      var(--paper);
+  }
+  html[data-theme="sepia"] .drawer-title{ text-transform:none; letter-spacing:.5px; font-weight:400; font-style:italic; font-size:20px; }
+  html[data-theme="sepia"] .drawer-close{ background:transparent; }
 </style>
 <script>
 /* Anti-flash: apply the saved theme before first paint. Store keeps values JSON-encoded
@@ -441,16 +491,28 @@
 
 <div class="topbar">
 <header>
-  <div class="logo">DUTCH<span>&#183;</span>5K</div>
+  <div class="hdr-left">
+    <button class="menu-btn" id="menuBtn" aria-label="Menu" aria-expanded="false" aria-controls="drawer" onclick="toggleMenu()"><span></span><span></span><span></span></button>
+    <div class="logo">DUTCH<span>&#183;</span>5K</div>
+  </div>
   <div class="counter"><small>Words learned</small><span id="hdrCount">0 / 5000</span></div>
 </header>
 
 <nav>
   <button id="tabLearn" class="active" onclick="setTab('learn')">Learn</button>
   <button id="tabWords" onclick="setTab('words')">Words</button>
-  <button id="tabProgress" onclick="setTab('progress')">Overview</button>
+  <button id="tabProgress" onclick="setTab('progress')">Progress</button>
 </nav>
 </div>
+
+<div class="scrim" id="scrim" onclick="closeMenu()"></div>
+<aside class="drawer" id="drawer" aria-hidden="true">
+  <div class="drawer-head">
+    <div class="drawer-title" id="drawerTitle">Settings</div>
+    <button class="drawer-close" id="drawerClose" aria-label="Close" onclick="hap();closeMenu()">&#10005;</button>
+  </div>
+  <div class="drawer-body" id="drawerBody"></div>
+</aside>
 
 <main id="main"></main>
 <div class="toast" id="toast"></div>
@@ -534,7 +596,8 @@ const CTCACHE = {};    // language id -> loaded content dictionary
 
 const UI = {
 fr:{
-  'Words learned':'Mots appris', 'Learn':'Apprendre', 'Words':'Mots', 'Overview':'Aperçu',
+  'Words learned':'Mots appris', 'Learn':'Apprendre', 'Words':'Mots', 'Progress':'Progression',
+  'Settings':'Réglages', 'About the app':"À propos de l'app", 'Menu':'Menu', 'Close':'Fermer',
   'Shuffle On':'Mélange activé', 'Shuffle Off':'Mélange désactivé',
   'All types':'Tous les types', 'Verbs':'Verbes', 'Nouns':'Noms', 'Adjectives':'Adjectifs', 'Adverbs':'Adverbes', 'Pronouns':'Pronoms', 'Prepositions':'Prépositions', 'Conjunctions':'Conjonctions', 'Numbers':'Nombres', 'Expressions':'Expressions', 'Articles':'Articles',
   'All sources':'Toutes les sources', 'General 5K':'5K général',
@@ -598,7 +661,8 @@ fr:{
   'Card preparation failed — check your API key in Progress':'Échec de préparation de la carte — vérifiez votre clé API',
 },
 it:{
-  'Words learned':'Parole apprese', 'Learn':'Impara', 'Words':'Parole', 'Overview':'Panoramica',
+  'Words learned':'Parole apprese', 'Learn':'Impara', 'Words':'Parole', 'Progress':'Progressi',
+  'Settings':'Impostazioni', 'About the app':"Informazioni sull'app", 'Menu':'Menu', 'Close':'Chiudi',
   'Shuffle On':'Casuale attivato', 'Shuffle Off':'Casuale disattivato',
   'All types':'Tutti i tipi', 'Verbs':'Verbi', 'Nouns':'Sostantivi', 'Adjectives':'Aggettivi', 'Adverbs':'Avverbi', 'Pronouns':'Pronomi', 'Prepositions':'Preposizioni', 'Conjunctions':'Congiunzioni', 'Numbers':'Numeri', 'Expressions':'Espressioni', 'Articles':'Articoli',
   'All sources':'Tutte le fonti', 'General 5K':'5K generale',
@@ -662,7 +726,8 @@ it:{
   'Card preparation failed — check your API key in Progress':'Preparazione della scheda non riuscita — controlla la chiave API',
 },
 es:{
-  'Words learned':'Palabras aprendidas', 'Learn':'Aprender', 'Words':'Palabras', 'Overview':'Resumen',
+  'Words learned':'Palabras aprendidas', 'Learn':'Aprender', 'Words':'Palabras', 'Progress':'Progreso',
+  'Settings':'Ajustes', 'About the app':'Acerca de la app', 'Menu':'Menú', 'Close':'Cerrar',
   'Shuffle On':'Aleatorio activado', 'Shuffle Off':'Aleatorio desactivado',
   'All types':'Todos los tipos', 'Verbs':'Verbos', 'Nouns':'Sustantivos', 'Adjectives':'Adjetivos', 'Adverbs':'Adverbios', 'Pronouns':'Pronombres', 'Prepositions':'Preposiciones', 'Conjunctions':'Conjunciones', 'Numbers':'Números', 'Expressions':'Expresiones', 'Articles':'Artículos',
   'All sources':'Todas las fuentes', 'General 5K':'5K general',
@@ -752,8 +817,10 @@ async function loadLangDict(id){
 /* Nav + header live outside #main, so re-label them explicitly on language change */
 function applyNavLang(){
   const set=(id,txt)=>{ const el=document.getElementById(id); if(el) el.textContent=txt; };
-  set('tabLearn', T('Learn')); set('tabWords', T('Words')); set('tabProgress', T('Overview'));
+  set('tabLearn', T('Learn')); set('tabWords', T('Words')); set('tabProgress', T('Progress'));
   const s=document.querySelector('header .counter small'); if(s) s.textContent = T('Words learned');
+  const mb=document.getElementById('menuBtn'); if(mb) mb.setAttribute('aria-label', T('Menu'));
+  const dc=document.getElementById('drawerClose'); if(dc) dc.setAttribute('aria-label', T('Close'));
 }
 async function setLang(id){
   hap();
@@ -766,6 +833,7 @@ async function setLang(id){
   await Store.set('dutch5k-lang', id);
   applyNavLang();
   render();
+  if(menuOpen) renderMenu();   // the drawer holds the language picker — retranslate it in place
 }
 
 const GOAL = 5000;
@@ -5853,8 +5921,82 @@ async function setTheme(t){
   hap();
   applyTheme(t);
   await Store.set('dutch5k-theme', t);
-  render();   // refresh Progress tab so the active theme is highlighted
+  render();
+  if(menuOpen) renderMenu();   // refresh the drawer so the active theme is highlighted
 }
+
+/* ============ SETTINGS DRAWER ============ */
+/* One-time-setup boxes (Theme, App language, Backup, About) live in a slide-in
+   drawer behind the header hamburger, not in the Progress tab. It sits outside
+   #main so render() never touches it; content is (re)built on every open and
+   after theme/language switches, so active states and translations stay current. */
+let menuOpen = false;
+function renderMenu(){
+  const body = document.getElementById('drawerBody'); if(!body) return;
+  document.getElementById('drawerTitle').textContent = T('Settings');
+  const withMeaning = deck.filter(e=>e.rich || e.hasMeaning).length;
+  const full = deck.filter(e=>e.rich).length;
+  body.innerHTML = `
+    <div class="genbox">
+      <h3>${T('Theme')}</h3>
+      <p>${T('Change how the whole app looks. Your words and progress stay exactly the same.')}</p>
+      <div class="themepick">
+        ${THEMES.map(t=>`
+          <button class="themebtn ${theme===t.id?'active':''}" onclick="setTheme('${t.id}')">
+            <span class="swatch">${t.sw.map(c=>`<i style="background:${c}"></i>`).join('')}</span>
+            <span class="tmeta"><span class="tname">${t.name}</span><span class="tdesc">${T(t.desc)}</span></span>
+            <span class="tcheck">&#10003;</span>
+          </button>`).join('')}
+      </div>
+    </div>
+
+    <div class="genbox">
+      <h3>${T('App language')}</h3>
+      <p>${T('Meanings, example translations and menus switch to your language — the Dutch words stay Dutch.')}</p>
+      <div class="themepick">
+        ${LANGS.map(l=>`
+          <button class="themebtn ${lang===l.id?'active':''}" onclick="setLang('${l.id}')">
+            <span class="langcode">${l.code}</span>
+            <span class="tmeta"><span class="tname">${l.name}</span><span class="tdesc">${l.desc}</span></span>
+            <span class="tcheck">&#10003;</span>
+          </button>`).join('')}
+      </div>
+    </div>
+
+    <div class="genbox">
+      <h3>${T('Backup')}</h3>
+      <p>${T('Your progress lives in this browser. Export a backup before switching phones, then import it there.')}</p>
+      <div class="rowbtns">
+        <button onclick="hap();exportData()">${T('Export')}</button>
+        <button onclick="hap();importData()">${T('Import')}</button>
+      </div>
+    </div>
+
+    <div class="genbox">
+      <h3>${T('About the app')}</h3>
+      <p>${T('{d} words total, all available offline. {m} have English meanings and {f} also have example sentences, grammar forms and synonyms.', {d:`<b>${deck.length}</b>`, m:`<b>${withMeaning}</b>`, f:`<b>${full}</b>`})}</p>
+      ${bookChapters('actie').length?`<p style="margin-top:6px">&#128218; <b>Nederlands in Actie</b>: ${T('{n} words across {c} chapters — filter by source in Learn or Words to study just these.', {n:deck.filter(e=>(e.srcTags||[]).includes('actie')).length, c:bookChapters('actie').length})}</p>`:''}
+      ${bookChapters('gang').length?`<p style="margin-top:6px">&#128218; <b>Nederlands in Gang</b>: ${T('{n} words', {n:deck.filter(e=>(e.srcTags||[]).includes('gang')).length})}.</p>`:''}
+      <div class="note">${T('Everything works with no internet connection once the app has loaded.')}</div>
+    </div>`;
+}
+function toggleMenu(){ hap(); if(menuOpen) closeMenu(); else openMenu(); }
+function openMenu(){
+  menuOpen = true;
+  renderMenu();
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('drawer').setAttribute('aria-hidden','false');
+  document.getElementById('scrim').classList.add('show');
+  document.getElementById('menuBtn').setAttribute('aria-expanded','true');
+}
+function closeMenu(){
+  menuOpen = false;
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('drawer').setAttribute('aria-hidden','true');
+  document.getElementById('scrim').classList.remove('show');
+  document.getElementById('menuBtn').setAttribute('aria-expanded','false');
+}
+document.addEventListener('keydown', e=>{ if(e.key==='Escape' && menuOpen) closeMenu(); });
 
 /* Local reminder via Notification API (best-effort; browsers throttle background timers) */
 async function enableReminders(){
@@ -6341,9 +6483,6 @@ function render(){
 
   if(tab==='progress'){
     const pct = ((c.learned/GOAL)*100).toFixed(1);
-    const withMeaning = deck.filter(e=>e.rich || e.hasMeaning).length;
-    const full = deck.filter(e=>e.rich).length;
-    const remaining = deck.length - withMeaning;
     const tc = todayCount();
     const st = currentStreak();
 
@@ -6438,49 +6577,6 @@ function render(){
         <h3>${T('By word type')}</h3>
         <div class="posbreak">${posRows}</div>
         <div class="note">${T('Tap a type to study or browse just those words.')}</div>
-      </div>
-
-      <div class="genbox">
-        <h3>${T('Your deck')}</h3>
-        <p>${T('{d} words total, all available offline. {m} have English meanings and {f} also have example sentences, grammar forms and synonyms.', {d:`<b>${deck.length}</b>`, m:`<b>${withMeaning}</b>`, f:`<b>${full}</b>`})}</p>
-        ${bookChapters('actie').length?`<p style="margin-top:6px">&#128218; <b>Nederlands in Actie</b>: ${T('{n} words across {c} chapters — filter by source in Learn or Words to study just these.', {n:deck.filter(e=>(e.srcTags||[]).includes('actie')).length, c:bookChapters('actie').length})}</p>`:''}
-        ${bookChapters('gang').length?`<p style="margin-top:6px">&#128218; <b>Nederlands in Gang</b>: ${T('{n} words', {n:deck.filter(e=>(e.srcTags||[]).includes('gang')).length})}.</p>`:''}
-        <div class="note">${T('Everything works with no internet connection once the app has loaded.')}</div>
-      </div>
-
-      <div class="genbox">
-        <h3>${T('Backup')}</h3>
-        <p>${T('Your progress lives in this browser. Export a backup before switching phones, then import it there.')}</p>
-        <div class="rowbtns">
-          <button onclick="hap();exportData()">${T('Export')}</button>
-          <button onclick="hap();importData()">${T('Import')}</button>
-        </div>
-      </div>
-
-      <div class="genbox">
-        <h3>${T('Theme')}</h3>
-        <p>${T('Change how the whole app looks. Your words and progress stay exactly the same.')}</p>
-        <div class="themepick">
-          ${THEMES.map(t=>`
-            <button class="themebtn ${theme===t.id?'active':''}" onclick="setTheme('${t.id}')">
-              <span class="swatch">${t.sw.map(c=>`<i style="background:${c}"></i>`).join('')}</span>
-              <span class="tmeta"><span class="tname">${t.name}</span><span class="tdesc">${T(t.desc)}</span></span>
-              <span class="tcheck">&#10003;</span>
-            </button>`).join('')}
-        </div>
-      </div>
-
-      <div class="genbox">
-        <h3>${T('App language')}</h3>
-        <p>${T('Meanings, example translations and menus switch to your language — the Dutch words stay Dutch.')}</p>
-        <div class="themepick">
-          ${LANGS.map(l=>`
-            <button class="themebtn ${lang===l.id?'active':''}" onclick="setLang('${l.id}')">
-              <span class="langcode">${l.code}</span>
-              <span class="tmeta"><span class="tname">${l.name}</span><span class="tdesc">${l.desc}</span></span>
-              <span class="tcheck">&#10003;</span>
-            </button>`).join('')}
-        </div>
       </div>`;
   }
 }
@@ -6488,7 +6584,7 @@ function render(){
 /* ============ OFFLINE (service worker) ============ */
 if('serviceWorker' in navigator){
   const swCode = `
-    const C = 'dutch5k-v52';
+    const C = 'dutch5k-v53';
     self.addEventListener('install', e => { self.skipWaiting(); });
     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
     self.addEventListener('fetch', e => {
