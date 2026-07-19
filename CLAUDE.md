@@ -1,7 +1,13 @@
-# Dutch 5K — project context
+# Dutch To Go (formerly Dutch 5K) — project context
 
 Single-file Dutch vocab trainer. Mondrian design (black rules, red/blue/yellow blocks).
 Owner Adi: B1 Dutch learner in Almere, toward conversational fluency.
+
+> **Name (v59):** the app is called **"Dutch To Go"** (Adi: "same as AH to go, for familiarity").
+> The rename is *user-visible only* — title, header wordmark (`DUTCH·TO·GO`), PWA/OG/Twitter metas,
+> manifest name/short_name, reminder-notification title, backup filename. Everything internal keeps
+> the old `dutch5k` name **on purpose**: storage keys (`dutch5k-*` — renaming wipes progress), SW
+> cache prefix (`dutch5k-vNN`), worker name (= URL), repo name, and this file's scripts/anchors.
 
 > **Convention (Adi):** this `CLAUDE.md` is the project's only memory (sessions get cleared), so it
 > should track features, gotchas, and cache bumps — but **never edit it automatically.** After each
@@ -78,7 +84,7 @@ two older schemes; breaking ids silently destroys progress.
 
 All books are Adi's copies; only vocab word lists extracted, no book sentences reproduced.
 
-## App icons & link-share branding (v48)
+## App icons & link-share branding (v48, art replaced v59)
 
 The app previously had **no icons/manifest** → phones showed a "W" letter tile on the home screen and
 link shares showed no image. Fixed by adding real asset files to `public/` (NOT data URIs — `wrangler.jsonc`
@@ -86,16 +92,19 @@ uses `not_found_handling:"single-page-application"`, so any *referenced* file th
 `index.html` with the wrong content-type = broken icon; every icon must be a real file). Social scrapers
 also need a real image URL for `og:image`, not a data URI.
 
-**Logo = tulip-book badge** (Adi-supplied art): a circular badge — black ring, red/white/blue tulip whose
-petals are an open book, arc text "DUTCH / VOCAB TRAINER / 5000 WORDS", two stars. Used **only** for the
-browser tab / home-screen icon / link-share card — **never inside the app UI** (the app stays Mondrian).
-The source PNG is a wide banner; `scratchpad/make_icons.py` (pure Pillow; `pip install Pillow numpy`) crops
-just the **circular part** (detected centre ≈ (511,284), outer ring radius ≈ 207), circle-masks it
+**Logo = "Dutch To Go" bike badge** (Adi-supplied art, v59; replaced the v48 tulip-book badge): a circular
+badge — Dutch-flag ring, arc text "DUTCH TO GO" top / "Vocab Trainer" bottom, orange bike with basket,
+speech bubbles (HALLO!/LEER!/DOORGAAN), windmills + canal houses. Used **only** for the browser tab /
+home-screen icon / link-share card — **never inside the app UI** (the app stays Mondrian).
+The source PNG is a wide banner (1408×768); `scratchpad/make_icons.py` (pure Pillow; `pip install Pillow
+numpy`) crops just the **circular part** (v59 art: centre ≈ (704,384), radius ≈ 296 — detect via bbox of
+non-near-white pixels), circle-masks it
 anti-aliased, and composites it onto **white** so every tile is a clean white square with the ringed badge
 centred. Files it writes to `public/`: `favicon.ico` (16/32/48), `favicon-32.png`,
 `apple-touch-icon.png` (180, iOS home screen), `icon-192.png`, `icon-512.png`,
 `icon-maskable-512.png` (badge shrunk to ~78% so Android's circular mask never clips ring/text),
-`og-image.png` (1200×630 share card: badge left + tagline right), and `favicon.svg` (the 180 tile embedded
+`og-image.png` (1200×630 share card: badge left + "Dutch To Go / Vocab Trainer" tagline right, drawn with
+DejaVu fonts, headline auto-shrinks to fit), and `favicon.svg` (the 180 tile embedded
 as a data-URI `<image>`). `public/site.webmanifest` (name/short_name/icons/`display:standalone`) is
 committed directly. **To change the logo:** drop the new art path into `make_icons.py`'s `SRC`, adjust
 `CX/CY/R` to the new circle, rerun, bump the SW cache, redeploy.
