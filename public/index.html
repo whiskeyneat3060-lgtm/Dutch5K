@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dutch To Go &#8212; Vocab Trainer</title>
+<title>Dutch To Go &#8212; Vocab Trainer (A0 &rarr; B2)</title>
 <meta name="description" content="Learn the 5,000 most common Dutch words &#8212; flashcards, examples, offline.">
 <!-- App icons: favicon (browser tab), apple-touch-icon (iOS home screen),
      manifest icons (Android home screen). Real files in /public — the Worker
@@ -24,15 +24,15 @@
      platform needs one. -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Dutch To Go">
-<meta property="og:title" content="Dutch To Go &#8212; Vocab Trainer">
+<meta property="og:title" content="Dutch To Go &#8212; Vocab Trainer (A0 &rarr; B2)">
 <meta property="og:description" content="Learn the 5,000 most common Dutch words &#8212; flashcards, examples, offline.">
 <meta property="og:image" content="/og-image.png">
 <meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Dutch To Go — Dutch vocab trainer">
+<meta property="og:image:alt" content="Dutch To Go — Dutch vocab trainer (A0 → B2)">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Dutch To Go &#8212; Vocab Trainer">
+<meta name="twitter:title" content="Dutch To Go &#8212; Vocab Trainer (A0 &rarr; B2)">
 <meta name="twitter:description" content="Learn the 5,000 most common Dutch words &#8212; flashcards, examples, offline.">
 <meta name="twitter:image" content="/og-image.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1145,7 +1145,6 @@ fr:{
   'Your deck':'Votre paquet',
   'Build your Dutch vocabulary in a structured way. This one-stop app shows all the details of a word — meaning, example sentences, grammar forms and synonyms — so learners can pick it up in a practical way.':"Construisez votre vocabulaire néerlandais de façon structurée. Cette app tout-en-un montre tous les détails d'un mot — sens, phrases d'exemple, formes grammaticales et synonymes — pour apprendre de manière pratique.",
   '{n} popular Dutch words, ordered by how often they are used in everyday Dutch.':'{n} mots néerlandais populaires, classés selon leur fréquence dans la langue de tous les jours.',
-  '{n} words across {c} chapters — filter by source in Learn or Words to study just these.':'{n} mots répartis sur {c} chapitres — filtrez par source dans Apprendre ou Mots pour étudier uniquement ceux-ci.',
   'Backup':'Sauvegarde',
   'Your progress lives in this browser. Export a backup before switching phones, then import it there.':'Votre progression vit dans ce navigateur. Exportez une sauvegarde avant de changer de téléphone, puis importez-la là-bas.',
   'Export':'Exporter', 'Import':'Importer',
@@ -1210,7 +1209,6 @@ it:{
   'Your deck':'Il tuo mazzo',
   'Build your Dutch vocabulary in a structured way. This one-stop app shows all the details of a word — meaning, example sentences, grammar forms and synonyms — so learners can pick it up in a practical way.':"Costruisci il tuo vocabolario olandese in modo strutturato. Questa app tutto-in-uno mostra tutti i dettagli di una parola — significato, frasi di esempio, forme grammaticali e sinonimi — per imparare in modo pratico.",
   '{n} popular Dutch words, ordered by how often they are used in everyday Dutch.':"{n} parole olandesi popolari, ordinate per frequenza d'uso nell'olandese di tutti i giorni.",
-  '{n} words across {c} chapters — filter by source in Learn or Words to study just these.':'{n} parole in {c} capitoli — filtra per fonte in Impara o Parole per studiare solo queste.',
   'Backup':'Backup',
   'Your progress lives in this browser. Export a backup before switching phones, then import it there.':'I tuoi progressi vivono in questo browser. Esporta un backup prima di cambiare telefono, poi importalo lì.',
   'Export':'Esporta', 'Import':'Importa',
@@ -1275,7 +1273,6 @@ es:{
   'Your deck':'Tu mazo',
   'Build your Dutch vocabulary in a structured way. This one-stop app shows all the details of a word — meaning, example sentences, grammar forms and synonyms — so learners can pick it up in a practical way.':'Construye tu vocabulario neerlandés de forma estructurada. Esta app todo en uno muestra todos los detalles de una palabra — significado, frases de ejemplo, formas gramaticales y sinónimos — para aprender de manera práctica.',
   '{n} popular Dutch words, ordered by how often they are used in everyday Dutch.':'{n} palabras neerlandesas populares, ordenadas por su frecuencia en el neerlandés cotidiano.',
-  '{n} words across {c} chapters — filter by source in Learn or Words to study just these.':'{n} palabras en {c} capítulos — filtra por fuente en Aprender o Palabras para estudiar solo estas.',
   'Backup':'Copia de seguridad',
   'Your progress lives in this browser. Export a backup before switching phones, then import it there.':'Tu progreso vive en este navegador. Exporta una copia antes de cambiar de teléfono y luego impórtala allí.',
   'Export':'Exportar', 'Import':'Importar',
@@ -6450,7 +6447,7 @@ function renderMenu(){
       <p>${T('Build your Dutch vocabulary in a structured way. This one-stop app shows all the details of a word — meaning, example sentences, grammar forms and synonyms — so learners can pick it up in a practical way.')}</p>
       <p style="margin-top:6px">&#11088; <b>General 5K</b>: ${T('{n} popular Dutch words, ordered by how often they are used in everyday Dutch.', {n:genCount})}</p>
       ${bookChapters('gang').length?`<p style="margin-top:6px">&#128218; <b>Nederlands in Gang</b> (A0 &rarr; A2): ${T('{n} words', {n:deck.filter(e=>(e.srcTags||[]).includes('gang')).length})}.</p>`:''}
-      ${bookChapters('actie').length?`<p style="margin-top:6px">&#128218; <b>Nederlands in Actie</b> (A2 &rarr; B1): ${T('{n} words across {c} chapters — filter by source in Learn or Words to study just these.', {n:deck.filter(e=>(e.srcTags||[]).includes('actie')).length, c:bookChapters('actie').length})}</p>`:''}
+      ${bookChapters('actie').length?`<p style="margin-top:6px">&#128218; <b>Nederlands in Actie</b> (A2 &rarr; B1): ${T('{n} words', {n:deck.filter(e=>(e.srcTags||[]).includes('actie')).length})}.</p>`:''}
       ${bookChapters('niveau').length?`<p style="margin-top:6px">&#128218; <b>Nederlands op Niveau</b> (B1 &rarr; B2): ${T('{n} words', {n:deck.filter(e=>(e.srcTags||[]).includes('niveau')).length})}.</p>`:''}
     </div>
 
@@ -7085,7 +7082,7 @@ function render(){
 /* ============ OFFLINE (service worker) ============ */
 if('serviceWorker' in navigator){
   const swCode = `
-    const C = 'dutch5k-v59';
+    const C = 'dutch5k-v60';
     self.addEventListener('install', e => { self.skipWaiting(); });
     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
     self.addEventListener('fetch', e => {
