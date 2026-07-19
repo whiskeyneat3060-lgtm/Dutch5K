@@ -90,18 +90,39 @@ on modern unfurlers); swap to an absolute URL if a platform needs one.
 
 `Store` adapter wraps `window.storage` (Claude artifacts) with `localStorage` fallback. Keys:
 `dutch5k-progress`, `-enriched`, `-plan`, `-streak`, `-remind`, `-theme`, `-shuffle`. Export/Import JSON
-backup in Progress tab. No server; losing localStorage loses progress.
+backup in the settings drawer. No server; losing localStorage loses progress.
 
 ## Features
 
 Three tabs: **Learn** (flashcards, flip, Again/Learning/Know-it, Skip), **Words** (search, list, detail),
-**Overview** (stats, daily goal, streak, 14-day history, POS breakdown, backup, theme + app-language pickers).
+**Progress** (stats, daily goal, streak, 14-day history, POS breakdown) — plus a **settings drawer**
+(hamburger in the header) holding Theme, App language, Backup and the About box.
 
-> **Naming (v50):** the third tab is *displayed* as **Overview** (renamed from "Progress" — it holds
-> settings/backup/theme, not just progress). The **internal id stays `progress`** everywhere: `setTab('progress')`,
-> `tab==='progress'`, `id="tabProgress"`, and all `dutch5k-progress*` storage keys are unchanged (renaming them
-> would break saved progress). Only the visible nav button label at `<nav>` changed. This doc mostly still says
-> "Progress tab" for the internal id — read that as the Overview tab.
+> **Naming (v50→v53):** the third tab was displayed as "Overview" in v50 (it held settings then); v53 moved
+> the settings out into the drawer and the visible label went **back to "Progress"**. The **internal id has
+> always stayed `progress`**: `setTab('progress')`, `tab==='progress'`, `id="tabProgress"`, and all
+> `dutch5k-progress*` storage keys are unchanged (renaming them would break saved progress). Only the nav
+> button label + `T('Progress')` in `applyNavLang()` changed.
+
+**Settings drawer (v53):** three-bar hamburger button (`#menuBtn`, in `.hdr-left` next to the logo) slides
+`aside#drawer` in from the left over a `#scrim`; close via ✕, scrim tap, or Escape. Holds the four
+one-time-setup boxes that used to bloat the third tab: **Theme**, **App language**, **Backup**
+(Export/Import), **About the app** (deck counts + book lines, heading is the new `T('About the app')` key).
+How it works / gotchas:
+- Drawer + scrim are **direct body children, outside `.topbar` and `#main`** — deliberate: the drawer's
+  slide `transform` would trap Midnight's `position:fixed` bottom nav if it were an ancestor, and `render()`
+  re-writing `#main` must never touch the drawer.
+- Content is built by `renderMenu()` **on every open** and re-built by `setTheme`/`setLang` when
+  `menuOpen` — that's how active-state highlights and translations stay current (drawer stays open across
+  a theme/language switch). State: `let menuOpen` + `toggleMenu()/openMenu()/closeMenu()`; aria-expanded /
+  aria-hidden kept in sync; `applyNavLang()` re-translates the Menu/Close aria-labels.
+- z-index order: drawer 60 > scrim 58 > Midnight nav 50 > topbar/nav 20 (scrim must cover the pill nav).
+- Per-theme skins at the end of each theme's CSS block: Midnight = solid `#12141f` panel (NOT the ambient
+  gradient — it must read as a layer) + darker scrim; Sepia = paper-grain background, italic serif title,
+  and the hamburger `position:absolute` in the corner of the centred title-page header
+  (`.hdr-left{justify-content:center}` keeps the logo centred).
+- New UI-dict keys (fr/it/es): `Progress`, `Settings`, `About the app`, `Menu`, `Close`; the old
+  `Overview` key was replaced.
 
 **Sticky top bar (v52):** `<header>` + `<nav>` are wrapped in `<div class="topbar">` —
 `position:sticky; top:0; z-index:20`, opaque theme background — so logo *and* tabs stay frozen while
@@ -113,7 +134,8 @@ Midnight's bottom nav inside the top bar. The v47 nav compositing-layer rules (s
 `nav` itself) are untouched — leave them, they fix the Android vanishing-tab-bar bug. In Sepia the whole
 title-page header freezes (tallish block) — flagged to Adi as acceptable for now.
 
-**Themes (v47 — three different LAYOUTS, not just palettes):** picked from Theme box in Progress. Content
+**Themes (v47 — three different LAYOUTS, not just palettes):** picked from the Theme box in the settings
+drawer (was the Progress tab before v53). Content
 identical across all three; DOM untouched — each theme is pure CSS scoped to `html[data-theme="<id>"]`,
 re-skinning structure (nav, type, spacing), not only colour.
 - **Minimalistic** (default, *no* `data-theme`) — original Mondrian: black rules, red/blue/yellow, Archivo/Inter, sharp corners, top tab bar.
@@ -151,7 +173,8 @@ don't flood the front. Only affects the *fresh* segment (learning/learned were a
 with POS/source filters automatically — filters narrow the pool first, ordering happens after (verified:
 shuffled verb-only rounds work). Toggling rebuilds the queue and clears session skips.
 
-**App language (v51):** Overview → "App language" box (below Theme): **EN / FR / IT / ES**. The app
+**App language (v51):** settings drawer → "App language" box (below Theme; lived on the third tab until
+v53): **EN / FR / IT / ES**. The app
 *teaches* Dutch; this switches everything else — menus, word meanings, example translations. Dutch words,
 forms and synonyms are never translated. `LANGS` array + `setLang(id)`; persisted `dutch5k-lang`, default `en`.
 Two layers:
