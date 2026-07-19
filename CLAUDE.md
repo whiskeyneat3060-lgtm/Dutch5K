@@ -8,6 +8,11 @@ Owner Adi: B1 Dutch learner in Almere, toward conversational fluency.
 > feature, **ask Adi** whether to update this file. Likewise **never push to `main` automatically**
 > (that deploys live) — after each feature, **ask** whether to push to `main`. Develop + push on the
 > feature branch freely; `main` and md edits are opt-in per change.
+>
+> **After any app change, always send Adi an offline copy of the built `public/index.html`** (as a
+> file attachment, e.g. `dutch5k-vNN-<feature>.html`) so it can be tested in a browser before any
+> `main` push. Caveats to mention: i18n packs (`/i18n/*.json`) can't load from a local file (FR/IT/ES
+> meanings stay English), and progress is stored under the file's own origin, separate from the live site.
 
 ## Architecture — read first
 
@@ -109,6 +114,13 @@ Three tabs: **Learn** (flashcards, flip, Again/Learning/Know-it, Skip), **Words*
 one-time-setup boxes that used to bloat the third tab: **Theme**, **App language**, **Backup**
 (Export/Import), **About the app** (deck counts + book lines, heading is the new `T('About the app')` key).
 How it works / gotchas:
+- **Compact pickers (v54, Adi request — keep them this way):** Theme = three **swatch-only chips in one
+  row** (no name/desc text; theme name kept as `aria-label`/`title`); App language = four **code chips**
+  (EN/FR/IT/ES, full name in `aria-label`/`title`). Both wrap via `.themepick{flex-wrap}`, share
+  `.themebtn` (language adds `.langbtn`); active = accent inset box-shadow (the old `.tcheck` ✓,
+  `.tdesc`, `.tmeta` are gone). Intro `<p>` above each picker removed too. The `desc` fields in the
+  `THEMES`/`LANGS` arrays are now **unused by the drawer** (kept as documentation); their UI-dict
+  translations linger harmlessly.
 - Drawer + scrim are **direct body children, outside `.topbar` and `#main`** — deliberate: the drawer's
   slide `transform` would trap Midnight's `position:fixed` bottom nav if it were an ancestor, and `render()`
   re-writing `#main` must never touch the drawer.
