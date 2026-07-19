@@ -103,6 +103,16 @@ Three tabs: **Learn** (flashcards, flip, Again/Learning/Know-it, Skip), **Words*
 > would break saved progress). Only the visible nav button label at `<nav>` changed. This doc mostly still says
 > "Progress tab" for the internal id — read that as the Overview tab.
 
+**Sticky top bar (v52):** `<header>` + `<nav>` are wrapped in `<div class="topbar">` —
+`position:sticky; top:0; z-index:20`, opaque theme background — so logo *and* tabs stay frozen while
+`#main` scrolls (before, only nav was sticky; the logo scrolled off). Per-theme bg overrides: Midnight
+replicates the body's ambient gradient with `background-attachment:fixed` (bar blends invisibly; its nav
+stays the fixed bottom pill, unaffected), Sepia replicates the paper grain. **Never put a `transform` on
+`.topbar`** — a transformed ancestor becomes the containing block for `position:fixed`, which would trap
+Midnight's bottom nav inside the top bar. The v47 nav compositing-layer rules (sticky + translateZ on
+`nav` itself) are untouched — leave them, they fix the Android vanishing-tab-bar bug. In Sepia the whole
+title-page header freezes (tallish block) — flagged to Adi as acceptable for now.
+
 **Themes (v47 — three different LAYOUTS, not just palettes):** picked from Theme box in Progress. Content
 identical across all three; DOM untouched — each theme is pure CSS scoped to `html[data-theme="<id>"]`,
 re-skinning structure (nav, type, spacing), not only colour.
