@@ -631,9 +631,10 @@ fr:{
   'Each square is a day; darker means more words learned. Learn at least one word a day to keep your streak alive.':'Chaque carré est un jour ; plus il est foncé, plus vous avez appris de mots. Apprenez au moins un mot par jour pour garder votre série.',
   'By word type':'Par type de mot', 'Tap a type to study or browse just those words.':'Touchez un type pour étudier ou parcourir uniquement ces mots.',
   'Your deck':'Votre paquet',
-  '{d} words total, all available offline. {m} have English meanings and {f} also have example sentences, grammar forms and synonyms.':"{d} mots au total, tous disponibles hors ligne. {m} ont un sens traduit et {f} ont aussi des phrases d'exemple, des formes grammaticales et des synonymes.",
+  'Build your Dutch vocabulary in a structured way. This one-stop app shows all the details of a word — meaning, example sentences, grammar forms and synonyms — so learners can pick it up in a practical way.':"Construisez votre vocabulaire néerlandais de façon structurée. Cette app tout-en-un montre tous les détails d'un mot — sens, phrases d'exemple, formes grammaticales et synonymes — pour apprendre de manière pratique.",
+  '{d} words in total. {m} have English meanings and {f} also have example sentences, grammar forms and synonyms.':"{d} mots au total. {m} ont un sens traduit et {f} ont aussi des phrases d'exemple, des formes grammaticales et des synonymes.",
+  '{n} popular Dutch words, ordered by how often they are used in everyday Dutch.':'{n} mots néerlandais populaires, classés selon leur fréquence dans la langue de tous les jours.',
   '{n} words across {c} chapters — filter by source in Learn or Words to study just these.':'{n} mots répartis sur {c} chapitres — filtrez par source dans Apprendre ou Mots pour étudier uniquement ceux-ci.',
-  'Everything works with no internet connection once the app has loaded.':"Tout fonctionne sans connexion Internet une fois l'app chargée.",
   'Backup':'Sauvegarde',
   'Your progress lives in this browser. Export a backup before switching phones, then import it there.':'Votre progression vit dans ce navigateur. Exportez une sauvegarde avant de changer de téléphone, puis importez-la là-bas.',
   'Export':'Exporter', 'Import':'Importer',
@@ -696,9 +697,10 @@ it:{
   'Each square is a day; darker means more words learned. Learn at least one word a day to keep your streak alive.':'Ogni quadrato è un giorno; più è scuro, più parole hai imparato. Impara almeno una parola al giorno per mantenere la serie.',
   'By word type':'Per tipo di parola', 'Tap a type to study or browse just those words.':'Tocca un tipo per studiare o sfogliare solo quelle parole.',
   'Your deck':'Il tuo mazzo',
-  '{d} words total, all available offline. {m} have English meanings and {f} also have example sentences, grammar forms and synonyms.':'{d} parole in totale, tutte disponibili offline. {m} hanno un significato tradotto e {f} hanno anche frasi di esempio, forme grammaticali e sinonimi.',
+  'Build your Dutch vocabulary in a structured way. This one-stop app shows all the details of a word — meaning, example sentences, grammar forms and synonyms — so learners can pick it up in a practical way.':"Costruisci il tuo vocabolario olandese in modo strutturato. Questa app tutto-in-uno mostra tutti i dettagli di una parola — significato, frasi di esempio, forme grammaticali e sinonimi — per imparare in modo pratico.",
+  '{d} words in total. {m} have English meanings and {f} also have example sentences, grammar forms and synonyms.':'{d} parole in totale. {m} hanno un significato tradotto e {f} hanno anche frasi di esempio, forme grammaticali e sinonimi.',
+  '{n} popular Dutch words, ordered by how often they are used in everyday Dutch.':"{n} parole olandesi popolari, ordinate per frequenza d'uso nell'olandese di tutti i giorni.",
   '{n} words across {c} chapters — filter by source in Learn or Words to study just these.':'{n} parole in {c} capitoli — filtra per fonte in Impara o Parole per studiare solo queste.',
-  'Everything works with no internet connection once the app has loaded.':"Tutto funziona senza connessione Internet una volta caricata l'app.",
   'Backup':'Backup',
   'Your progress lives in this browser. Export a backup before switching phones, then import it there.':'I tuoi progressi vivono in questo browser. Esporta un backup prima di cambiare telefono, poi importalo lì.',
   'Export':'Esporta', 'Import':'Importa',
@@ -761,9 +763,10 @@ es:{
   'Each square is a day; darker means more words learned. Learn at least one word a day to keep your streak alive.':'Cada cuadrado es un día; cuanto más oscuro, más palabras aprendidas. Aprende al menos una palabra al día para mantener tu racha.',
   'By word type':'Por tipo de palabra', 'Tap a type to study or browse just those words.':'Toca un tipo para estudiar o explorar solo esas palabras.',
   'Your deck':'Tu mazo',
-  '{d} words total, all available offline. {m} have English meanings and {f} also have example sentences, grammar forms and synonyms.':'{d} palabras en total, todas disponibles sin conexión. {m} tienen significado traducido y {f} también tienen frases de ejemplo, formas gramaticales y sinónimos.',
+  'Build your Dutch vocabulary in a structured way. This one-stop app shows all the details of a word — meaning, example sentences, grammar forms and synonyms — so learners can pick it up in a practical way.':'Construye tu vocabulario neerlandés de forma estructurada. Esta app todo en uno muestra todos los detalles de una palabra — significado, frases de ejemplo, formas gramaticales y sinónimos — para aprender de manera práctica.',
+  '{d} words in total. {m} have English meanings and {f} also have example sentences, grammar forms and synonyms.':'{d} palabras en total. {m} tienen significado traducido y {f} también tienen frases de ejemplo, formas gramaticales y sinónimos.',
+  '{n} popular Dutch words, ordered by how often they are used in everyday Dutch.':'{n} palabras neerlandesas populares, ordenadas por su frecuencia en el neerlandés cotidiano.',
   '{n} words across {c} chapters — filter by source in Learn or Words to study just these.':'{n} palabras en {c} capítulos — filtra por fuente en Aprender o Palabras para estudiar solo estas.',
-  'Everything works with no internet connection once the app has loaded.':'Todo funciona sin conexión a Internet una vez cargada la app.',
   'Backup':'Copia de seguridad',
   'Your progress lives in this browser. Export a backup before switching phones, then import it there.':'Tu progreso vive en este navegador. Exporta una copia antes de cambiar de teléfono y luego impórtala allí.',
   'Export':'Exportar', 'Import':'Importar',
@@ -5932,15 +5935,15 @@ function renderMenu(){
   document.getElementById('drawerTitle').textContent = T('Settings');
   const withMeaning = deck.filter(e=>e.rich || e.hasMeaning).length;
   const full = deck.filter(e=>e.rich).length;
+  const genCount = deck.filter(e=>(e.srcTags||[]).includes('general')).length;
   body.innerHTML = `
     <div class="genbox">
-      <h3>${T('Theme')}</h3>
-      <div class="themepick">
-        ${THEMES.map(t=>`
-          <button class="themebtn ${theme===t.id?'active':''}" onclick="setTheme('${t.id}')" aria-label="${t.name}" title="${t.name}">
-            <span class="swatch">${t.sw.map(c=>`<i style="background:${c}"></i>`).join('')}</span>
-          </button>`).join('')}
-      </div>
+      <h3>${T('About the app')}</h3>
+      <p>${T('Build your Dutch vocabulary in a structured way. This one-stop app shows all the details of a word — meaning, example sentences, grammar forms and synonyms — so learners can pick it up in a practical way.')}</p>
+      <p style="margin-top:6px">${T('{d} words in total. {m} have English meanings and {f} also have example sentences, grammar forms and synonyms.', {d:`<b>${deck.length}</b>`, m:`<b>${withMeaning}</b>`, f:`<b>${full}</b>`})}</p>
+      <p style="margin-top:6px">&#11088; <b>General 5K</b>: ${T('{n} popular Dutch words, ordered by how often they are used in everyday Dutch.', {n:genCount})}</p>
+      ${bookChapters('gang').length?`<p style="margin-top:6px">&#128218; <b>Nederlands in Gang</b>: ${T('{n} words', {n:deck.filter(e=>(e.srcTags||[]).includes('gang')).length})}.</p>`:''}
+      ${bookChapters('actie').length?`<p style="margin-top:6px">&#128218; <b>Nederlands in Actie</b>: ${T('{n} words across {c} chapters — filter by source in Learn or Words to study just these.', {n:deck.filter(e=>(e.srcTags||[]).includes('actie')).length, c:bookChapters('actie').length})}</p>`:''}
     </div>
 
     <div class="genbox">
@@ -5952,20 +5955,22 @@ function renderMenu(){
     </div>
 
     <div class="genbox">
+      <h3>${T('Theme')}</h3>
+      <div class="themepick">
+        ${THEMES.map(t=>`
+          <button class="themebtn ${theme===t.id?'active':''}" onclick="setTheme('${t.id}')" aria-label="${t.name}" title="${t.name}">
+            <span class="swatch">${t.sw.map(c=>`<i style="background:${c}"></i>`).join('')}</span>
+          </button>`).join('')}
+      </div>
+    </div>
+
+    <div class="genbox">
       <h3>${T('Backup')}</h3>
       <p>${T('Your progress lives in this browser. Export a backup before switching phones, then import it there.')}</p>
       <div class="rowbtns">
         <button onclick="hap();exportData()">${T('Export')}</button>
         <button onclick="hap();importData()">${T('Import')}</button>
       </div>
-    </div>
-
-    <div class="genbox">
-      <h3>${T('About the app')}</h3>
-      <p>${T('{d} words total, all available offline. {m} have English meanings and {f} also have example sentences, grammar forms and synonyms.', {d:`<b>${deck.length}</b>`, m:`<b>${withMeaning}</b>`, f:`<b>${full}</b>`})}</p>
-      ${bookChapters('actie').length?`<p style="margin-top:6px">&#128218; <b>Nederlands in Actie</b>: ${T('{n} words across {c} chapters — filter by source in Learn or Words to study just these.', {n:deck.filter(e=>(e.srcTags||[]).includes('actie')).length, c:bookChapters('actie').length})}</p>`:''}
-      ${bookChapters('gang').length?`<p style="margin-top:6px">&#128218; <b>Nederlands in Gang</b>: ${T('{n} words', {n:deck.filter(e=>(e.srcTags||[]).includes('gang')).length})}.</p>`:''}
-      <div class="note">${T('Everything works with no internet connection once the app has loaded.')}</div>
     </div>`;
 }
 function toggleMenu(){ hap(); if(menuOpen) closeMenu(); else openMenu(); }
@@ -6572,7 +6577,7 @@ function render(){
 /* ============ OFFLINE (service worker) ============ */
 if('serviceWorker' in navigator){
   const swCode = `
-    const C = 'dutch5k-v54';
+    const C = 'dutch5k-v55';
     self.addEventListener('install', e => { self.skipWaiting(); });
     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
     self.addEventListener('fetch', e => {
