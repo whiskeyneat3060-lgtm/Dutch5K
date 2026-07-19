@@ -504,7 +504,7 @@
 <div class="scrim" id="scrim" onclick="closeMenu()"></div>
 <aside class="drawer" id="drawer" aria-hidden="true">
   <div class="drawer-head">
-    <div class="drawer-title" id="drawerTitle">Settings</div>
+    <div class="drawer-title" id="drawerTitle">Menu</div>
     <button class="drawer-close" id="drawerClose" aria-label="Close" onclick="hap();closeMenu()">&#10005;</button>
   </div>
   <div class="drawer-body" id="drawerBody"></div>
@@ -593,7 +593,7 @@ const CTCACHE = {};    // language id -> loaded content dictionary
 const UI = {
 fr:{
   'Words learned':'Mots appris', 'Learn':'Apprendre', 'Words':'Mots', 'Progress':'Progression',
-  'Settings':'Réglages', 'About the app':"À propos de l'app", 'Menu':'Menu', 'Close':'Fermer',
+  'About the app':"À propos de l'app", 'Menu':'Menu', 'Close':'Fermer',
   'Shuffle On':'Mélange activé', 'Shuffle Off':'Mélange désactivé',
   'All types':'Tous les types', 'Verbs':'Verbes', 'Nouns':'Noms', 'Adjectives':'Adjectifs', 'Adverbs':'Adverbes', 'Pronouns':'Pronoms', 'Prepositions':'Prépositions', 'Conjunctions':'Conjonctions', 'Numbers':'Nombres', 'Expressions':'Expressions', 'Articles':'Articles',
   'All sources':'Toutes les sources', 'General 5K':'5K général',
@@ -632,7 +632,6 @@ fr:{
   'By word type':'Par type de mot', 'Tap a type to study or browse just those words.':'Touchez un type pour étudier ou parcourir uniquement ces mots.',
   'Your deck':'Votre paquet',
   'Build your Dutch vocabulary in a structured way. This one-stop app shows all the details of a word — meaning, example sentences, grammar forms and synonyms — so learners can pick it up in a practical way.':"Construisez votre vocabulaire néerlandais de façon structurée. Cette app tout-en-un montre tous les détails d'un mot — sens, phrases d'exemple, formes grammaticales et synonymes — pour apprendre de manière pratique.",
-  '{d} words in total. {m} have English meanings and {f} also have example sentences, grammar forms and synonyms.':"{d} mots au total. {m} ont un sens traduit et {f} ont aussi des phrases d'exemple, des formes grammaticales et des synonymes.",
   '{n} popular Dutch words, ordered by how often they are used in everyday Dutch.':'{n} mots néerlandais populaires, classés selon leur fréquence dans la langue de tous les jours.',
   '{n} words across {c} chapters — filter by source in Learn or Words to study just these.':'{n} mots répartis sur {c} chapitres — filtrez par source dans Apprendre ou Mots pour étudier uniquement ceux-ci.',
   'Backup':'Sauvegarde',
@@ -659,7 +658,7 @@ fr:{
 },
 it:{
   'Words learned':'Parole apprese', 'Learn':'Impara', 'Words':'Parole', 'Progress':'Progressi',
-  'Settings':'Impostazioni', 'About the app':"Informazioni sull'app", 'Menu':'Menu', 'Close':'Chiudi',
+  'About the app':"Informazioni sull'app", 'Menu':'Menu', 'Close':'Chiudi',
   'Shuffle On':'Casuale attivato', 'Shuffle Off':'Casuale disattivato',
   'All types':'Tutti i tipi', 'Verbs':'Verbi', 'Nouns':'Sostantivi', 'Adjectives':'Aggettivi', 'Adverbs':'Avverbi', 'Pronouns':'Pronomi', 'Prepositions':'Preposizioni', 'Conjunctions':'Congiunzioni', 'Numbers':'Numeri', 'Expressions':'Espressioni', 'Articles':'Articoli',
   'All sources':'Tutte le fonti', 'General 5K':'5K generale',
@@ -698,7 +697,6 @@ it:{
   'By word type':'Per tipo di parola', 'Tap a type to study or browse just those words.':'Tocca un tipo per studiare o sfogliare solo quelle parole.',
   'Your deck':'Il tuo mazzo',
   'Build your Dutch vocabulary in a structured way. This one-stop app shows all the details of a word — meaning, example sentences, grammar forms and synonyms — so learners can pick it up in a practical way.':"Costruisci il tuo vocabolario olandese in modo strutturato. Questa app tutto-in-uno mostra tutti i dettagli di una parola — significato, frasi di esempio, forme grammaticali e sinonimi — per imparare in modo pratico.",
-  '{d} words in total. {m} have English meanings and {f} also have example sentences, grammar forms and synonyms.':'{d} parole in totale. {m} hanno un significato tradotto e {f} hanno anche frasi di esempio, forme grammaticali e sinonimi.',
   '{n} popular Dutch words, ordered by how often they are used in everyday Dutch.':"{n} parole olandesi popolari, ordinate per frequenza d'uso nell'olandese di tutti i giorni.",
   '{n} words across {c} chapters — filter by source in Learn or Words to study just these.':'{n} parole in {c} capitoli — filtra per fonte in Impara o Parole per studiare solo queste.',
   'Backup':'Backup',
@@ -725,7 +723,7 @@ it:{
 },
 es:{
   'Words learned':'Palabras aprendidas', 'Learn':'Aprender', 'Words':'Palabras', 'Progress':'Progreso',
-  'Settings':'Ajustes', 'About the app':'Acerca de la app', 'Menu':'Menú', 'Close':'Cerrar',
+  'About the app':'Acerca de la app', 'Menu':'Menú', 'Close':'Cerrar',
   'Shuffle On':'Aleatorio activado', 'Shuffle Off':'Aleatorio desactivado',
   'All types':'Todos los tipos', 'Verbs':'Verbos', 'Nouns':'Sustantivos', 'Adjectives':'Adjetivos', 'Adverbs':'Adverbios', 'Pronouns':'Pronombres', 'Prepositions':'Preposiciones', 'Conjunctions':'Conjunciones', 'Numbers':'Números', 'Expressions':'Expresiones', 'Articles':'Artículos',
   'All sources':'Todas las fuentes', 'General 5K':'5K general',
@@ -764,7 +762,6 @@ es:{
   'By word type':'Por tipo de palabra', 'Tap a type to study or browse just those words.':'Toca un tipo para estudiar o explorar solo esas palabras.',
   'Your deck':'Tu mazo',
   'Build your Dutch vocabulary in a structured way. This one-stop app shows all the details of a word — meaning, example sentences, grammar forms and synonyms — so learners can pick it up in a practical way.':'Construye tu vocabulario neerlandés de forma estructurada. Esta app todo en uno muestra todos los detalles de una palabra — significado, frases de ejemplo, formas gramaticales y sinónimos — para aprender de manera práctica.',
-  '{d} words in total. {m} have English meanings and {f} also have example sentences, grammar forms and synonyms.':'{d} palabras en total. {m} tienen significado traducido y {f} también tienen frases de ejemplo, formas gramaticales y sinónimos.',
   '{n} popular Dutch words, ordered by how often they are used in everyday Dutch.':'{n} palabras neerlandesas populares, ordenadas por su frecuencia en el neerlandés cotidiano.',
   '{n} words across {c} chapters — filter by source in Learn or Words to study just these.':'{n} palabras en {c} capítulos — filtra por fuente en Aprender o Palabras para estudiar solo estas.',
   'Backup':'Copia de seguridad',
@@ -5932,15 +5929,12 @@ async function setTheme(t){
 let menuOpen = false;
 function renderMenu(){
   const body = document.getElementById('drawerBody'); if(!body) return;
-  document.getElementById('drawerTitle').textContent = T('Settings');
-  const withMeaning = deck.filter(e=>e.rich || e.hasMeaning).length;
-  const full = deck.filter(e=>e.rich).length;
+  document.getElementById('drawerTitle').textContent = T('Menu');
   const genCount = deck.filter(e=>(e.srcTags||[]).includes('general')).length;
   body.innerHTML = `
     <div class="genbox">
       <h3>${T('About the app')}</h3>
       <p>${T('Build your Dutch vocabulary in a structured way. This one-stop app shows all the details of a word — meaning, example sentences, grammar forms and synonyms — so learners can pick it up in a practical way.')}</p>
-      <p style="margin-top:6px">${T('{d} words in total. {m} have English meanings and {f} also have example sentences, grammar forms and synonyms.', {d:`<b>${deck.length}</b>`, m:`<b>${withMeaning}</b>`, f:`<b>${full}</b>`})}</p>
       <p style="margin-top:6px">&#11088; <b>General 5K</b>: ${T('{n} popular Dutch words, ordered by how often they are used in everyday Dutch.', {n:genCount})}</p>
       ${bookChapters('gang').length?`<p style="margin-top:6px">&#128218; <b>Nederlands in Gang</b> (A0 &rarr; A2): ${T('{n} words', {n:deck.filter(e=>(e.srcTags||[]).includes('gang')).length})}.</p>`:''}
       ${bookChapters('actie').length?`<p style="margin-top:6px">&#128218; <b>Nederlands in Actie</b> (A2 &rarr; B1): ${T('{n} words across {c} chapters — filter by source in Learn or Words to study just these.', {n:deck.filter(e=>(e.srcTags||[]).includes('actie')).length, c:bookChapters('actie').length})}</p>`:''}
@@ -6577,7 +6571,7 @@ function render(){
 /* ============ OFFLINE (service worker) ============ */
 if('serviceWorker' in navigator){
   const swCode = `
-    const C = 'dutch5k-v56';
+    const C = 'dutch5k-v57';
     self.addEventListener('install', e => { self.skipWaiting(); });
     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
     self.addEventListener('fetch', e => {
