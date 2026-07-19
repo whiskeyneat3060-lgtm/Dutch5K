@@ -5942,8 +5942,8 @@ function renderMenu(){
       <p>${T('Build your Dutch vocabulary in a structured way. This one-stop app shows all the details of a word — meaning, example sentences, grammar forms and synonyms — so learners can pick it up in a practical way.')}</p>
       <p style="margin-top:6px">${T('{d} words in total. {m} have English meanings and {f} also have example sentences, grammar forms and synonyms.', {d:`<b>${deck.length}</b>`, m:`<b>${withMeaning}</b>`, f:`<b>${full}</b>`})}</p>
       <p style="margin-top:6px">&#11088; <b>General 5K</b>: ${T('{n} popular Dutch words, ordered by how often they are used in everyday Dutch.', {n:genCount})}</p>
-      ${bookChapters('gang').length?`<p style="margin-top:6px">&#128218; <b>Nederlands in Gang</b>: ${T('{n} words', {n:deck.filter(e=>(e.srcTags||[]).includes('gang')).length})}.</p>`:''}
-      ${bookChapters('actie').length?`<p style="margin-top:6px">&#128218; <b>Nederlands in Actie</b>: ${T('{n} words across {c} chapters — filter by source in Learn or Words to study just these.', {n:deck.filter(e=>(e.srcTags||[]).includes('actie')).length, c:bookChapters('actie').length})}</p>`:''}
+      ${bookChapters('gang').length?`<p style="margin-top:6px">&#128218; <b>Nederlands in Gang</b> (A0 &rarr; A2): ${T('{n} words', {n:deck.filter(e=>(e.srcTags||[]).includes('gang')).length})}.</p>`:''}
+      ${bookChapters('actie').length?`<p style="margin-top:6px">&#128218; <b>Nederlands in Actie</b> (A2 &rarr; B1): ${T('{n} words across {c} chapters — filter by source in Learn or Words to study just these.', {n:deck.filter(e=>(e.srcTags||[]).includes('actie')).length, c:bookChapters('actie').length})}</p>`:''}
     </div>
 
     <div class="genbox">
@@ -6577,7 +6577,7 @@ function render(){
 /* ============ OFFLINE (service worker) ============ */
 if('serviceWorker' in navigator){
   const swCode = `
-    const C = 'dutch5k-v55';
+    const C = 'dutch5k-v56';
     self.addEventListener('install', e => { self.skipWaiting(); });
     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
     self.addEventListener('fetch', e => {
