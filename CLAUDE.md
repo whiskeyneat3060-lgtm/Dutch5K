@@ -95,7 +95,7 @@ backup in Progress tab. No server; losing localStorage loses progress.
 ## Features
 
 Three tabs: **Learn** (flashcards, flip, Again/Learning/Know-it, Skip), **Words** (search, list, detail),
-**Overview** (stats, daily goal, streak, 14-day history, POS breakdown, backup, theme picker).
+**Overview** (stats, daily goal, streak, 14-day history, POS breakdown, backup, theme + app-language pickers).
 
 > **Naming (v50):** the third tab is *displayed* as **Overview** (renamed from "Progress" — it holds
 > settings/backup/theme, not just progress). The **internal id stays `progress`** everywhere: `setTab('progress')`,
@@ -140,6 +140,31 @@ words still tend to surface first but every session/rebuild draws a different va
 don't flood the front. Only affects the *fresh* segment (learning/learned were already shuffled). Composes
 with POS/source filters automatically — filters narrow the pool first, ordering happens after (verified:
 shuffled verb-only rounds work). Toggling rebuilds the queue and clears session skips.
+
+**App language (v51):** Overview → "App language" box (below Theme): **EN / FR / IT / ES**. The app
+*teaches* Dutch; this switches everything else — menus, word meanings, example translations. Dutch words,
+forms and synonyms are never translated. `LANGS` array + `setLang(id)`; persisted `dutch5k-lang`, default `en`.
+Two layers:
+- **UI strings** — hand-written `UI` dicts in the JS (one per language, keyed by the **exact English
+  string**), looked up via `T(s, vars)`. `{x}` placeholders substituted *after* lookup so translations can
+  reorder them. Missing key → English. Nav + header live outside `#main`, so `applyNavLang()` re-labels
+  them explicitly on switch/init. Date formatting follows `langLocale()`.
+- **Content** (meanings, example EN sides, related-word meanings) — per-language packs
+  `public/i18n/<id>.json`, a flat `{english → translated}` map (~11.5k entries, ~860 KB raw; Cloudflare
+  gzips). Fetched on demand by `loadLangDict()`, runtime-cached by the SW (offline after first pick),
+  applied at render via `ct(s)`. Missing key falls back to English — so fresh API enrichments simply show
+  English until packs are regenerated.
+
+Packs are machine-translated offline (Argos/CTranslate2 en→fr/it/es). **Regenerate** (after adding
+BOOKEX/GENEX content, or for a new language): `node scratchpad/i18n_extract.js` (jsdom-dumps every
+meaning + example string from the *built* deck — keys must match render-time strings exactly, so always
+extract post-overlay) → `python3 scratchpad/i18n_translate.py` (`pip install argostranslate` first;
+**keep `intra_threads<=2`** — 4 threads nondeterministically corrupts CTranslate2 batch output). Glosses
+are translated part-by-part on commas/semicolons + deduped (MT mangles bare comma lists); `(form of "X")`
+suffixes are stripped pre-MT and re-attached with a localized label so the quoted Dutch word is untouched.
+**Add a language:** entry in `LANGS`, a full `UI` dict, add its id to the two scripts, regenerate, bump SW
+cache. Gotcha: a *missing* pack file doesn't 404 — the SPA fallback returns index.html with HTTP 200, so
+`r.json()` throws and `setLang` toasts the connection error; ship the pack file with the `LANGS` entry.
 
 Filters in Learn + Words: **status** (new/learning/learned), **POS** (verb/noun/adj/...), **source**
 (All / General 5K / Gang / Actie). Book words show A/G badges + chapter tags ("Actie H3").
