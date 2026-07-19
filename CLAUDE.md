@@ -111,9 +111,16 @@ Three tabs: **Learn** (flashcards, flip, Again/Learning/Know-it, Skip), **Words*
 
 **Settings drawer (v53):** three-bar hamburger button (`#menuBtn`, in `.hdr-left` next to the logo) slides
 `aside#drawer` in from the left over a `#scrim`; close via ✕, scrim tap, or Escape. Holds the four
-one-time-setup boxes that used to bloat the third tab: **Theme**, **App language**, **Backup**
-(Export/Import), **About the app** (deck counts + book lines, heading is the new `T('About the app')` key).
+one-time-setup boxes that used to bloat the third tab, in order (v55, Adi request): **About the app**,
+**App language**, **Theme**, **Backup** (Export/Import).
 How it works / gotchas:
+- **About box rewritten (v55–v56, Adi request — keep this framing):** intro = "build Dutch vocabulary in a
+  structured way / one-stop app with all word details for practical learning"; **no offline claims** (the
+  old "all available offline" phrase and "works with no internet" note were removed on purpose). Then live
+  deck counts, then sources in canonical order: ⭐ General 5K ("{n} popular Dutch words…"), 📚 Nederlands in
+  Gang **(A0 → A2)**, 📚 Nederlands in Actie **(A2 → B1)**. CEFR ranges sit outside the `T()` strings
+  (language-neutral). New UI-dict keys (fr/it/es): the intro sentence, `{d} words in total…`, `{n} popular
+  Dutch words…`; the old offline-flavoured keys were deleted.
 - **Compact pickers (v54, Adi request — keep them this way):** Theme = three **swatch-only chips in one
   row** (no name/desc text; theme name kept as `aria-label`/`title`); App language = four **code chips**
   (EN/FR/IT/ES, full name in `aria-label`/`title`). Both wrap via `.themepick{flex-wrap}`, share
