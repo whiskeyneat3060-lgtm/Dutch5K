@@ -70,6 +70,12 @@
   .counter{font-family:var(--font-head); font-weight:700; font-size:13px; text-align:right; line-height:1.2;}
   .counter small{display:block; font-weight:400; font-size:10px; letter-spacing:1px; text-transform:uppercase; color:var(--muted);}
 
+  /* .topbar wraps header + nav and freezes the whole block at the viewport top while
+     #main scrolls. It must have an opaque background (content passes underneath) and
+     must NOT get a transform — a transformed ancestor would trap Midnight's
+     position:fixed bottom nav inside it. */
+  .topbar{ position:sticky; top:0; z-index:20; background:var(--paper); }
+
   /* position:sticky + translateZ(0) force nav onto its own compositing layer, so its
      paint survives #main re-renders (fixes the tab bar vanishing after a tap on
      Android Chrome). Sticky also keeps the tabs reachable when the page scrolls. */
@@ -310,6 +316,15 @@
       var(--paper);
     background-attachment:fixed;
   }
+  /* Same ambient gradient as body, also viewport-fixed, so the frozen topbar is
+     indistinguishable from the page behind it (nav lives at the bottom here). */
+  html[data-theme="midnight"] .topbar{
+    background:
+      radial-gradient(1100px 560px at 82% -12%, rgba(108,140,255,.18), transparent 60%),
+      radial-gradient(820px 480px at -12% 18%, rgba(255,107,129,.12), transparent 55%),
+      var(--paper);
+    background-attachment:fixed;
+  }
   html[data-theme="midnight"] header{ border-bottom:none; padding:20px 18px 8px; }
   html[data-theme="midnight"] .logo{ font-weight:800; letter-spacing:-.5px; font-size:22px; }
   html[data-theme="midnight"] .counter small{ letter-spacing:1.4px; }
@@ -371,6 +386,12 @@
       var(--paper);
   }
   html[data-theme="sepia"] main{ max-width:520px; padding:24px 22px 60px; }
+  /* match the body's paper grain so the frozen topbar doesn't read as a flat strip */
+  html[data-theme="sepia"] .topbar{
+    background:
+      repeating-linear-gradient(0deg, rgba(120,90,50,.028) 0 2px, transparent 2px 5px),
+      var(--paper);
+  }
   /* title-page header */
   html[data-theme="sepia"] header{
     flex-direction:column; gap:3px; text-align:center; justify-content:center;
@@ -418,6 +439,7 @@
 </head>
 <body>
 
+<div class="topbar">
 <header>
   <div class="logo">DUTCH<span>&#183;</span>5K</div>
   <div class="counter"><small>Words learned</small><span id="hdrCount">0 / 5000</span></div>
@@ -428,6 +450,7 @@
   <button id="tabWords" onclick="setTab('words')">Words</button>
   <button id="tabProgress" onclick="setTab('progress')">Overview</button>
 </nav>
+</div>
 
 <main id="main"></main>
 <div class="toast" id="toast"></div>
@@ -6465,7 +6488,7 @@ function render(){
 /* ============ OFFLINE (service worker) ============ */
 if('serviceWorker' in navigator){
   const swCode = `
-    const C = 'dutch5k-v51';
+    const C = 'dutch5k-v52';
     self.addEventListener('install', e => { self.skipWaiting(); });
     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
     self.addEventListener('fetch', e => {
