@@ -116,11 +116,12 @@ one-time-setup boxes that used to bloat the third tab, in order (v55, Adi reques
 How it works / gotchas:
 - **About box rewritten (v55–v56, Adi request — keep this framing):** intro = "build Dutch vocabulary in a
   structured way / one-stop app with all word details for practical learning"; **no offline claims** (the
-  old "all available offline" phrase and "works with no internet" note were removed on purpose). Then live
-  deck counts, then sources in canonical order: ⭐ General 5K ("{n} popular Dutch words…"), 📚 Nederlands in
+  old "all available offline" phrase and "works with no internet" note were removed on purpose). Then
+  sources in canonical order: ⭐ General 5K ("{n} popular Dutch words…"), 📚 Nederlands in
   Gang **(A0 → A2)**, 📚 Nederlands in Actie **(A2 → B1)**. CEFR ranges sit outside the `T()` strings
-  (language-neutral). New UI-dict keys (fr/it/es): the intro sentence, `{d} words in total…`, `{n} popular
-  Dutch words…`; the old offline-flavoured keys were deleted.
+  (language-neutral). New UI-dict keys (fr/it/es): the intro sentence, `{n} popular
+  Dutch words…`; the old offline-flavoured keys were deleted. **v57 (Adi request):** the deck-counts line
+  ("{d} words in total…") between intro and sources was removed, along with its UI-dict keys.
 - **Compact pickers (v54, Adi request — keep them this way):** Theme = three **swatch-only chips in one
   row** (no name/desc text; theme name kept as `aria-label`/`title`); App language = four **code chips**
   (EN/FR/IT/ES, full name in `aria-label`/`title`). Both wrap via `.themepick{flex-wrap}`, share
@@ -140,8 +141,11 @@ How it works / gotchas:
   gradient — it must read as a layer) + darker scrim; Sepia = paper-grain background, italic serif title,
   and the hamburger `position:absolute` in the corner of the centred title-page header
   (`.hdr-left{justify-content:center}` keeps the logo centred).
-- New UI-dict keys (fr/it/es): `Progress`, `Settings`, `About the app`, `Menu`, `Close`; the old
+- New UI-dict keys (fr/it/es): `Progress`, `About the app`, `Menu`, `Close`; the old
   `Overview` key was replaced.
+- **Drawer title = "Menu" since v57 (Adi request):** `renderMenu()` sets `T('Menu')` (shared with the
+  hamburger aria-label); `.drawer-title` CSS uppercases it, so it displays **MENU** (Sepia keeps its
+  italic no-uppercase skin). The old `Settings` UI-dict keys were deleted with it.
 
 **Sticky top bar (v52):** `<header>` + `<nav>` are wrapped in `<div class="topbar">` —
 `position:sticky; top:0; z-index:20`, opaque theme background — so logo *and* tabs stay frozen while
