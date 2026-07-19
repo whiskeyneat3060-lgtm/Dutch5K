@@ -28,6 +28,14 @@ auto-deploy from `main` via Workers Builds. Push to `main` = live in ~60s.
 | `SEED` | 115 | Hand-curated: forms, synonyms, antonyms, 2 examples |
 | `TRANS` | 3,887 | Offline English meanings (FreeDict NL-EN + lemmatisation + manual). `word -> {m, t?}` |
 | `BOOKS` | 2,233 | Textbook vocab: 1,236 Nederlands in Actie + 997 Nederlands in Gang |
+| `NIVEAU` | 501 | Nederlands op Niveau vocab (499 words, 2 cross-chapter tag dups) — separate blob, pushed into `BOOKS` at load |
+
+**`NIVEAU`** (right after the `BOOKS` line, v58): third book as its own readable blob so the giant
+`BOOKS` line never needs editing — `NIVEAU.forEach(b=>BOOKS.push(b))` merges it before `buildDeck()`
+runs, so all downstream code (merge, filters, badges) needed zero changes. Entries carry full
+enrichment inline (`m`/`ex`/`syn`/`ant`/`f`) unlike Actie/Gang which overlay via `BOOKEX`; words in two
+chapters appear once rich + once as a minimal `{w,src,ch,t}` tag entry. **Top-ups: append before the
+`--NIVEAU-APPEND--` anchor** (scratchpad build script `niveau_build.js` regenerable from session).
 
 **`BOOKEX`** (just above `buildDeck`): hand-written examples for textbook words lacking them. Key
 `"<src>:<word-lowercase>"` (same as `BOOKS` merge), value `[[dutch,english],…]`. `buildDeck()` applies
@@ -61,7 +69,14 @@ two older schemes; breaking ids silently destroys progress.
   publisher's official Dutch→German list (klett-sprachen.de), translated to English. All have meanings;
   all 825 now have a hand-written example (`BOOKEX`). No forms/synonyms.
 
-Both books are Adi's copies; only vocab lists extracted, no book sentences reproduced.
+- **Nederlands op Niveau** (6 ch, 499 words, v58): PDF is a *scan* too (no text layer, no OCR run) —
+  the six chapter-end `Vocabulairelijst` spreads (book pp. 52-53, 93-94, 134-135, 187-188, 226-227,
+  262-263) were rendered to images (`pypdfium2`) and read visually. Words + de/het articles only; **all
+  meanings, examples, syn/ant and irregular-verb forms hand-written** (498 of 499 fully rich; the one
+  non-rich card is a cross-referenced tag). Includes each chapter's verb+preposition collocations,
+  conjunctions and irregular-verb lists as their own cards.
+
+All books are Adi's copies; only vocab word lists extracted, no book sentences reproduced.
 
 ## App icons & link-share branding (v48)
 
@@ -118,7 +133,8 @@ How it works / gotchas:
   structured way / one-stop app with all word details for practical learning"; **no offline claims** (the
   old "all available offline" phrase and "works with no internet" note were removed on purpose). Then
   sources in canonical order: ⭐ General 5K ("{n} popular Dutch words…"), 📚 Nederlands in
-  Gang **(A0 → A2)**, 📚 Nederlands in Actie **(A2 → B1)**. CEFR ranges sit outside the `T()` strings
+  Gang **(A0 → A2)**, 📚 Nederlands in Actie **(A2 → B1)**, 📚 Nederlands op Niveau **(B1 → B2)** (v58;
+  reuses the existing `{n} words` key — no new UI-dict keys). CEFR ranges sit outside the `T()` strings
   (language-neutral). New UI-dict keys (fr/it/es): the intro sentence, `{n} popular
   Dutch words…`; the old offline-flavoured keys were deleted. **v57 (Adi request):** the deck-counts line
   ("{d} words in total…") between intro and sources was removed, along with its UI-dict keys.
@@ -223,11 +239,13 @@ cache. Gotcha: a *missing* pack file doesn't 404 — the SPA fallback returns in
 `r.json()` throws and `setLang` toasts the connection error; ship the pack file with the `LANGS` entry.
 
 Filters in Learn + Words: **status** (new/learning/learned), **POS** (verb/noun/adj/...), **source**
-(All / General 5K / Gang / Actie). Book words show A/G badges + chapter tags ("Actie H3").
+(All / General 5K / Gang / Actie / Niveau). Book words show A/G/N badges + chapter tags ("Actie H3",
+"Niveau H5"). Badge letters come from the map in the Words-row template (`{actie:'A',gang:'G',niveau:'N'}`);
+badge colours `.sb-actie` red, `.sb-gang` blue, `.sb-niveau` yellow with dark text (yellow bg needs it).
 
 POS + source filters are **identical & same order across both tabs** — render from shared helpers
 `posFilterButtons()`/`srcFilterButtons()` (on `POS_FILTER` + `srcFilterOpts()`). Canonical source order:
-**All, General, Gang, Actie**. Edit the shared helpers, not per-tab markup, or tabs drift. (Learn:
+**All, General, Gang, Actie, Niveau** (by CEFR level). Edit the shared helpers, not per-tab markup, or tabs drift. (Learn:
 `setLearnPos`/`setLearnSrc`→full `render()`. Words: `setPosFilter`/`setSrcFilter`→partial `renderWordList()`
 with scoped `button[data-p]` update so POS refresh doesn't clobber the source bar.)
 
@@ -304,3 +322,7 @@ Push `public/index.html` to `main`. Workers Builds runs `npx wrangler deploy`, l
    Conservative: anything with a real meaning/example or book membership kept (units `km`, loanwords `app`/`tv`,
    countries, Dutch places all stay). To extend, add to `JUNK` — but first validate the candidate has no
    meaning/example/book tag. Deck dropped 6,100 → 5,754. CEFR/spoken-level tag still unbuilt.
+6. **i18n packs stale since v58 (Niveau).** The 499 new Niveau meanings/example-EN-sides show **English**
+   in FR/IT/ES until `public/i18n/*.json` are regenerated (`i18n_extract.js` → `i18n_translate.py`, see
+   App language section; Argos install too heavy for the remote session that built v58). Graceful by
+   design — regenerate on a machine with disk, bump SW cache, redeploy.
