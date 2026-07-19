@@ -271,17 +271,16 @@
   }
 
   /* ---- theme + language pickers (settings drawer) ---- */
-  /* Compact chips (v54): themes = swatch + name, languages = short code only. No descriptions. */
+  /* Compact chips (v54): themes = swatch only (name in aria-label/title), languages = short code only. */
   .themepick{display:flex; flex-wrap:wrap; gap:8px; margin-top:4px;}
   .themebtn{
-    display:flex; align-items:center; gap:8px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
     padding:8px 12px; border:var(--rule); background:var(--card-bg); color:var(--ink);
     border-radius:var(--radius); font-family:var(--font-body);
   }
   .themebtn.active{ box-shadow:inset 0 0 0 3px var(--accent); }
-  .themebtn .swatch{display:flex; flex-shrink:0; width:32px; height:20px; border:2px solid var(--line); border-radius:calc(var(--radius) * .5); overflow:hidden;}
+  .themebtn .swatch{display:flex; flex-shrink:0; width:44px; height:24px; border:2px solid var(--line); border-radius:calc(var(--radius) * .5); overflow:hidden;}
   .themebtn .swatch i{flex:1; display:block;}
-  .themebtn .tname{display:block; font-family:var(--font-head); font-weight:700; font-size:13px; text-transform:uppercase; letter-spacing:0.5px;}
   /* Language picker reuses the chip; content is just the two-letter code */
   .themebtn.langbtn{min-width:52px; justify-content:center; font-family:var(--font-head); font-weight:800; font-size:13px; letter-spacing:1px;}
 
@@ -5938,9 +5937,8 @@ function renderMenu(){
       <h3>${T('Theme')}</h3>
       <div class="themepick">
         ${THEMES.map(t=>`
-          <button class="themebtn ${theme===t.id?'active':''}" onclick="setTheme('${t.id}')" aria-label="${t.name}">
+          <button class="themebtn ${theme===t.id?'active':''}" onclick="setTheme('${t.id}')" aria-label="${t.name}" title="${t.name}">
             <span class="swatch">${t.sw.map(c=>`<i style="background:${c}"></i>`).join('')}</span>
-            <span class="tname">${t.name}</span>
           </button>`).join('')}
       </div>
     </div>
