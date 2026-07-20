@@ -1,0 +1,14 @@
+# intermediate i18n build outputs — regenerate via i18n_extract.js + i18n_translate.py;
+# the shipped packs live in public/i18n/
+strings.json
+argos-index.json
+bg.json
+de.json
+es.json
+fr.json
+it.json
+pl.json
+pt.json
+ru.json
+tr.json
+uk.json
