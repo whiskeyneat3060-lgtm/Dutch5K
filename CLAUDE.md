@@ -370,6 +370,21 @@ match (`shuffleBar + srcBar + posBar` in the two `main.innerHTML` spots; the shu
 Synonyms/antonyms render as tappable rows; if the word is in deck it links to its card, with back-stack
 (`wordViewStack`).
 
+**Word-detail Back behaviour (v69, Adi request):** `openWord`/`backFromWord` now remember where a
+detail chain was entered so **Back returns you to that exact place**, not the top of the Words list:
+- `wordListScrollY` — captured (`window.scrollY`) when a word is opened **from the Words list**;
+  `backFromWord` restores it (`scrollTo(0, wordListScrollY)`) so the list keeps your scroll position
+  instead of snapping to the top. `listLimit` isn't reset on Back, so the restored height matches
+  even after "Show more".
+- `wordOrigin` (`'words'` | `'learn'`) — captured on the **first** open of a chain (`wordView===null`).
+  Following a synonym/antonym **from a Learn flashcard** opens the detail in the Words tab; on Back
+  with an empty `wordViewStack`, `wordOrigin==='learn'` sends you back to the **Learn card**
+  (`tab='learn'`) rather than dumping you on the Words list. From the Words list it stays in Words and
+  restores scroll. Stepping back through a synonym→synonym chain (non-empty stack) still lands on the
+  parent card, top-aligned. The Back button label reads **"Back"** (not "Back to list") whenever the
+  stack is non-empty **or** `wordOrigin==='learn'` (reuses existing `Back`/`Back to list` UI keys — no
+  new translations).
+
 **Pronunciation:** speaker icon (`spkBtn(idx)`, `.spk`) next to every word in Learn card, Words rows, Words
 detail. Tap → `speak(idx, event)` uses Web Speech API (`SpeechSynthesisUtterance`, `lang='nl-NL'`) — offline,
 no deps/key. Dutch voice via `_loadNlVoice()`; icon red (`.spk.speaking`) while speaking. Works for all words.
