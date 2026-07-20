@@ -247,13 +247,24 @@ Two layers:
   applied at render via `ct(s)`. Missing key falls back to English — so fresh API enrichments simply show
   English until packs are regenerated.
 
-Packs are machine-translated offline (Argos/CTranslate2 en→fr/it/es). **Regenerate** (after adding
-BOOKEX/GENEX content, or for a new language): `node scratchpad/i18n_extract.js` (jsdom-dumps every
-meaning + example string from the *built* deck — keys must match render-time strings exactly, so always
-extract post-overlay) → `python3 scratchpad/i18n_translate.py` (`pip install argostranslate` first;
-**keep `intra_threads<=2`** — 4 threads nondeterministically corrupts CTranslate2 batch output). Glosses
-are translated part-by-part on commas/semicolons + deduped (MT mangles bare comma lists); `(form of "X")`
-suffixes are stripped pre-MT and re-attached with a localized label so the quoted Dutch word is untouched.
+Packs are machine-translated offline (Argos CTranslate2 models, all 10 pairs since v62; no
+argostranslate/stanza — `i18n_translate.py` drives ctranslate2+sentencepiece directly). **Regenerate**
+(after adding BOOKEX/GENEX content, or for a new language): `node scratchpad/i18n_extract.js`
+(jsdom-dumps every meaning + example string from the *built* deck — keys must match render-time strings
+exactly, so always extract post-overlay) → `python3 scratchpad/i18n_translate.py` (`pip install
+ctranslate2 sentencepiece sacremoses subword-nmt`; download the `.argosmodel` zips from the argospm
+index, extract into `~/.local/share/argos-translate/packages/`, and sync `PKGDIR` to the actual dir
+names) → `python3 scratchpad/i18n_check.py` (corruption gate — must exit 0 before shipping). Gotchas
+learned in the v62 run: **`intra_threads` MUST be 1** — ctranslate2 4.8.1 nondeterministically splices
+foreign tokens into batch output at 2+ threads (re-verified; the old "≤2 is safe" note was wrong);
+parallelise per *process* (one language each) instead. The **en_pl package has no sentencepiece.model**
+— it ships Moses+subword-nmt BPE (`bpe.model`, `@@` joiners, `&apos;`/`@-@` escapes); the script
+auto-detects and handles both layouts. Glosses are translated part-by-part on commas/semicolons +
+deduped (MT mangles bare comma lists); `(form of X)` suffixes — **both** curly-quoted and bare (629 +
+457 in the deck) — are stripped pre-MT and re-attached with a localized label so the Dutch lemma never
+reaches the model (Cyrillic models transliterate-mangle it otherwise, e.g. "гаанrd"). Cyrillic packs
+(bg/uk/ru) additionally drop any entry with Latin glued onto Cyrillic (residual model garbage → English
+fallback). Turkish is the weakest model (~440 strings rejected for length blowups → stay English).
 **Add a language:** entry in `LANGS`, a full `UI` dict, add its id to the two scripts, regenerate, bump SW
 cache. Gotcha: a *missing* pack file doesn't 404 — the SPA fallback returns index.html with HTTP 200, so
 `r.json()` throws and `setLang` toasts the connection error; ship the pack file with the `LANGS` entry.
@@ -342,10 +353,10 @@ Push `public/index.html` to `main`. Workers Builds runs `npx wrangler deploy`, l
    Conservative: anything with a real meaning/example or book membership kept (units `km`, loanwords `app`/`tv`,
    countries, Dutch places all stay). To extend, add to `JUNK` — but first validate the candidate has no
    meaning/example/book tag. Deck dropped 6,100 → 5,754. CEFR/spoken-level tag still unbuilt.
-6. **i18n packs stale (FR/IT/ES since v58) / stubs (DE/PT/PL/TR/UK/RU/BG since v61).** FR/IT/ES packs
-   predate Niveau, so its 499 meanings/example-EN-sides show **English** there; the seven v61 languages
-   ship deliberately **empty `{}` packs** (real files, so `setLang` never hits the SPA-fallback error) —
-   all their word meanings/examples show English until regenerated. Fix for both: `i18n_extract.js` →
-   `i18n_translate.py` (script already lists all 10 ids; check `PKGDIR` matches the installed Argos
-   package dirs for the new pairs), then bump SW cache + redeploy. Argos install too heavy for the
-   remote sessions that built v58/v61 — regenerate on a machine with disk. Graceful by design.
+6. **i18n packs — DONE (v62).** All 10 languages now ship real content packs (~12k entries each,
+   ~0.9–1.2 MB raw): the seven v61 stubs (DE/PT/PL/TR/UK/RU/BG) got full packs, and FR/IT/ES were
+   regenerated to cover the 499 Niveau words they were missing. Regenerated in a remote session (the
+   old "Argos too heavy" blocker is gone — the script needs only ctranslate2+sentencepiece, no
+   argostranslate/stanza/torch; models downloaded per-pair from argos-net.com, ~1 GB total for all 10).
+   Pipeline + gotchas documented in the App-language section above; `i18n_check.py` gates corruption.
+   Missing keys still fall back to English by design (Turkish has the most, ~440).
