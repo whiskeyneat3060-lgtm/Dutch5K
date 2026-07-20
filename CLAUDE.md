@@ -124,7 +124,7 @@ on modern unfurlers); swap to an absolute URL if a platform needs one.
 ## Storage (client-side, no backend)
 
 `Store` adapter wraps `window.storage` (Claude artifacts) with `localStorage` fallback. Keys:
-`dutch5k-progress`, `-enriched`, `-plan`, `-streak`, `-remind`, `-theme`, `-shuffle`. Export/Import JSON
+`dutch5k-progress`, `-enriched`, `-plan`, `-streak`, `-remind`, `-theme`, `-shuffle`, `-pro`. Export/Import JSON
 backup in the settings drawer. No server; losing localStorage loses progress.
 
 ## Features
@@ -132,6 +132,34 @@ backup in the settings drawer. No server; losing localStorage loses progress.
 Three tabs: **Learn** (flashcards, flip, Again/Learning/Know-it, Skip), **Words** (search, list, detail),
 **Progress** (stats, daily goal, streak, 14-day history, POS breakdown) — plus a **settings drawer**
 (hamburger in the header) holding Theme, App language, Backup and the About box.
+
+**Pro / Free plan (v65, Adi request):** the app ships as a **freemium** gate. `isPro` (persisted
+`dutch5k-pro`, default **false** = Free) is flipped on by the **"Pro to go"** box — a prominent
+(non-accordion) `genbox.probox` rendered **first** in the drawer via `proBox()` in `renderMenu()`.
+`unlockPro()` sets it (auto-unlocks for now — **payment/entitlement is still to be wired in**, this is
+the placeholder); `lockPro()` (test-only "Switch back to Free" button, shown only when Pro) flips back so
+both states are checkable offline. Both persist, `buildQueue()`+`render()`, and re-run `renderMenu()` when
+the drawer is open.
+- **Free limits** = `FREE_LIMITS = {general:500, gang:200, actie:0, niveau:0}`. `computeFree()` (called at
+  the end of `buildDeck()`, fills module-level `freeIds`) takes the **lowest-rank N** entries of each
+  source (rank 0/missing → back via `||99999`, so real frequency words fill the quota). A word is free if
+  it falls under the cap of **any** of its sources — so a word shared between Gang (capped 200) and Actie
+  (capped 0) stays reachable via Gang. **Source precedence = the app's own taxonomy** (`inSource`):
+  `general` means *no book*, so a common frequency word that's **also** a textbook word counts as that
+  book's word, not general — e.g. `terug` is filed under Actie and therefore locks in Free even though its
+  rank is low. (If Adi ever wants top-frequency free regardless of book membership, change `computeFree`.)
+- `isLocked(e)` = `!isPro && !freeIds.has(e.id)` — the single gate used by all three tabs.
+- **Learn:** locked card renders blurred (`.card-body.locked-blur`) behind `proOverlay()` inside a
+  `.card.pro-lock`; **no flip onclick**, only a **Skip** button. The queue leads with top-frequency (free)
+  words, so a new Free user starts on open cards and meets locks deeper in.
+- **Words:** locked list rows → `.wrow.locked-row` (blurred content + `.pro-mini` 🔒), tap → `openPro()`.
+  Locked word-**detail** (reachable via synonym/antonym links) shows the same overlay card.
+- **Progress:** the "By word type" `genbox` gets `.pro-lock` + `.posbreak.locked-blur` + `proOverlay()`
+  when Free; the top stat tiles stay visible (only the POS breakdown is gated).
+- `proOverlay()` = reusable absolute overlay (🔒 + "Unlock Pro version for full access" + CTA), all CTAs
+  call `openPro(ev)` which `openMenu()`s and flashes the `.probox`. CSS: `.pro-lock`/`.locked-blur`/
+  `.pro-overlay` (theme-aware bg overrides for Midnight/Sepia)/`.pro-cta`/`.probox` near the `.card` rules.
+  Pro-specific strings go through `T()` (English-only for now — fall back to English in other langs).
 
 > **Naming (v50→v53):** the third tab was displayed as "Overview" in v50 (it held settings then); v53 moved
 > the settings out into the drawer and the visible label went **back to "Progress"**. The **internal id has
@@ -367,7 +395,11 @@ Push `public/index.html` to `main`. Workers Builds runs `npx wrangler deploy`, l
    `JUNK-EXTRA`/`JUNK-EXTRA2` `.forEach(w=>JUNK.add(w))` lines above `buildDeck` (item 5). Scratchpad scripts
    regenerable from this description.
 3. Gang words (+ hand-added Actie words) have only meaning + one example — no forms/synonyms.
-4. Adi wants a premium gate for the API key rather than pasting one in.
+4. **Pro/Free gate — DONE (v65, gate only).** Freemium plan shipped (see the Pro/Free section under
+   Features): Free unlocks General 500 / Gang 200 / Actie 0 / Niveau 0, the rest locks behind a Pro
+   overlay; the "Pro to go" drawer box unlocks. **Still open: the actual payment/entitlement** —
+   `unlockPro()` auto-unlocks as a placeholder; wire a real purchase/restore flow when ready. (Adi also
+   wanted a premium gate for the API key rather than pasting one in — could fold into the same Pro tier.)
 5. **Junk filter — DONE (first pass).** Curated `JUNK` set (above `buildDeck`, ~354 words) drops corpus noise:
    proper names, brands, foreign places, standalone abbrevs, English tokens duplicating a Dutch word.
    `buildDeck()` skips them in the `FREQ` loop (`if(JUNK.has(w)) return;`) so they never enter deck/counts.
