@@ -119,6 +119,40 @@
   .wrow .spk{width:26px; height:26px; padding:3px;}
   .word-nl .spk{width:34px; height:34px; padding:5px; margin-left:9px;}
   .word-hint{font-size:12px; color:var(--muted); margin-top:12px;}
+
+  /* ---- Pro / Free gating ---- */
+  .pro-lock{position:relative;}
+  .locked-blur{filter:blur(5px); opacity:.6; user-select:none; pointer-events:none;}
+  .pro-overlay{
+    position:absolute; inset:0; z-index:5;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:9px; text-align:center; padding:22px; cursor:pointer;
+    background:rgba(255,255,255,.6);
+  }
+  html[data-theme="midnight"] .pro-overlay{background:rgba(13,14,21,.6);}
+  html[data-theme="sepia"] .pro-overlay{background:rgba(243,234,214,.64);}
+  .pro-overlay .pro-lockico{font-size:34px; line-height:1;}
+  .pro-overlay .pro-msg{font-family:var(--font-head); font-weight:900; font-size:15px; text-transform:uppercase; letter-spacing:2px; color:var(--ink);}
+  .pro-overlay .pro-sub{font-size:13px; color:var(--muted); max-width:250px;}
+  .pro-cta{
+    margin-top:4px; padding:11px 18px; background:var(--red); color:#fff; border:none;
+    font-family:var(--font-head); font-weight:800; text-transform:uppercase; letter-spacing:1px; cursor:pointer;
+  }
+  .pro-cta.wide{width:100%; margin-top:10px;}
+  .pro-cta:active{transform:scale(.97);}
+  .wrow.locked-row{cursor:pointer;}
+  .wrow.locked-row .locked-blur{flex:1;}
+  .pro-mini{font-size:16px; flex-shrink:0; opacity:.8;}
+  /* Pro box in the settings drawer */
+  .probox{border:var(--rule);}
+  .probox:not(.pro-on){cursor:pointer;}
+  .probox .pro-h{display:flex; align-items:center; gap:8px; font-family:var(--font-head); font-size:17px; font-weight:900; text-transform:uppercase; letter-spacing:1px;}
+  .probox .pro-crown{font-size:20px;}
+  .probox .pro-chk{margin-left:auto; font-size:12px; letter-spacing:1px; color:var(--blue);}
+  .probox p{margin-top:8px; font-size:13px; color:var(--muted);}
+  .pro-restore{margin-top:10px; padding:8px 12px; background:transparent; border:2px solid var(--line); font-size:12px; text-transform:uppercase; letter-spacing:1px; cursor:pointer;}
+  .probox.flash{animation:proflash 1.4s ease;}
+  @keyframes proflash{0%,100%{box-shadow:none;} 30%,60%{box-shadow:0 0 0 3px var(--red);}}
   .word-en{font-size:20px; font-weight:600; color:var(--blue);}
   .rankline{font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--muted2); margin-top:2px;}
   .forms{margin-top:12px; font-size:13px; line-height:1.75;}
@@ -1088,6 +1122,14 @@ let enrichInFlight = false;
 let plan = null;          // {perDay, endDate, startDate} daily study plan
 let streak = null;        // {count, lastStudied, todayCount, history:{date:count}}
 let remindOn = false;
+/* ---- Pro / Free gating (v65) ----
+   Free users get a limited slice of each source; the rest is locked behind a Pro
+   upsell overlay (Learn card, Words rows, Progress "By word type"). `isPro` is
+   persisted as dutch5k-pro; the "Pro to go" box in the settings drawer flips it on.
+   `freeIds` holds the ids unlocked in free mode (computed once in buildDeck). */
+let isPro = false;
+let freeIds = new Set();
+const FREE_LIMITS = { general:500, gang:200, actie:0, niveau:0 };
 let theme = 'minimalistic';   // active UI theme id (persisted as dutch5k-theme)
 /* Theme catalogue for the Progress-tab picker. `id` matches the html[data-theme] value
    ('minimalistic' = the default, no attribute). `sw` = 3 swatch colours for the preview chip. */
@@ -6651,7 +6693,28 @@ function buildDeck(){
     if(e.books && e.books.length) e.srcTags = [...new Set(e.books.map(x=>x.src))];
     else e.srcTags = ['general'];
   });
+  computeFree();
 }
+/* Decide which entries are unlocked in the FREE plan. Each source has a cap
+   (FREE_LIMITS): the lowest-rank N words of that source stay free, the rest lock.
+   A word is free if it falls under the cap of ANY of its sources, so a word shared
+   between Gang and (capped-at-0) Actie is still reachable via Gang. Pro ignores this. */
+function computeFree(){
+  freeIds = new Set();
+  const bySrc = { general:[], gang:[], actie:[], niveau:[] };
+  deck.forEach(e => {
+    if(!e.books || !e.books.length) bySrc.general.push(e);
+    (e.srcTags||[]).forEach(t => { if(bySrc[t] && t!=='general') bySrc[t].push(e); });
+  });
+  Object.keys(bySrc).forEach(src => {
+    const cap = FREE_LIMITS[src] || 0;
+    if(cap<=0) return;
+    // rank 0 / missing sorts to the back (|| 99999) so real frequency words fill the quota
+    bySrc[src].slice().sort((a,b)=>(a.rank||99999)-(b.rank||99999))
+      .slice(0, cap).forEach(e => freeIds.add(e.id));
+  });
+}
+function isLocked(e){ return !isPro && !!e && !freeIds.has(e.id); }
 function bookChapters(src){
   const set=new Set();
   deck.forEach(e=>{ (e.books||[]).forEach(b=>{ if(b.src===src) set.add(b.ch); }); });
@@ -6708,6 +6771,7 @@ async function init(){
   plan = (await Store.get('dutch5k-plan')) || null;
   streak = (await Store.get('dutch5k-streak')) || {count:0, lastStudied:null, history:{}};
   remindOn = (await Store.get('dutch5k-remind')) || false;
+  isPro = (await Store.get('dutch5k-pro')) || false;
   learnShuffle = (await Store.get('dutch5k-shuffle')) || false;
   applyTheme((await Store.get('dutch5k-theme')) || 'minimalistic');
   lang = (await Store.get('dutch5k-lang')) || 'en';
@@ -6965,10 +7029,69 @@ function renderMenu(){
         <button onclick="hap();importData()">${T('Import')}</button>
       </div>`;
   body.innerHTML =
+    proBox() +
     menuBox('about', T('About the app'), aboutInner) +
     menuBox('lang',  T('App language'),  langInner) +
     menuBox('theme', T('Theme'),         themeInner) +
     menuBox('backup',T('Backup'),        backupInner);
+}
+/* ---- Pro / Free ---- */
+function proBox(){
+  if(isPro){
+    return `
+      <div class="genbox probox pro-on">
+        <div class="pro-h"><span class="pro-crown">&#128081;</span><b>${T('Pro to go')}</b><span class="pro-chk">&#10003; ${T('Unlocked')}</span></div>
+        <p>${T('You have full access to every word, list and stat.')}</p>
+        <button class="pro-restore" onclick="lockPro()">${T('Switch back to Free (test)')}</button>
+      </div>`;
+  }
+  return `
+    <div class="genbox probox" onclick="unlockPro()" role="button" tabindex="0">
+      <div class="pro-h"><span class="pro-crown">&#128081;</span><b>${T('Pro to go')}</b></div>
+      <p>${T('The free version unlocks a limited set of words. Go Pro for full access to every General, Gang, Actie and Niveau word, the complete word list and all progress stats.')}</p>
+      <button class="pro-cta wide" onclick="event&&event.stopPropagation();unlockPro()">${T('Unlock Pro to go')}</button>
+    </div>`;
+}
+async function unlockPro(){
+  hap();
+  if(typeof event!=='undefined' && event) event.stopPropagation();
+  isPro = true;
+  await Store.set('dutch5k-pro', true);
+  toast(T('Pro unlocked — full access!'));
+  buildQueue();
+  render();
+  if(menuOpen) renderMenu();
+}
+async function lockPro(){
+  hap();
+  if(typeof event!=='undefined' && event) event.stopPropagation();
+  isPro = false;
+  await Store.set('dutch5k-pro', false);
+  toast(T('Back on the Free plan.'));
+  buildQueue();
+  render();
+  if(menuOpen) renderMenu();
+}
+/* Open the drawer and flash the Pro box — the target of every lock overlay CTA. */
+function openPro(ev){
+  if(ev) ev.stopPropagation();
+  hap();
+  openMenu();
+  const box = document.querySelector('.probox');
+  if(box){
+    try{ box.scrollIntoView({block:'center', behavior:'smooth'}); }catch(e){}
+    box.classList.add('flash');
+    setTimeout(()=>box.classList.remove('flash'), 1500);
+  }
+}
+/* Reusable upsell overlay (Learn card, Words detail, Progress box). */
+function proOverlay(){
+  return `<div class="pro-overlay" onclick="openPro(event)">
+      <div class="pro-lockico">&#128274;</div>
+      <div class="pro-msg">${T('Locked')}</div>
+      <div class="pro-sub">${T('Unlock Pro version for full access')}</div>
+      <button class="pro-cta" onclick="openPro(event)">${T('Unlock Pro to go')} &#8594;</button>
+    </div>`;
 }
 function toggleMenu(){ hap(); if(menuOpen) closeMenu(); else openMenu(); }
 function openMenu(){
@@ -7318,6 +7441,13 @@ function renderWordList(){
     const meaning = (e.rich || e.hasMeaning) ? esc(ct(e.m)) : (e.books&&e.books.length ? T('tap to open') : `#${e.rank} &#183; ${T('tap to open')}`);
     const pos = posOf(e) ? `<span class="wpos">${esc(T(posOf(e)))}</span>` : '';
     const badge = (e.srcTags||[]).filter(t=>t!=='general').map(t=>`<span class="srcbadge sb-${t}">${({actie:'A',gang:'G',niveau:'N'})[t]||'?'}</span>`).join('');
+    if(isLocked(e)){
+      // Free plan: row stays visible but blurred; tapping opens the Pro upsell.
+      return `<div class="wrow locked-row" onclick="openPro(event)">
+          <div class="locked-blur"><div class="nl">${e.a?esc(e.a)+' ':''}${esc(e.w)} ${pos}${badge}</div><div class="en">${meaning}</div></div>
+          <div class="pro-mini" title="${T('Locked')}">&#128274;</div>
+        </div>`;
+    }
     return `<div class="wrow" onclick="hap();openWord(${i})">
         <div><div class="nl">${e.a?esc(e.a)+' ':''}${esc(e.w)} ${pos}${badge}${spkBtn(i)}</div><div class="en">${meaning}</div></div>
         <div class="dot ${s}" title="${T(s)}"></div>
@@ -7367,6 +7497,24 @@ function render(){
     const e = deck[queue[qPos]];
     const status = progress[e.id] || 'new';
     const rankTxt = e.rank ? T('#{n} most frequent', {n:e.rank}) : (e.books&&e.books.length ? bookTag(e) : T('curated extra'));
+    if(isLocked(e)){
+      // Free plan: word stays visible (blurred) behind a Pro upsell overlay.
+      main.innerHTML = shuffleBar + srcBar + posBar + `
+        ${mondrianStrip(c)}
+        <div class="card pro-lock">
+          <div class="card-tag"><span>${esc(T(e.t||'word'))}${e.a?` &#183; ${esc(e.a)}`:''}</span><span>${T(status).toUpperCase()}</span></div>
+          <div class="card-body locked-blur">
+            <div class="word-nl">${esc(e.w)}</div>
+            <div class="rankline">${rankTxt}</div>
+            <div class="word-hint">${T('Tap to reveal meaning, forms, examples &amp; related words')}</div>
+          </div>
+          ${proOverlay()}
+        </div>
+        <div class="actions"><button class="btn-skip" onclick="skipCard()">&#8631; ${T('Skip')}</button></div>
+        <div class="deckinfo">${T('Card {a} of {b} in this round · {c} words in deck', {a:qPos+1, b:queue.length, c:c.total})}</div>
+      `;
+      return;
+    }
     let back;
     if(e.rich){
       back = `
@@ -7417,6 +7565,20 @@ function render(){
     if(wordView !== null && deck[wordView]){
       const e = deck[wordView];
       const s = progress[e.id] || 'new';
+      if(isLocked(e)){
+        const backLabel = wordViewStack.length ? `&#8592; ${T('Back')}` : `&#8592; ${T('Back to list')}`;
+        main.innerHTML = `
+          <button class="loadmore" style="margin-top:0;margin-bottom:14px" onclick="backFromWord()">${backLabel}</button>
+          <div class="card pro-lock">
+            <div class="card-tag"><span>${esc(T(e.t||'word'))}</span><span>${T(s).toUpperCase()}</span></div>
+            <div class="card-body locked-blur">
+              <div class="word-nl">${esc(e.w)}</div>
+              <div class="word-hint">${T('Tap to reveal meaning, forms, examples &amp; related words')}</div>
+            </div>
+            ${proOverlay()}
+          </div>`;
+        return;
+      }
       const rankTxt = e.rank ? T('#{n} most frequent', {n:e.rank}) : (e.books&&e.books.length ? T('textbook word') : T('curated extra'));
       const bookLine = e.books&&e.books.length ? `<div class="rankline booktag">&#128218; ${bookTag(e)}</div>` : '';
       let body;
@@ -7563,10 +7725,11 @@ function render(){
         <div class="note">${T('Each square is a day; darker means more words learned. Learn at least one word a day to keep your streak alive.')}</div>
       </div>
 
-      <div class="genbox">
+      <div class="genbox${isPro?'':' pro-lock'}">
         <h3>${T('By word type')}</h3>
-        <div class="posbreak">${posRows}</div>
+        <div class="posbreak${isPro?'':' locked-blur'}">${posRows}</div>
         <div class="note">${T('Tap a type to study or browse just those words.')}</div>
+        ${isPro?'':proOverlay()}
       </div>`;
   }
 }
@@ -7574,7 +7737,7 @@ function render(){
 /* ============ OFFLINE (service worker) ============ */
 if('serviceWorker' in navigator){
   const swCode = `
-    const C = 'dutch5k-v64';
+    const C = 'dutch5k-v65';
     self.addEventListener('install', e => { self.skipWaiting(); });
     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
     self.addEventListener('fetch', e => {
