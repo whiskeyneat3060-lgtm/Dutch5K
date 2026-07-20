@@ -7041,7 +7041,7 @@ let menuOpen = false;
 /* Which drawer sections are expanded. Kept module-level so it survives the
    renderMenu() re-runs triggered by theme/language switches while the drawer
    is open. Every section starts collapsed — tap a header to reveal its body. */
-let menuSections = { about:false, lang:false, theme:false, backup:false };
+let menuSections = { about:false, lang:false, theme:false };
 function toggleSection(id){
   hap();
   menuSections[id] = !menuSections[id];
@@ -7081,18 +7081,11 @@ function renderMenu(){
             <span class="swatch">${t.sw.map(c=>`<i style="background:${c}"></i>`).join('')}</span>
           </button>`).join('')}
       </div>`;
-  const backupInner = `
-      <p>${T('Your progress lives in this browser. Export a backup before switching phones, then import it there.')}</p>
-      <div class="rowbtns">
-        <button onclick="hap();exportData()">${T('Export')}</button>
-        <button onclick="hap();importData()">${T('Import')}</button>
-      </div>`;
   body.innerHTML =
     proBox() +
     menuBox('about', T('About the app'), aboutInner) +
     menuBox('lang',  T('App language'),  langInner) +
-    menuBox('theme', T('Theme'),         themeInner) +
-    menuBox('backup',T('Backup'),        backupInner);
+    menuBox('theme', T('Theme'),         themeInner);
 }
 /* ---- Pro / Free ---- */
 function proBox(){
@@ -7843,7 +7836,7 @@ function render(){
 /* ============ OFFLINE (service worker) ============ */
 if('serviceWorker' in navigator){
   const swCode = `
-    const C = 'dutch5k-v67';
+    const C = 'dutch5k-v68';
     self.addEventListener('install', e => { self.skipWaiting(); });
     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
     self.addEventListener('fetch', e => {
