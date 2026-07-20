@@ -149,9 +149,19 @@ the drawer is open.
   book's word, not general — e.g. `terug` is filed under Actie and therefore locks in Free even though its
   rank is low. (If Adi ever wants top-frequency free regardless of book membership, change `computeFree`.)
 - `isLocked(e)` = `!isPro && !freeIds.has(e.id)` — the single gate used by all three tabs.
+- **Free-first ordering (v66, Adi request):** in Free mode `freeFirst(order)` (just below `isLocked`) pulls
+  **all unlocked words to the front** of a deck-index list and puts every locked word after, so a Free user
+  scrolls through *every* readable word in one run before hitting a clean wall of Pro-locks — a clear
+  "here's what you get / here's what's behind Pro" boundary. Order **within** each group stays frequency-
+  sorted (a plain rank sort isn't enough — a low-rank *locked* general word could otherwise jump ahead of a
+  free *book* word, so the explicit partition is needed). No-op for Pro / all-free / all-locked views.
+  **Shared by both the Learn queue and the Words list:** `buildQueue()` runs `fresh = freeFirst(fresh)` in
+  the **shuffle-off** branch only (shuffle-on keeps its strategic mix); `renderWordList()` runs
+  `freeFirst(list)` before the `listLimit` slice. (This *replaced* the earlier "queue leads with
+  top-frequency free words" behaviour — free words were partly front-loaded by rank but not guaranteed all
+  before every lock.)
 - **Learn:** locked card renders blurred (`.card-body.locked-blur`) behind `proOverlay()` inside a
-  `.card.pro-lock`; **no flip onclick**, only a **Skip** button. The queue leads with top-frequency (free)
-  words, so a new Free user starts on open cards and meets locks deeper in.
+  `.card.pro-lock`; **no flip onclick**, only a **Skip** button.
 - **Words:** locked list rows → `.wrow.locked-row` (blurred content + `.pro-mini` 🔒), tap → `openPro()`.
   Locked word-**detail** (reachable via synonym/antonym links) shows the same overlay card.
 - **Progress:** the "By word type" `genbox` gets `.pro-lock` + `.posbreak.locked-blur` + `proOverlay()`
