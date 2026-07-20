@@ -1,3 +1,6 @@
+# offline copies sent to Adi for browser testing — built from public/index.html
+dutch5k-*.html
+
 # intermediate i18n build outputs — regenerate via i18n_extract.js + i18n_translate.py;
 # the shipped packs live in public/i18n/
 strings.json
