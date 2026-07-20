@@ -172,6 +172,19 @@
   .genbox{border:var(--rule); padding:16px; margin-top:18px;}
   .genbox h3{font-family:var(--font-head); font-weight:900; font-size:16px; text-transform:uppercase; letter-spacing:0.5px;}
   .genbox p{font-size:13px; color:var(--muted); margin:8px 0 12px; line-height:1.5;}
+  /* Collapsible drawer sections: header + arrow, body reveals on tap */
+  .accbox{padding:0; overflow:hidden;}
+  .accbox .acc-body p:last-child{margin-bottom:0;}
+  .acc-h{
+    width:100%; display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding:16px; background:transparent; border:none; cursor:pointer; text-align:left;
+    font-family:var(--font-head); font-weight:900; font-size:16px; text-transform:uppercase;
+    letter-spacing:0.5px; color:var(--ink);
+  }
+  .acc-arrow{font-size:22px; line-height:1; color:var(--muted); transition:transform .25s ease;}
+  .accbox.open .acc-arrow{transform:rotate(90deg);}
+  .acc-body{max-height:0; overflow:hidden; padding:0 16px; transition:max-height .28s ease, padding .28s ease;}
+  .accbox.open .acc-body{max-height:1200px; padding-bottom:16px;}
   .genbtn{
     width:100%; padding:14px; background:var(--red); color:#fff; border:var(--rule);
     font-family:var(--font-head); font-weight:900; font-size:14px; text-transform:uppercase; letter-spacing:1px; cursor:pointer;
@@ -6902,47 +6915,60 @@ async function setTheme(t){
    #main so render() never touches it; content is (re)built on every open and
    after theme/language switches, so active states and translations stay current. */
 let menuOpen = false;
+/* Which drawer sections are expanded. Kept module-level so it survives the
+   renderMenu() re-runs triggered by theme/language switches while the drawer
+   is open. Every section starts collapsed — tap a header to reveal its body. */
+let menuSections = { about:false, lang:false, theme:false, backup:false };
+function toggleSection(id){
+  hap();
+  menuSections[id] = !menuSections[id];
+  renderMenu();
+}
+function menuBox(id, title, inner){
+  const open = !!menuSections[id];
+  return `
+    <div class="genbox accbox ${open?'open':''}">
+      <button class="acc-h" type="button" aria-expanded="${open}" onclick="toggleSection('${id}')">
+        <span>${title}</span>
+        <span class="acc-arrow" aria-hidden="true">&#8250;</span>
+      </button>
+      <div class="acc-body">${inner}</div>
+    </div>`;
+}
 function renderMenu(){
   const body = document.getElementById('drawerBody'); if(!body) return;
   document.getElementById('drawerTitle').textContent = T('Menu');
   const genCount = deck.filter(e=>(e.srcTags||[]).includes('general')).length;
-  body.innerHTML = `
-    <div class="genbox">
-      <h3>${T('About the app')}</h3>
+  const aboutInner = `
       <p>${T('Build your Dutch vocabulary in a structured way. This one-stop app shows all the details of a word — meaning, example sentences, grammar forms and synonyms — so learners can pick it up in a practical way.')}</p>
       <p style="margin-top:6px">${T('The app has {n} Dutch words in total, gathered from four sources:', {n:deck.length})}</p>
       <p style="margin-top:6px">&#128218; <b>General Words</b>: ${T('{n} popular everyday Dutch words.', {n:genCount})}</p>
       ${bookChapters('gang').length?`<p style="margin-top:6px">&#128218; <b>Nederlands in Gang</b> (A0 &rarr; A2): ${T('{n} words', {n:deck.filter(e=>(e.srcTags||[]).includes('gang')).length})}.</p>`:''}
       ${bookChapters('actie').length?`<p style="margin-top:6px">&#128218; <b>Nederlands in Actie</b> (A2 &rarr; B1): ${T('{n} words', {n:deck.filter(e=>(e.srcTags||[]).includes('actie')).length})}.</p>`:''}
-      ${bookChapters('niveau').length?`<p style="margin-top:6px">&#128218; <b>Nederlands op Niveau</b> (B1 &rarr; B2): ${T('{n} words', {n:deck.filter(e=>(e.srcTags||[]).includes('niveau')).length})}.</p>`:''}
-    </div>
-
-    <div class="genbox">
-      <h3>${T('App language')}</h3>
+      ${bookChapters('niveau').length?`<p style="margin-top:6px">&#128218; <b>Nederlands op Niveau</b> (B1 &rarr; B2): ${T('{n} words', {n:deck.filter(e=>(e.srcTags||[]).includes('niveau')).length})}.</p>`:''}`;
+  const langInner = `
       <div class="themepick">
         ${LANGS.map(l=>`
           <button class="themebtn langbtn ${lang===l.id?'active':''}" onclick="setLang('${l.id}')" aria-label="${l.name}" title="${l.name}">${l.code}</button>`).join('')}
-      </div>
-    </div>
-
-    <div class="genbox">
-      <h3>${T('Theme')}</h3>
+      </div>`;
+  const themeInner = `
       <div class="themepick">
         ${THEMES.map(t=>`
           <button class="themebtn ${theme===t.id?'active':''}" onclick="setTheme('${t.id}')" aria-label="${t.name}" title="${t.name}">
             <span class="swatch">${t.sw.map(c=>`<i style="background:${c}"></i>`).join('')}</span>
           </button>`).join('')}
-      </div>
-    </div>
-
-    <div class="genbox">
-      <h3>${T('Backup')}</h3>
+      </div>`;
+  const backupInner = `
       <p>${T('Your progress lives in this browser. Export a backup before switching phones, then import it there.')}</p>
       <div class="rowbtns">
         <button onclick="hap();exportData()">${T('Export')}</button>
         <button onclick="hap();importData()">${T('Import')}</button>
-      </div>
-    </div>`;
+      </div>`;
+  body.innerHTML =
+    menuBox('about', T('About the app'), aboutInner) +
+    menuBox('lang',  T('App language'),  langInner) +
+    menuBox('theme', T('Theme'),         themeInner) +
+    menuBox('backup',T('Backup'),        backupInner);
 }
 function toggleMenu(){ hap(); if(menuOpen) closeMenu(); else openMenu(); }
 function openMenu(){
@@ -7548,7 +7574,7 @@ function render(){
 /* ============ OFFLINE (service worker) ============ */
 if('serviceWorker' in navigator){
   const swCode = `
-    const C = 'dutch5k-v63';
+    const C = 'dutch5k-v64';
     self.addEventListener('install', e => { self.skipWaiting(); });
     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
     self.addEventListener('fetch', e => {
