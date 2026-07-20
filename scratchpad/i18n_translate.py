@@ -17,8 +17,13 @@ import ctranslate2, sentencepiece as spm
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 PKG = os.path.expanduser('~/.local/share/argos-translate/packages')
-PKGDIR = {'fr': 'translate-en_fr-1_9', 'it': 'en_it', 'es': 'en_es'}
-FORM_LABEL = {'fr': 'forme de', 'it': 'forma di', 'es': 'forma de'}
+PKGDIR = {'fr': 'translate-en_fr-1_9', 'it': 'en_it', 'es': 'en_es',
+          # v61 additions — dir names follow the installed Argos package (check ~/.local/share/argos-translate/packages)
+          'de': 'en_de', 'pt': 'en_pt', 'pl': 'en_pl', 'tr': 'en_tr',
+          'uk': 'en_uk', 'ru': 'en_ru', 'bg': 'en_bg'}
+FORM_LABEL = {'fr': 'forme de', 'it': 'forma di', 'es': 'forma de',
+              'de': 'Form von', 'pt': 'forma de', 'pl': 'forma od', 'tr': 'biçimi:',
+              'uk': 'форма від', 'ru': 'форма от', 'bg': 'форма на'}
 FORM_RE = re.compile(r'\s*\(form of (“[^”]+”)\)\s*$')
 
 data = json.load(open(os.path.join(BASE, 'strings.json')))
@@ -82,6 +87,6 @@ def run_lang(lang):
     json.dump(pack, open(path, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
     print(f'[{lang}] pack {len(pack)}/{len(meanings)+len(examples)} entries -> {path} ({os.path.getsize(path)//1024} KB)', flush=True)
 
-for lang in (sys.argv[1:] or ['fr', 'it', 'es']):
+for lang in (sys.argv[1:] or ['fr', 'it', 'es', 'de', 'pt', 'pl', 'tr', 'uk', 'ru', 'bg']):
     run_lang(lang)
 print('done')
