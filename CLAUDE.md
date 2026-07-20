@@ -156,6 +156,14 @@ How it works / gotchas:
   **v60 (Adi request):** the Actie line dropped "across {c} chapters — filter by source…" and now
   reuses the `{n} words` key like Gang/Niveau (all three book lines identical in form); the unused
   `{n} words across {c} chapters…` UI-dict keys (fr/it/es) were deleted.
+  **v63 (Adi request):** the General line was relabelled **"General Words"** (bold literal, not
+  `T()`ed — the source-filter chip still reads "General 5K") and its ⭐ icon swapped to 📚 so **all
+  four source lines share the book icon**. A total-count sentence — `The app has {n} Dutch words in
+  total, gathered from four sources:` (n=`deck.length`) — was **re-added above** the General line
+  (this is the v57-removed "words in total" line, back by request, now with a full UI-dict key in all
+  10 languages). The General description was shortened from the long "ordered by how often…" sentence
+  to `{n} popular everyday Dutch words.` so it sits on one line like the book lines; the old long
+  `{n} popular Dutch words…` key was **replaced** (key + value) in all 10 dicts.
 - **Compact pickers (v54, Adi request — keep them this way):** Theme = three **swatch-only chips in one
   row** (no name/desc text; theme name kept as `aria-label`/`title`); App language = **code chips**
   (four EN/FR/IT/ES then, **eleven since v61**; full name in `aria-label`/`title`). Both wrap via `.themepick{flex-wrap}`, share
@@ -278,7 +286,9 @@ POS + source filters are **identical & same order across both tabs** — render 
 `posFilterButtons()`/`srcFilterButtons()` (on `POS_FILTER` + `srcFilterOpts()`). Canonical source order:
 **All, General, Gang, Actie, Niveau** (by CEFR level). Edit the shared helpers, not per-tab markup, or tabs drift. (Learn:
 `setLearnPos`/`setLearnSrc`→full `render()`. Words: `setPosFilter`/`setSrcFilter`→partial `renderWordList()`
-with scoped `button[data-p]` update so POS refresh doesn't clobber the source bar.)
+with scoped `button[data-p]` update so POS refresh doesn't clobber the source bar.) **Bar order (v63):
+source bar sits *above* the POS bar on both tabs** — Words already did this; the Learn tab was flipped to
+match (`shuffleBar + srcBar + posBar` in the two `main.innerHTML` spots; the shuffle toggle stays on top).
 
 Synonyms/antonyms render as tappable rows; if the word is in deck it links to its card, with back-stack
 (`wordViewStack`).
