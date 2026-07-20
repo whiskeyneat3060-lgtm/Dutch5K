@@ -130,8 +130,27 @@ backup in the settings drawer. No server; losing localStorage loses progress.
 ## Features
 
 Three tabs: **Learn** (flashcards, flip, Again/Learning/Know-it, Skip), **Words** (search, list, detail),
-**Progress** (stats, daily goal, streak, 14-day history, POS breakdown) — plus a **settings drawer**
-(hamburger in the header) holding Theme, App language, Backup and the About box.
+**Progress** (stats, daily goal, streak, 14-day history, POS breakdown, source breakdown) — plus a
+**settings drawer** (hamburger in the header) holding Theme, App language, Backup and the About box.
+
+**Progress "By source" donut (v67, Adi request):** below the "By word type" breakdown, an interactive
+donut chart of words *learned per source* (General / Gang / Actie / Niveau). `countsBySource()` (right
+after `countsByPos()`) mirrors it, using `inSource()` so a word shared between two books counts under
+**each** source (matches how the source filter presents them — slice sums can exceed distinct-learned;
+the donut centre shows the summed learned total, which is fine given overlaps are rare). Built inline in
+`renderProgress()` just before `main.innerHTML`: an SVG donut (`.srcdonut`, `<circle>` arcs via
+`stroke-dasharray`/`-dashoffset`, `rotate(-90)` group, 2px gap per slice) + a `.srclegend` of `.srcrow`s
+(swatch + short name + `.posbar` progress fill + learned/total). Slice/row colours reuse the canonical
+source-badge palette via `SRC_COLORVAR` = general `--muted` (grey), gang `--blue`, actie `--red`, niveau
+`--yellow` — the 2px slice gaps + labelled legend keep identity from being colour-alone. Present sources
+only (`SRC_ORDER` filtered by `bookChapters`). Tapping a slice **or** legend row runs
+`srcFilter='<s>';posFilter='all';setTab('words')` (jumps to the source-filtered Words list, exactly like
+a POS row jumps to a type-filtered list). **Empty state:** 0 learned → a single faint full ring + centre
+`0`. Same **Pro/Free gate** as the POS breakdown (`.genbox.pro-lock` + `.srcbreak.locked-blur` +
+`proOverlay()`). New UI keys `By source` / `Tap a source to study or browse just those words.` in all 10
+non-English dicts; short legend labels (`SRC_SHORT`: General/Gang/Actie/Niveau) are literals, not `T()`ed.
+CSS (`.srcbreak`/`.srcdonut`/`.donut-seg`/`.donut-num`/`.donut-lbl`/`.srclegend`/`.srcrow`/`.srcdot`/
+`.srcname`) sits right after the `.posbreak` block; colours use theme tokens so it adapts per theme.
 
 **Pro / Free plan (v65, Adi request):** the app ships as a **freemium** gate. `isPro` (persisted
 `dutch5k-pro`, default **false** = Free) is flipped on by the **"Pro to go"** box — a prominent
