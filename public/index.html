@@ -7416,9 +7416,13 @@ function chipsHtml(e){
 
 /* Open a word's detail card. fromLink=true pushes current view onto a back-stack. */
 let wordListScrollY = 0;   // remember Words-list scroll position while a detail card is open
+let wordOrigin = 'words';  // which tab a word-detail chain was entered from ('words' list or 'learn' card)
 function openWord(idx, fromLink){
-  // Opening from the list (not a synonym/antonym hyperlink) — remember where we were.
-  if(!fromLink && wordView===null && tab==='words'){ wordListScrollY = window.scrollY || window.pageYOffset || 0; }
+  // Starting a fresh detail chain — remember where we came from so Back returns there.
+  if(wordView===null){
+    wordOrigin = (tab==='learn') ? 'learn' : 'words';
+    if(tab==='words'){ wordListScrollY = window.scrollY || window.pageYOffset || 0; }
+  }
   if(fromLink && wordView!==null) wordViewStack.push(wordView);
   wordView = idx;
   if(tab!=='words'){ tab='words'; }
@@ -7427,12 +7431,25 @@ function openWord(idx, fromLink){
 }
 function backFromWord(){
   hap();
-  const toList = !wordViewStack.length;   // returning all the way to the list
-  if(wordViewStack.length){ wordView = wordViewStack.pop(); }
-  else { wordView = null; }
-  render();
-  // Back to the list: restore the saved scroll; back to another detail card: top.
-  try{ window.scrollTo(0, toList ? wordListScrollY : 0); }catch(e){}
+  if(wordViewStack.length){
+    // Stepping back to a parent detail card (synonym/antonym chain) — top of that card.
+    wordView = wordViewStack.pop();
+    render();
+    try{ window.scrollTo(0,0); }catch(e){}
+    return;
+  }
+  // Leaving the detail chain entirely.
+  wordView = null;
+  if(wordOrigin==='learn'){
+    // Came from a flashcard synonym/antonym — go back to the Learn card, not the Words list.
+    tab = 'learn';
+    render();
+    try{ window.scrollTo(0,0); }catch(e){}
+  } else {
+    // Came from the Words list — restore the scroll position we left it at.
+    render();
+    try{ window.scrollTo(0, wordListScrollY); }catch(e){}
+  }
 }
 
 /* Haptic feedback for taps (Vibration API; silently no-ops where unsupported) */
@@ -7625,7 +7642,7 @@ function render(){
       const e = deck[wordView];
       const s = progress[e.id] || 'new';
       if(isLocked(e)){
-        const backLabel = wordViewStack.length ? `&#8592; ${T('Back')}` : `&#8592; ${T('Back to list')}`;
+        const backLabel = (wordViewStack.length || wordOrigin==='learn') ? `&#8592; ${T('Back')}` : `&#8592; ${T('Back to list')}`;
         main.innerHTML = `
           <button class="loadmore" style="margin-top:0;margin-bottom:14px" onclick="backFromWord()">${backLabel}</button>
           <div class="card pro-lock">
@@ -7655,7 +7672,7 @@ function render(){
       } else {
         body = `<div class="word-en">${T('Not translated yet')}</div><div class="rankline">${rankTxt}</div>${bookLine}<div class="word-hint" style="margin-top:12px">${T('Meaning will be added when you add an API key, or from the app online.')}</div>`;
       }
-      const backLabel = wordViewStack.length ? `&#8592; ${T('Back')}` : `&#8592; ${T('Back to list')}`;
+      const backLabel = (wordViewStack.length || wordOrigin==='learn') ? `&#8592; ${T('Back')}` : `&#8592; ${T('Back to list')}`;
       main.innerHTML = `
         <button class="loadmore" style="margin-top:0;margin-bottom:14px" onclick="backFromWord()">${backLabel}</button>
         <div class="card">
