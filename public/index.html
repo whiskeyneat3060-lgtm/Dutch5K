@@ -296,6 +296,20 @@
   .posbar{flex:1; height:12px; border:2px solid var(--line); background:var(--paper);}
   .posbar-fill{display:block; height:100%; background:var(--blue);}
   .poscount{flex:0 0 auto; font-family:var(--font-head); font-weight:700; font-size:12px; color:var(--muted);}
+
+  /* Progress-by-source donut + legend */
+  .srcbreak{display:flex; align-items:center; gap:18px; flex-wrap:wrap;}
+  .srcdonut-wrap{flex:0 0 auto;}
+  .srcdonut{width:140px; height:140px; display:block;}
+  .srcdonut .donut-seg{cursor:pointer; transition:opacity .12s;}
+  .srcdonut .donut-seg:hover{opacity:.8;}
+  .srcdonut .donut-num{font-family:var(--font-head); font-weight:900; font-size:30px; fill:var(--ink);}
+  .srcdonut .donut-lbl{font-family:var(--font-head); font-weight:700; font-size:11px; letter-spacing:.5px; text-transform:uppercase; fill:var(--muted);}
+  .srclegend{flex:1 1 190px; display:flex; flex-direction:column; gap:8px; min-width:190px;}
+  .srcrow{display:flex; align-items:center; gap:10px; cursor:pointer;}
+  .srcdot{flex:0 0 auto; width:12px; height:12px; border:2px solid var(--line);}
+  .srcname{flex:0 0 64px; font-size:13px; font-weight:600;}
+  .srcrow .posbar{flex:1;}
   .booktag{color:var(--red); font-weight:600; letter-spacing:0.5px;}
   .srcbadge{display:inline-block; font-family:var(--font-head); font-weight:900; font-size:9px; width:15px; height:15px; line-height:15px; text-align:center; margin-left:4px; vertical-align:middle; color:#fff;}
   .sb-actie{background:var(--red);}
@@ -1204,6 +1218,7 @@ fr:{
   'Last 14 days':'Les 14 derniers jours',
   'Each square is a day; darker means more words learned. Learn at least one word a day to keep your streak alive.':'Chaque carré est un jour ; plus il est foncé, plus vous avez appris de mots. Apprenez au moins un mot par jour pour garder votre série.',
   'By word type':'Par type de mot', 'Tap a type to study or browse just those words.':'Touchez un type pour étudier ou parcourir uniquement ces mots.',
+  'By source':'Par source', 'Tap a source to study or browse just those words.':'Touchez une source pour étudier ou parcourir uniquement ces mots.',
   'Your deck':'Votre paquet',
   'Build your Dutch vocabulary in a structured way. This one-stop app shows all the details of a word — meaning, example sentences, grammar forms and synonyms — so learners can pick it up in a practical way.':"Construisez votre vocabulaire néerlandais de façon structurée. Cette app tout-en-un montre tous les détails d'un mot — sens, phrases d'exemple, formes grammaticales et synonymes — pour apprendre de manière pratique.",
   '{n} popular everyday Dutch words.':'{n} mots néerlandais courants du quotidien.',
@@ -1269,6 +1284,7 @@ it:{
   'Last 14 days':'Ultimi 14 giorni',
   'Each square is a day; darker means more words learned. Learn at least one word a day to keep your streak alive.':'Ogni quadrato è un giorno; più è scuro, più parole hai imparato. Impara almeno una parola al giorno per mantenere la serie.',
   'By word type':'Per tipo di parola', 'Tap a type to study or browse just those words.':'Tocca un tipo per studiare o sfogliare solo quelle parole.',
+  'By source':'Per fonte', 'Tap a source to study or browse just those words.':'Tocca una fonte per studiare o sfogliare solo quelle parole.',
   'Your deck':'Il tuo mazzo',
   'Build your Dutch vocabulary in a structured way. This one-stop app shows all the details of a word — meaning, example sentences, grammar forms and synonyms — so learners can pick it up in a practical way.':"Costruisci il tuo vocabolario olandese in modo strutturato. Questa app tutto-in-uno mostra tutti i dettagli di una parola — significato, frasi di esempio, forme grammaticali e sinonimi — per imparare in modo pratico.",
   '{n} popular everyday Dutch words.':'{n} parole olandesi comuni di uso quotidiano.',
@@ -1334,6 +1350,7 @@ es:{
   'Last 14 days':'Últimos 14 días',
   'Each square is a day; darker means more words learned. Learn at least one word a day to keep your streak alive.':'Cada cuadrado es un día; cuanto más oscuro, más palabras aprendidas. Aprende al menos una palabra al día para mantener tu racha.',
   'By word type':'Por tipo de palabra', 'Tap a type to study or browse just those words.':'Toca un tipo para estudiar o explorar solo esas palabras.',
+  'By source':'Por fuente', 'Tap a source to study or browse just those words.':'Toca una fuente para estudiar o explorar solo esas palabras.',
   'Your deck':'Tu mazo',
   'Build your Dutch vocabulary in a structured way. This one-stop app shows all the details of a word — meaning, example sentences, grammar forms and synonyms — so learners can pick it up in a practical way.':'Construye tu vocabulario neerlandés de forma estructurada. Esta app todo en uno muestra todos los detalles de una palabra — significado, frases de ejemplo, formas gramaticales y sinónimos — para aprender de manera práctica.',
   '{n} popular everyday Dutch words.':'{n} palabras neerlandesas comunes del día a día.',
@@ -1399,6 +1416,7 @@ de:{
   'Last 14 days':'Die letzten 14 Tage',
   'Each square is a day; darker means more words learned. Learn at least one word a day to keep your streak alive.':'Jedes Quadrat ist ein Tag; je dunkler, desto mehr gelernte Wörter. Lerne mindestens ein Wort pro Tag, um deine Serie zu halten.',
   'By word type':'Nach Wortart', 'Tap a type to study or browse just those words.':'Tippe auf einen Typ, um nur diese Wörter zu lernen oder zu durchstöbern.',
+  'By source':'Nach Quelle', 'Tap a source to study or browse just those words.':'Tippe auf eine Quelle, um nur diese Wörter zu lernen oder zu durchstöbern.',
   'Your deck':'Dein Stapel',
   'Build your Dutch vocabulary in a structured way. This one-stop app shows all the details of a word — meaning, example sentences, grammar forms and synonyms — so learners can pick it up in a practical way.':'Baue deinen niederländischen Wortschatz strukturiert auf. Diese All-in-one-App zeigt alle Details eines Wortes — Bedeutung, Beispielsätze, Grammatikformen und Synonyme — für praktisches Lernen.',
   '{n} popular everyday Dutch words.':'{n} gebräuchliche niederländische Alltagswörter.',
@@ -1464,6 +1482,7 @@ pt:{
   'Last 14 days':'Últimos 14 dias',
   'Each square is a day; darker means more words learned. Learn at least one word a day to keep your streak alive.':'Cada quadrado é um dia; quanto mais escuro, mais palavras aprendidas. Aprende pelo menos uma palavra por dia para manter a sequência.',
   'By word type':'Por tipo de palavra', 'Tap a type to study or browse just those words.':'Toca num tipo para estudar ou explorar só essas palavras.',
+  'By source':'Por fonte', 'Tap a source to study or browse just those words.':'Toca numa fonte para estudar ou explorar só essas palavras.',
   'Your deck':'O teu baralho',
   'Build your Dutch vocabulary in a structured way. This one-stop app shows all the details of a word — meaning, example sentences, grammar forms and synonyms — so learners can pick it up in a practical way.':'Constrói o teu vocabulário neerlandês de forma estruturada. Esta app tudo-em-um mostra todos os detalhes de uma palavra — significado, frases de exemplo, formas gramaticais e sinónimos — para aprender de forma prática.',
   '{n} popular everyday Dutch words.':'{n} palavras neerlandesas comuns do dia a dia.',
@@ -1529,6 +1548,7 @@ pl:{
   'Last 14 days':'Ostatnie 14 dni',
   'Each square is a day; darker means more words learned. Learn at least one word a day to keep your streak alive.':'Każdy kwadrat to jeden dzień; im ciemniejszy, tym więcej nauczonych słów. Ucz się co najmniej jednego słowa dziennie, aby utrzymać serię.',
   'By word type':'Według typu słowa', 'Tap a type to study or browse just those words.':'Dotknij typu, aby uczyć się lub przeglądać tylko te słowa.',
+  'By source':'Według źródła', 'Tap a source to study or browse just those words.':'Dotknij źródła, aby uczyć się lub przeglądać tylko te słowa.',
   'Your deck':'Twoja talia',
   'Build your Dutch vocabulary in a structured way. This one-stop app shows all the details of a word — meaning, example sentences, grammar forms and synonyms — so learners can pick it up in a practical way.':'Buduj swoje niderlandzkie słownictwo w uporządkowany sposób. Ta wszechstronna aplikacja pokazuje wszystkie szczegóły słowa — znaczenie, zdania przykładowe, formy gramatyczne i synonimy — do praktycznej nauki.',
   '{n} popular everyday Dutch words.':'{n} popularnych codziennych słów niderlandzkich.',
@@ -1594,6 +1614,7 @@ tr:{
   'Last 14 days':'Son 14 gün',
   'Each square is a day; darker means more words learned. Learn at least one word a day to keep your streak alive.':'Her kare bir gündür; koyulaştıkça o gün daha çok kelime öğrenilmiş demektir. Serini korumak için günde en az bir kelime öğren.',
   'By word type':'Kelime türüne göre', 'Tap a type to study or browse just those words.':'Yalnızca o kelimeleri çalışmak veya taramak için bir türe dokun.',
+  'By source':'Kaynağa göre', 'Tap a source to study or browse just those words.':'Yalnızca o kelimeleri çalışmak veya taramak için bir kaynağa dokun.',
   'Your deck':'Desten',
   'Build your Dutch vocabulary in a structured way. This one-stop app shows all the details of a word — meaning, example sentences, grammar forms and synonyms — so learners can pick it up in a practical way.':'Hollandaca kelime dağarcığını düzenli bir şekilde geliştir. Bu hepsi bir arada uygulama, bir kelimenin tüm ayrıntılarını — anlam, örnek cümleler, dil bilgisi biçimleri ve eş anlamlılar — pratik öğrenme için gösterir.',
   '{n} popular everyday Dutch words.':'{n} yaygın günlük Hollandaca kelime.',
@@ -1659,6 +1680,7 @@ uk:{
   'Last 14 days':'Останні 14 днів',
   'Each square is a day; darker means more words learned. Learn at least one word a day to keep your streak alive.':'Кожен квадрат — це день; що темніший, то більше вивчених слів. Вивчайте хоча б одне слово на день, щоб зберегти серію.',
   'By word type':'За типом слова', 'Tap a type to study or browse just those words.':'Торкніться типу, щоб вивчати або переглядати лише ці слова.',
+  'By source':'За джерелом', 'Tap a source to study or browse just those words.':'Торкніться джерела, щоб вивчати або переглядати лише ці слова.',
   'Your deck':'Ваша колода',
   'Build your Dutch vocabulary in a structured way. This one-stop app shows all the details of a word — meaning, example sentences, grammar forms and synonyms — so learners can pick it up in a practical way.':'Розбудовуйте свій нідерландський словниковий запас структуровано. Цей універсальний застосунок показує всі деталі слова — значення, приклади речень, граматичні форми й синоніми — для практичного навчання.',
   '{n} popular everyday Dutch words.':'{n} поширених повсякденних нідерландських слів.',
@@ -1724,6 +1746,7 @@ ru:{
   'Last 14 days':'Последние 14 дней',
   'Each square is a day; darker means more words learned. Learn at least one word a day to keep your streak alive.':'Каждый квадрат — это день; чем темнее, тем больше изученных слов. Учите хотя бы одно слово в день, чтобы сохранить серию.',
   'By word type':'По типу слова', 'Tap a type to study or browse just those words.':'Нажмите на тип, чтобы учить или просматривать только эти слова.',
+  'By source':'По источнику', 'Tap a source to study or browse just those words.':'Нажмите на источник, чтобы учить или просматривать только эти слова.',
   'Your deck':'Ваша колода',
   'Build your Dutch vocabulary in a structured way. This one-stop app shows all the details of a word — meaning, example sentences, grammar forms and synonyms — so learners can pick it up in a practical way.':'Стройте свой нидерландский словарный запас структурированно. Это универсальное приложение показывает все детали слова — значение, примеры предложений, грамматические формы и синонимы — для практичного обучения.',
   '{n} popular everyday Dutch words.':'{n} распространённых повседневных нидерландских слов.',
@@ -1789,6 +1812,7 @@ bg:{
   'Last 14 days':'Последните 14 дни',
   'Each square is a day; darker means more words learned. Learn at least one word a day to keep your streak alive.':'Всеки квадрат е един ден; колкото по-тъмен, толкова повече научени думи. Учи поне по една дума на ден, за да запазиш серията си.',
   'By word type':'По вид дума', 'Tap a type to study or browse just those words.':'Докосни вид, за да учиш или разглеждаш само тези думи.',
+  'By source':'По източник', 'Tap a source to study or browse just those words.':'Докосни източник, за да учиш или разглеждаш само тези думи.',
   'Your deck':'Твоето тесте',
   'Build your Dutch vocabulary in a structured way. This one-stop app shows all the details of a word — meaning, example sentences, grammar forms and synonyms — so learners can pick it up in a practical way.':'Изграждай нидерландския си речник структурирано. Това приложение „всичко в едно“ показва всички детайли на една дума — значение, примерни изречения, граматични форми и синоними — за практично учене.',
   '{n} popular everyday Dutch words.':'{n} често срещани всекидневни нидерландски думи.',
@@ -6874,6 +6898,24 @@ function countsByPos(){
   });
   return out;
 }
+// Learned/total per source (general = no book; book sources via inSource). A word shared
+// between two books counts under each, matching how the source filter presents them.
+const SRC_ORDER = ['general','gang','actie','niveau'];
+const SRC_SHORT = {general:'General', gang:'Gang', actie:'Actie', niveau:'Niveau'};
+const SRC_COLORVAR = {general:'--muted', gang:'--blue', actie:'--red', niveau:'--yellow'};
+function countsBySource(){
+  const out={};
+  SRC_ORDER.forEach(s=>{ if(s==='general'||bookChapters(s).length) out[s]={total:0,learned:0}; });
+  deck.forEach(e=>{
+    SRC_ORDER.forEach(s=>{
+      if(out[s] && inSource(e,s)){
+        out[s].total++;
+        if(progress[e.id]==='learned') out[s].learned++;
+      }
+    });
+  });
+  return out;
+}
 
 /* ============ ACTIONS ============ */
 async function mark(status){
@@ -7727,6 +7769,49 @@ function render(){
         <span class="poscount">${d.learned}/${d.total}</span></div>`;
     }).join('');
 
+    // Progress by source (interactive donut + legend)
+    const cbs = countsBySource();
+    const srcKeys = Object.keys(cbs);
+    const srcTotalLearned = srcKeys.reduce((a,s)=>a+cbs[s].learned,0);
+    const R=52, SW=22, CX=70, CY=70, CIRC=2*Math.PI*R;
+    let _acc=0;
+    const srcSegs = srcKeys.filter(s=>cbs[s].learned>0).map(s=>{
+      const len = cbs[s].learned/srcTotalLearned*CIRC;
+      const dash = `${Math.max(len-2,0)} ${CIRC}`;
+      const off = -_acc; _acc += len;
+      const share = Math.round(cbs[s].learned/srcTotalLearned*100);
+      return `<circle class="donut-seg" cx="${CX}" cy="${CY}" r="${R}" fill="none"
+        stroke="var(${SRC_COLORVAR[s]})" stroke-width="${SW}"
+        stroke-dasharray="${dash}" stroke-dashoffset="${off}" stroke-linecap="butt"
+        onclick="hap();srcFilter='${s}';posFilter='all';setTab('words')"
+        ><title>${SRC_SHORT[s]}: ${cbs[s].learned} (${share}%)</title></circle>`;
+    }).join('');
+    const donutInner = srcTotalLearned
+      ? `<g transform="rotate(-90 ${CX} ${CY})">${srcSegs}</g>`
+      : `<circle cx="${CX}" cy="${CY}" r="${R}" fill="none" stroke="var(--faint)" stroke-width="${SW}"/>`;
+    const donut = `<svg class="srcdonut" viewBox="0 0 140 140" role="img" aria-label="${T('By source')}">
+      ${donutInner}
+      <text class="donut-num" x="${CX}" y="${CY-1}" text-anchor="middle">${srcTotalLearned}</text>
+      <text class="donut-lbl" x="${CX}" y="${CY+16}" text-anchor="middle">${T('Learned')}</text></svg>`;
+    const srcLegend = srcKeys.map(s=>{
+      const d=cbs[s]; const pc=d.total?Math.round(d.learned/d.total*100):0;
+      return `<div class="srcrow" onclick="hap();srcFilter='${s}';posFilter='all';setTab('words')">
+        <span class="srcdot" style="background:var(${SRC_COLORVAR[s]})"></span>
+        <span class="srcname">${SRC_SHORT[s]}</span>
+        <span class="posbar"><span class="posbar-fill" style="width:${pc}%;background:var(${SRC_COLORVAR[s]})"></span></span>
+        <span class="poscount">${d.learned}/${d.total}</span></div>`;
+    }).join('');
+    const sourceGraph = `
+      <div class="genbox${isPro?'':' pro-lock'}">
+        <h3>${T('By source')}</h3>
+        <div class="srcbreak${isPro?'':' locked-blur'}">
+          <div class="srcdonut-wrap">${donut}</div>
+          <div class="srclegend">${srcLegend}</div>
+        </div>
+        <div class="note">${T('Tap a source to study or browse just those words.')}</div>
+        ${isPro?'':proOverlay()}
+      </div>`;
+
     main.innerHTML = `
       ${mondrianStrip(c)}
       <div class="stats">
@@ -7749,14 +7834,16 @@ function render(){
         <div class="posbreak${isPro?'':' locked-blur'}">${posRows}</div>
         <div class="note">${T('Tap a type to study or browse just those words.')}</div>
         ${isPro?'':proOverlay()}
-      </div>`;
+      </div>
+
+      ${sourceGraph}`;
   }
 }
 
 /* ============ OFFLINE (service worker) ============ */
 if('serviceWorker' in navigator){
   const swCode = `
-    const C = 'dutch5k-v66';
+    const C = 'dutch5k-v67';
     self.addEventListener('install', e => { self.skipWaiting(); });
     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
     self.addEventListener('fetch', e => {
