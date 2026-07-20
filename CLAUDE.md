@@ -143,6 +143,17 @@ Three tabs: **Learn** (flashcards, flip, Again/Learning/Know-it, Skip), **Words*
 `aside#drawer` in from the left over a `#scrim`; close via ✕, scrim tap, or Escape. Holds the four
 one-time-setup boxes that used to bloat the third tab, in order (v55, Adi request): **About the app**,
 **App language**, **Theme**, **Backup** (Export/Import).
+
+> **v64 (Adi request):** the four boxes are now **collapsible accordions** — each shows only its title
+> plus a `›` chevron; tapping the header expands the details and rotates the arrow, tapping again
+> collapses. All start collapsed; they toggle **independently** (several can be open). `renderMenu()`
+> builds each box via `menuBox(id,title,inner)`; `toggleSection(id)` flips a per-section flag in the
+> module-level `menuSections` object. That object lives **outside** `renderMenu()` on purpose so open
+> state survives the `renderMenu()` re-runs fired by `setTheme`/`setLang` while the drawer is open.
+> CSS: `.accbox`/`.acc-h` (header button, real `<button>` + `aria-expanded`)/`.acc-arrow` (rotates
+> 90° when `.accbox.open`)/`.acc-body` (`max-height` reveal, `1200px` cap when open). The old
+> `.genbox h3` heading rule is now unused by the drawer (still used by the Progress-tab `.genbox`es).
+
 How it works / gotchas:
 - **About box rewritten (v55–v56, Adi request — keep this framing):** intro = "build Dutch vocabulary in a
   structured way / one-stop app with all word details for practical learning"; **no offline claims** (the
