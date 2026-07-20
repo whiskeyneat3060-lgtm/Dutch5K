@@ -7324,7 +7324,7 @@ function render(){
     // Shuffle toggle — off = frequency order (default), on = strategic mix of new words
     const shuffleBar = `<div class="posfilters learn-pos shuffle-bar"><button class="shuffle-btn${learnShuffle?' active':''}" aria-pressed="${learnShuffle}" onclick="toggleShuffle()">&#128256; ${learnShuffle?T('Shuffle On'):T('Shuffle Off')}</button></div>`;
     if(!queue.length){
-      main.innerHTML = shuffleBar + posBar + srcBar + `<div class="empty">${T('No words left in this round with these filters.')}<br>${T('Try “All”.')}</div>`;
+      main.innerHTML = shuffleBar + srcBar + posBar + `<div class="empty">${T('No words left in this round with these filters.')}<br>${T('Try “All”.')}</div>`;
       return;
     }
     const e = deck[queue[qPos]];
@@ -7348,7 +7348,7 @@ function render(){
       back = `<div class="word-en">${T('Not translated yet')}</div>`;
     }
     const dailyLine = plan ? `<div class="deckinfo">${T('Today: {n} learned · streak {s}', {n:`<b>${todayCount()}</b>${plan.perDay?` / ${plan.perDay}`:''}`, s:`<b>${currentStreak()}</b>`})} &#128293;</div>` : '';
-    main.innerHTML = shuffleBar + posBar + srcBar + `
+    main.innerHTML = shuffleBar + srcBar + posBar + `
       ${mondrianStrip(c)}
       <div class="card" tabindex="0" role="button" aria-label="${T('Flip card')}" onclick="flip()">
         <div class="card-tag"><span>${esc(T(e.t||'word'))}${e.a?` &#183; ${esc(e.a)}`:''}</span><span>${T(status).toUpperCase()}</span></div>
