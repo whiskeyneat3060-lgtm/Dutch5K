@@ -124,14 +124,16 @@ on modern unfurlers); swap to an absolute URL if a platform needs one.
 ## Storage (client-side, no backend)
 
 `Store` adapter wraps `window.storage` (Claude artifacts) with `localStorage` fallback. Keys:
-`dutch5k-progress`, `-enriched`, `-plan`, `-streak`, `-remind`, `-theme`, `-shuffle`, `-pro`. Export/Import JSON
-backup in the settings drawer. No server; losing localStorage loses progress.
+`dutch5k-progress`, `-enriched`, `-plan`, `-streak`, `-remind`, `-theme`, `-shuffle`, `-pro`. No server;
+losing localStorage loses progress. (The Export/Import JSON backup box was **removed from the drawer in
+v68** — see the Settings drawer note; `exportData()`/`importData()` still exist in the JS but are no
+longer wired to any UI.)
 
 ## Features
 
 Three tabs: **Learn** (flashcards, flip, Again/Learning/Know-it, Skip), **Words** (search, list, detail),
 **Progress** (stats, daily goal, streak, 14-day history, POS breakdown, source breakdown) — plus a
-**settings drawer** (hamburger in the header) holding Theme, App language, Backup and the About box.
+**settings drawer** (hamburger in the header) holding Theme, App language and the About box.
 
 **Progress "By source" donut (v67, Adi request):** below the "By word type" breakdown, an interactive
 donut chart of words *learned per source* (General / Gang / Actie / Niveau). `countsBySource()` (right
@@ -197,11 +199,18 @@ the drawer is open.
 > button label + `T('Progress')` in `applyNavLang()` changed.
 
 **Settings drawer (v53):** three-bar hamburger button (`#menuBtn`, in `.hdr-left` next to the logo) slides
-`aside#drawer` in from the left over a `#scrim`; close via ✕, scrim tap, or Escape. Holds the four
+`aside#drawer` in from the left over a `#scrim`; close via ✕, scrim tap, or Escape. Holds the
 one-time-setup boxes that used to bloat the third tab, in order (v55, Adi request): **About the app**,
-**App language**, **Theme**, **Backup** (Export/Import).
+**App language**, **Theme** — plus, until v68, a **Backup** (Export/Import) box.
 
-> **v64 (Adi request):** the four boxes are now **collapsible accordions** — each shows only its title
+> **v68 (Adi request):** the **Backup box was removed** from the drawer (`backupInner` + its
+> `menuBox('backup',…)` line dropped from `renderMenu()`, and the `backup:false` flag dropped from
+> `menuSections`). The drawer now holds three boxes: About, App language, Theme. The `exportData()`/
+> `importData()` functions and the `Backup`/`Export`/`Import`/`Your progress lives in this browser…`/
+> `Import failed…` UI-dict keys are left in place (dead but harmless). The v64 accordion note below now
+> describes **three** boxes, not four.
+
+> **v64 (Adi request):** the boxes are now **collapsible accordions** — each shows only its title
 > plus a `›` chevron; tapping the header expands the details and rotates the arrow, tapping again
 > collapses. All start collapsed; they toggle **independently** (several can be open). `renderMenu()`
 > builds each box via `menuBox(id,title,inner)`; `toggleSection(id)` flips a per-section flag in the
