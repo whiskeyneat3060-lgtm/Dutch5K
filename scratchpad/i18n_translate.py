@@ -28,7 +28,13 @@ PKGDIR = {'fr': 'translate-en_fr-1_9', 'it': 'en_it', 'es': 'en_es',
 FORM_LABEL = {'fr': 'forme de', 'it': 'forma di', 'es': 'forma de',
               'de': 'Form von', 'pt': 'forma de', 'pl': 'forma od', 'tr': 'biçimi:',
               'uk': 'форма від', 'ru': 'форма от', 'bg': 'форма на'}
-FORM_RE = re.compile(r'\s*\(form of (“[^”]+”)\)\s*$')
+# both suffix styles exist in the deck: 629 curly-quoted `(form of “X”)` and
+# 457 bare `(form of X)` — strip both so the Dutch lemma never reaches the model
+FORM_RE = re.compile(r'\s*\(form of (“[^”]+”|[^)]+)\)\s*$')
+# MT noise gate for Cyrillic targets: Latin glued onto Cyrillic (e.g. "гаанrd")
+# is always model garbage — drop the entry so ct() falls back to English
+GLUED_RE = re.compile(r'[а-яА-ЯёЁїЇіІєЄґҐ][A-Za-z]|[A-Za-z][а-яА-ЯёЁїЇіІєЄґҐ]')
+CYRILLIC = {'bg', 'uk', 'ru'}
 
 data = json.load(open(os.path.join(BASE, 'strings.json')))
 meanings, examples = data['meanings'], data['examples']
@@ -112,6 +118,10 @@ def run_lang(lang):
     for e in examples:
         t = out.get(e, '')
         if t and t != e: pack[e] = t
+    if lang in CYRILLIC:
+        glued = [k for k, v in pack.items() if GLUED_RE.search(v)]
+        for k in glued: del pack[k]
+        print(f'[{lang}] dropped {len(glued)} glued-script entries', flush=True)
     path = os.path.join(BASE, f'{lang}.json')
     json.dump(pack, open(path, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
     print(f'[{lang}] pack {len(pack)}/{len(meanings)+len(examples)} entries -> {path} ({os.path.getsize(path)//1024} KB)', flush=True)
