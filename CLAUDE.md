@@ -157,8 +157,8 @@ How it works / gotchas:
   reuses the `{n} words` key like Gang/Niveau (all three book lines identical in form); the unused
   `{n} words across {c} chapters…` UI-dict keys (fr/it/es) were deleted.
 - **Compact pickers (v54, Adi request — keep them this way):** Theme = three **swatch-only chips in one
-  row** (no name/desc text; theme name kept as `aria-label`/`title`); App language = four **code chips**
-  (EN/FR/IT/ES, full name in `aria-label`/`title`). Both wrap via `.themepick{flex-wrap}`, share
+  row** (no name/desc text; theme name kept as `aria-label`/`title`); App language = **code chips**
+  (four EN/FR/IT/ES then, **eleven since v61**; full name in `aria-label`/`title`). Both wrap via `.themepick{flex-wrap}`, share
   `.themebtn` (language adds `.langbtn`); active = accent inset box-shadow (the old `.tcheck` ✓,
   `.tdesc`, `.tmeta` are gone). Intro `<p>` above each picker removed too. The `desc` fields in the
   `THEMES`/`LANGS` arrays are now **unused by the drawer** (kept as documentation); their UI-dict
@@ -230,8 +230,10 @@ don't flood the front. Only affects the *fresh* segment (learning/learned were a
 with POS/source filters automatically — filters narrow the pool first, ordering happens after (verified:
 shuffled verb-only rounds work). Toggling rebuilds the queue and clears session skips.
 
-**App language (v51):** settings drawer → "App language" box (below Theme; lived on the third tab until
-v53): **EN / FR / IT / ES**. The app
+**App language (v51, expanded v61):** settings drawer → "App language" box (below Theme; lived on the
+third tab until v53): **EN / FR / IT / ES**, plus since v61 (Adi request) **DE / PT / PL / TR / UK / RU /
+BG** — 11 total. The v61 seven have full hand-written `UI` dicts (138 keys each, key/placeholder parity
+with FR/IT/ES verified) but **stub `{}` content packs** — see Open work item 6. The app
 *teaches* Dutch; this switches everything else — menus, word meanings, example translations. Dutch words,
 forms and synonyms are never translated. `LANGS` array + `setLang(id)`; persisted `dutch5k-lang`, default `en`.
 Two layers:
@@ -340,7 +342,10 @@ Push `public/index.html` to `main`. Workers Builds runs `npx wrangler deploy`, l
    Conservative: anything with a real meaning/example or book membership kept (units `km`, loanwords `app`/`tv`,
    countries, Dutch places all stay). To extend, add to `JUNK` — but first validate the candidate has no
    meaning/example/book tag. Deck dropped 6,100 → 5,754. CEFR/spoken-level tag still unbuilt.
-6. **i18n packs stale since v58 (Niveau).** The 499 new Niveau meanings/example-EN-sides show **English**
-   in FR/IT/ES until `public/i18n/*.json` are regenerated (`i18n_extract.js` → `i18n_translate.py`, see
-   App language section; Argos install too heavy for the remote session that built v58). Graceful by
-   design — regenerate on a machine with disk, bump SW cache, redeploy.
+6. **i18n packs stale (FR/IT/ES since v58) / stubs (DE/PT/PL/TR/UK/RU/BG since v61).** FR/IT/ES packs
+   predate Niveau, so its 499 meanings/example-EN-sides show **English** there; the seven v61 languages
+   ship deliberately **empty `{}` packs** (real files, so `setLang` never hits the SPA-fallback error) —
+   all their word meanings/examples show English until regenerated. Fix for both: `i18n_extract.js` →
+   `i18n_translate.py` (script already lists all 10 ids; check `PKGDIR` matches the installed Argos
+   package dirs for the new pairs), then bump SW cache + redeploy. Argos install too heavy for the
+   remote sessions that built v58/v61 — regenerate on a machine with disk. Graceful by design.
