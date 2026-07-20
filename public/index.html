@@ -7415,7 +7415,10 @@ function chipsHtml(e){
 }
 
 /* Open a word's detail card. fromLink=true pushes current view onto a back-stack. */
+let wordListScrollY = 0;   // remember Words-list scroll position while a detail card is open
 function openWord(idx, fromLink){
+  // Opening from the list (not a synonym/antonym hyperlink) — remember where we were.
+  if(!fromLink && wordView===null && tab==='words'){ wordListScrollY = window.scrollY || window.pageYOffset || 0; }
   if(fromLink && wordView!==null) wordViewStack.push(wordView);
   wordView = idx;
   if(tab!=='words'){ tab='words'; }
@@ -7424,10 +7427,12 @@ function openWord(idx, fromLink){
 }
 function backFromWord(){
   hap();
+  const toList = !wordViewStack.length;   // returning all the way to the list
   if(wordViewStack.length){ wordView = wordViewStack.pop(); }
   else { wordView = null; }
   render();
-  try{ window.scrollTo(0,0); }catch(e){}
+  // Back to the list: restore the saved scroll; back to another detail card: top.
+  try{ window.scrollTo(0, toList ? wordListScrollY : 0); }catch(e){}
 }
 
 /* Haptic feedback for taps (Vibration API; silently no-ops where unsupported) */
