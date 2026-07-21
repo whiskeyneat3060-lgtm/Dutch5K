@@ -350,7 +350,24 @@ deduped (MT mangles bare comma lists); `(form of X)` suffixes — **both** curly
 reaches the model (Cyrillic models transliterate-mangle it otherwise, e.g. "гаанrd"). Cyrillic packs
 (bg/uk/ru) additionally drop any entry with Latin glued onto Cyrillic (residual model garbage → English
 fallback). Turkish is the weakest model (~440 strings rejected for length blowups → stay English).
-**Add a language:** entry in `LANGS`, a full `UI` dict, add its id to the two scripts, regenerate, bump SW
+
+> **v70 corruption sweep (Adi request "review every word in every language"):** a post-hoc audit of all
+> ~123k pack strings pulled **2,247 mechanically-corrupt entries** (deletions only — `ct()` falls back to
+> the hand-written English, always better than garbage). Two verified classes: (1) **token/phrase loops**
+> — `≥3` consecutive identical tokens ("It it it it it it", "coraggio coraggio coraggio coraggio") + a
+> curated garbage-marker regex (`. kgm`, `@ action: inmenu`, `unit description in lists`, EU-reg
+> boilerplate, brand ad-copy); (2) **genitive self-loops** ("storia della storia", "forza di forza",
+> "milioni di milioni") + Turkish phrase-loops ("would like would like would like"). Per-pack drops: tr
+> 1844, it 316, bg 36, es 20, pl 12, de 7, uk 5, pt 3, ru 3, fr 1. **False-positive guards that MUST stay
+> if this is re-run:** skip source keys containing ` / ` (synonym lists legitimately mirror-repeat, e.g.
+> "for example / for instance" → "zum Beispiel / zum Beispiel"); the genitive rule excludes `in`/`da`/`do`
+> preps ("etwas in etwas anderes" = correct German; "od czasu do czasu" = correct Polish idiom) and
+> full-sentence entries (French "le son de son stylo" — son/son homographs). Length-*only* blowups were
+> **kept** — many are valid-but-longer translations, not corruption. This is a *mechanical* pass; subtler
+> mistranslations that pass all checks remain. No source strings were regenerated, so a future pack
+> regeneration reintroduces these unless the audit is re-run.
+>
+> **Add a language:** entry in `LANGS`, a full `UI` dict, add its id to the two scripts, regenerate, bump SW
 cache. Gotcha: a *missing* pack file doesn't 404 — the SPA fallback returns index.html with HTTP 200, so
 `r.json()` throws and `setLang` toasts the connection error; ship the pack file with the `LANGS` entry.
 
