@@ -357,8 +357,13 @@ ctranslate2 sentencepiece sacremoses subword-nmt`; download the `.argosmodel` zi
 index, extract into `~/.local/share/argos-translate/packages/`, and sync `PKGDIR` to the actual dir
 names) → `python3 scratchpad/i18n_check.py` (corruption gate — must exit 0 before shipping). Gotchas
 learned in the v62 run: **`intra_threads` MUST be 1** — ctranslate2 4.8.1 nondeterministically splices
-foreign tokens into batch output at 2+ threads (re-verified; the old "≤2 is safe" note was wrong);
-parallelise per *process* (one language each) instead. The **en_pl package has no sentencepiece.model**
+foreign tokens into batch output at 2+ threads (re-verified; the old "≤2 is safe" note was wrong).
+**v74 correction: do NOT parallelise per-process either** — running 4 ct2 processes at once on a 4-core
+box oversubscribes the CPU and re-triggers the *same* nondeterministic corruption even at
+`intra_threads=1` (bg came out with 3,523 glued-script drops → pack halved; re-ran clean sequentially).
+**Regenerate languages one at a time, sequentially** (~5 min each, ~40 min for all 10; Turkish ~25 min).
+The `i18n_check.py` glued-script gate catches this — a spiking glued/rejected count = contention
+corruption, re-run that language alone. The **en_pl package has no sentencepiece.model**
 — it ships Moses+subword-nmt BPE (`bpe.model`, `@@` joiners, `&apos;`/`@-@` escapes); the script
 auto-detects and handles both layouts. Glosses are translated part-by-part on commas/semicolons +
 deduped (MT mangles bare comma lists); `(form of X)` suffixes — **both** curly-quoted and bare (629 +
@@ -399,6 +404,26 @@ fallback). Turkish is the weakest model (~440 strings rejected for length blowup
 > Guard kept: distinct comma-separated senses sharing a prefix (pl "głos, głosowanie" = voice, vote) survive
 > because whole tokens differ. Turkish took the most drops (~40, weakest model); Cyrillic glued-script check
 > stayed 0. Per-lang delta coverage 142–153/153; the rest fall back to English. Bumped SW cache (v72→v73).
+>
+> **v74 full regeneration — leak fix (Adi spotted bg `tel` = "Брой, tally", English `tally` beside a Bulgarian
+> word):** the root cause was one line in `i18n_translate.py` — `parts = [out.get(p, p) for …]`. When a
+> multi-sense gloss (`count; tally`) had one sense the model dropped, `out.get(p, p)` kept the **raw English
+> word** and joined it with the translated siblings → a half-English mix. **Fixed:** keep a gloss only if
+> **every** sense genuinely translated (present in `out` AND different from its English source); otherwise
+> drop the whole gloss so `ct()` falls back to full English — never a script-mix. A Cyrillic-only residual
+> filter also drops multi-sense glosses whose value still carries a lowercase-Latin head word outside any
+> paren/quote (`you (informal); your` → "you …"), while single-sense glosses are spared so genuine
+> loanwords/proper nouns (website, Groningen, brie, IT/DJ/PC) keep their translated annotations.
+> **The whole v70 corruption audit is now baked into `i18n_translate.py`** (`is_corrupt`: 1/2/3-gram loops
+> repeated 3×, genitive self-loops `X di/della/du/von X` gated to short glosses, curated garbage markers;
+> same false-positive guards — skip ` / ` synonym sources, exclude in/da/do/de preps, spare full sentences) —
+> **so a full regen no longer reintroduces the v70 deletions, and the old "do NOT full-regen" warning is
+> superseded.** Result: English-sense leaks in Cyrillic packs bg 142→9, uk 20→3, ru 8→6 (the bg residue is
+> all legit loanwords/proper nouns); corruption gate 0 glued across all 10; coverage 11.4k–12.2k/12.36k
+> except tr 9.2k (model weakness, not corruption). **Remaining `tel` second senses in other langs
+> (uk "пердят", it "tal", pl "tall") are model mistranslations, NOT leaks — a separate pre-existing quality
+> issue the fix doesn't address.** Pipeline unchanged otherwise (extract → translate → check). Bumped SW
+> cache (v73→v74). See also the **v74 sequential-only** correction in the App-language regenerate note above.
 >
 > **Add a language:** entry in `LANGS`, a full `UI` dict, add its id to the two scripts, regenerate, bump SW
 cache. Gotcha: a *missing* pack file doesn't 404 — the SPA fallback returns index.html with HTTP 200, so
