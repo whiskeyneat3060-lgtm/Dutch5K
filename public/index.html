@@ -5017,7 +5017,7 @@ const GENEX = {
   "streek": [["Deze streek is bekend om zijn kaas.","This region is known for its cheese."]],
   "taken": [["Ik heb vandaag veel taken te doen.","I have many tasks to do today."]],
   "tante": [["Mijn tante woont in België.","My aunt lives in Belgium."]],
-  "tel": [["Op de tel van drie springen we.","On the count of three we jump."]],
+  "tel": {"m":"count; tally","ex":[["Op de tel van drie springen we.","On the count of three we jump."]]},
   "uitvoeren": [["We gaan het plan volgende week uitvoeren.","We're going to carry out the plan next week."]],
   "variant": {"m":"variant","ex":[["Er is een goedkopere variant van dit product.","There's a cheaper variant of this product."]]},
   "verdediging": [["De verdediging van het team is sterk.","The team's defence is strong."]],
@@ -7858,7 +7858,7 @@ function render(){
 /* ============ OFFLINE (service worker) ============ */
 if('serviceWorker' in navigator){
   const swCode = `
-    const C = 'dutch5k-v70';
+    const C = 'dutch5k-v71';
     self.addEventListener('install', e => { self.skipWaiting(); });
     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
     self.addEventListener('fetch', e => {
