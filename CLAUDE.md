@@ -59,6 +59,22 @@ fills words with no examples yet; safe to append. **Add book-word examples here,
 — object `m` *overrides* FreeDict's wrong homograph gloss (e.g. `kan`→"can" not "jug", `moet`→"must" not
 "blot", `mee`→"mead"). Applied after `BOOKEX`. **Corpus junk deliberately gets NO fake content** (Open work).
 
+> **v71–v72 meaning sweep (Adi spotted `tel`→"esteem; regard; instant" while its own example said "count"):**
+> a heuristic audit found GENEX **example-only** entries (array form, no `m` override) sitting on top of a
+> **wrong FreeDict TRANS gloss** — FreeDict had picked the wrong homograph or dropped the real sense, and the
+> example-only form doesn't override the meaning, so the card contradicted its own example. Signature used:
+> gloss shares no word-stem with the entry's example English (648 candidates → reviewed by hand). **155 words
+> fixed** by converting those entries to `{m, ex}` with a corrected concise gloss (each verified against its own
+> example): plain-wrong homographs (`tel`→count, `weken`→weeks, `mars`→march, `wenen`→weep, `pers`→press,
+> `stem`→voice, `bocht`→bend, `winnen`→win, `sterven`→die, `zonen`→sons, `helden`→heroes), an offensive gloss
+> (`zwarte`→black), and glosses missing the real sense (`vuur`→fire, `baan`→job, `rol`→role, `file`→traffic jam,
+> `speler`→player). `gebruiken` (absent from GENEX) got a new `{m, ex}` entry. **Object `{m}` with no `ex` is
+> valid** (buildDeck line ~6708 guards it), so a meaning-only override needs no example. **i18n packs still show
+> the old English** for these until regenerated (`ct()` falls back to English — safe, just stale in FR/IT/ES/etc.).
+> This was a *mechanical* pass over the no-overlap set; subtler mistranslations that share a word with their
+> example remain. Reproducible: extract GENEX+TRANS, flag array-form entries whose gloss stems don't intersect
+> the example-English stems, review, rewrite in place at each entry's line.
+
 `buildDeck()` merges all into `deck[]`. Stable `id`:
 - curated/enriched: `"word|type"` (homographs like `eten` verb vs noun must not collide)
 - frequency stubs: `"word"`
