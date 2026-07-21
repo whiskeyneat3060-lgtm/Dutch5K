@@ -337,6 +337,14 @@ BG** — 11 total. The v61 seven have full hand-written `UI` dicts (138 keys eac
 with FR/IT/ES verified) but **stub `{}` content packs** — see Open work item 6. The app
 *teaches* Dutch; this switches everything else — menus, word meanings, example translations. Dutch words,
 forms and synonyms are never translated. `LANGS` array + `setLang(id)`; persisted `dutch5k-lang`, default `en`.
+
+> **v75 (Adi request):** a short muted note sits **below the language chips** in the drawer's App-language
+> box — "Some languages may not be fully translated. English is used where a translation is missing." Added
+> in `langInner` as `<p class="lang-note">${T('…')}</p>`; new `.lang-note` CSS (12px, `--muted`, theme-aware,
+> after the `.langbtn` rule). The note is a **UI string** (baked into the file, translated via `T()` in all
+> 10 non-English dicts) so it switches with the language even offline — unlike the *content* packs it warns
+> about. SW cache bumped v74→v75.
+
 Two layers:
 - **UI strings** — hand-written `UI` dicts in the JS (one per language, keyed by the **exact English
   string**), looked up via `T(s, vars)`. `{x}` placeholders substituted *after* lookup so translations can
