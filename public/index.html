@@ -6765,6 +6765,26 @@ function freeFirst(order){
   if(!free.length || !locked.length) return order;
   return free.concat(locked);
 }
+// Relevance rank for a search hit (lower = better). We match the query anywhere
+// in the Dutch word or the (English/translated) meaning, but rank exact-word and
+// whole-word hits ahead of mid-word substring hits so "tell" surfaces the word
+// "tell" itself before "teller"/"vertellen" etc. Best (lowest) score across fields wins.
+function searchScore(e, q){
+  const wb = new RegExp('(^|[^a-z\\u00c0-\\u024f])' + q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + '($|[^a-z\\u00c0-\\u024f])', 'i');
+  let best = 9;
+  const fields = [e.w, e.m||'', (CT ? ct(e.m||'') : '')];
+  for(const f0 of fields){
+    const f = (f0||'').toLowerCase();
+    if(!f || !f.includes(q)) continue;
+    let sc;
+    if(f === q) sc = 0;                 // exact match
+    else if(f.startsWith(q)) sc = wb.test(f) ? 1 : 3;  // starts with query (whole word 1, prefix-of-word 3)
+    else if(wb.test(f)) sc = 2;         // whole word somewhere inside
+    else sc = 4;                        // mid-word substring
+    if(sc < best) best = sc;
+  }
+  return best;
+}
 function bookChapters(src){
   const set=new Set();
   deck.forEach(e=>{ (e.books||[]).forEach(b=>{ if(b.src===src) set.add(b.ch); }); });
@@ -7522,6 +7542,13 @@ function renderWordList(){
     if(q && !(e.w.toLowerCase().includes(q) || (e.m||'').toLowerCase().includes(q) || (CT && ct(e.m||'').toLowerCase().includes(q)))) continue;
     list.push(i);
   }
+  // When searching, rank exact/whole-word hits ahead of mid-word substring hits.
+  // Stable sort keeps corpus-frequency order within each relevance tier.
+  if(q){
+    const score = new Map();
+    for(const i of list) score.set(i, searchScore(deck[i], q));
+    list.sort((a,b)=> score.get(a) - score.get(b));
+  }
   // Free plan: all unlocked words first, then the locked ones, so scrolling the
   // list runs through every free word before hitting the Pro-locked wall.
   const shown = freeFirst(list).slice(0, listLimit);
@@ -7871,7 +7898,7 @@ function render(){
 /* ============ OFFLINE (service worker) ============ */
 if('serviceWorker' in navigator){
   const swCode = `
-    const C = 'dutch5k-v75';
+    const C = 'dutch5k-v76';
     self.addEventListener('install', e => { self.skipWaiting(); });
     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
     self.addEventListener('fetch', e => {
