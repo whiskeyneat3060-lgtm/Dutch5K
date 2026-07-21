@@ -450,6 +450,16 @@ with scoped `button[data-p]` update so POS refresh doesn't clobber the source ba
 source bar sits *above* the POS bar on both tabs** — Words already did this; the Learn tab was flipped to
 match (`shuffleBar + srcBar + posBar` in the two `main.innerHTML` spots; the shuffle toggle stays on top).
 
+**Search result ordering (v76, Adi request):** the Words search matches the query as a substring of the
+Dutch word **or** the (English/translated) meaning, but results were left in corpus-frequency order — so an
+exact hit (searching "tell" → the word `tell`) sat far below words that merely contain it (`teller`,
+`vertellen`). `renderWordList()` now sorts matches by `searchScore(e, q)` (helper just above `bookChapters`)
+**before** `freeFirst()`; a stable sort keeps frequency order within each relevance tier, so every matching
+word still appears — only the sequence changes. Score tiers (lower = better): `0` exact match (field === q),
+`1` starts-with-query-as-whole-word, `2` whole-word match inside a field, `3` prefix of a longer word,
+`4` mid-word substring. "Whole word" via a Latin+diacritic boundary regex `(^|[^a-zÀ-ɏ])q($|…)`;
+best (lowest) score across the three fields (`w`, `m`, `ct(m)`) wins. Only kicks in when `q` is non-empty.
+
 Synonyms/antonyms render as tappable rows; if the word is in deck it links to its card, with back-stack
 (`wordViewStack`).
 
