@@ -383,6 +383,23 @@ fallback). Turkish is the weakest model (~440 strings rejected for length blowup
 > mistranslations that pass all checks remain. No source strings were regenerated, so a future pack
 > regeneration reintroduces these unless the audit is re-run.
 >
+> **v73 incremental pack update (after the v71–v72 meaning sweep):** the 155 corrected general-word glosses
+> changed the deck's English meaning *keys*, so the packs had no translation for them (`ct()` fell back to
+> English in all 10 langs). **Do NOT full-regen to fix this** — a full `i18n_translate.py` run reintroduces
+> the v70 corruption deletions above. Instead translate **only the delta** and merge: extract the changed
+> `word→meaning` pairs (`git diff <fix-commits> | grep '"w": {"m":'`), split each gloss on `,`/`;` into
+> units, translate units per language with the same Argos ct2 flow (`intra_threads=1`, one model at a time —
+> download/extract/translate/`rmtree` to fit the disk allowance; **model dir names vary**: `it`/`es` are
+> `en_it-1_0`/`en_es-1_0` extracting to bare `en_it`/`en_es`, `uk` is `en_uk-1_4`, so locate the extracted
+> dir by finding the child containing a `model/` subdir, not by name), rebuild each changed meaning's pack
+> value (translate parts, dedupe, rejoin `, `), and `pack.update(add)` into the existing `public/i18n/<lang>.json`
+> — existing keys untouched. **Clean the new keys** (ct2 loops recur in the fresh output): collapse consecutive
+> repeated tokens (case/punctuation-normalized, keep the later token so trailing commas survive), then **drop**
+> any value whose normalized alphabetic token still repeats 2+ times → English fallback (safe; correct meaning).
+> Guard kept: distinct comma-separated senses sharing a prefix (pl "głos, głosowanie" = voice, vote) survive
+> because whole tokens differ. Turkish took the most drops (~40, weakest model); Cyrillic glued-script check
+> stayed 0. Per-lang delta coverage 142–153/153; the rest fall back to English. Bumped SW cache (v72→v73).
+>
 > **Add a language:** entry in `LANGS`, a full `UI` dict, add its id to the two scripts, regenerate, bump SW
 cache. Gotcha: a *missing* pack file doesn't 404 — the SPA fallback returns index.html with HTTP 200, so
 `r.json()` throws and `setLang` toasts the connection error; ship the pack file with the `LANGS` entry.
