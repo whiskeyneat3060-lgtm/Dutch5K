@@ -1217,6 +1217,7 @@ let leechOnly = false;     // when true, the Learn queue drills only your hardes
 let filter = 'all'; let posFilter = 'all'; let srcFilter = 'all'; let search = ''; let expanded = null; let listLimit = 100;
 let learnPos = 'all'; let learnSrc = 'all';     // filters for the Learn queue
 let learnShuffle = false;   // Learn queue: strategic shuffle of new words (persisted dutch5k-shuffle). off = frequency order
+let newOnly = false;        // Learn queue: when true, show only brand-new words — hold back all due reviews (persisted dutch5k-newonly)
 let remindTime = '19:00';   // time of day for the daily-study reminder (persisted dutch5k-remindtime)
 let wordView = null;      // when set, Words tab shows a full card for this deck index
 let wordViewStack = [];   // for synonym/antonym hyperlink navigation (back button)
@@ -1955,6 +1956,21 @@ const UI_V82 = JSON.parse(`{
 "bg":{"Cards":"Карти","Reverse":"Обратно","Type":"Пиши","Listen":"Слушай","Cloze":"Празнина","What is this in Dutch?":"Как е на нидерландски?","Tap to reveal the Dutch word":"Докосни, за да видиш нидерландската дума","Listen, then recall the meaning":"Чуй и си спомни значението","Play audio":"Пусни звука","Tap the card to reveal":"Докосни картата, за да разкриеш","Fill in the missing word":"Попълни липсващата дума","Type the Dutch word":"Напиши нидерландската дума","Type here…":"Пиши тук…","Check":"Провери","Correct!":"Вярно!","Not quite":"Почти","You typed:":"Ти написа:","Continue":"Продължи","Review again":"Повтори пак","I knew it":"Знаех го","de or het?":"de или het?","It is “{a}”":"Това е „{a}”","Next":"Напред","Hear this sentence":"Чуй това изречение","{n} due for review":"{n} за преговор","Drilling hardest words":"Преговор на най-трудните думи","Exit drill":"Излез от упражнението","No tricky words yet — keep going!":"Още няма трудни думи — продължавай!","No words available for this mode with these filters.":"Няма думи за този режим с тези филтри.","Review":"Преговор","due for review":"за преговор","Words you’ve started that are scheduled to come back today. Reviewing on time is what moves them into long-term memory.":"Думи, които си започнал и които трябва да се върнат днес. Навременният преговор ги закрепва в дългосрочната памет.","Start review":"Започни преговор","All caught up — nothing due right now. Words you learn come back on a spaced schedule so you review them right before you’d forget.":"Всичко е наред — нищо за преговор сега. Научените думи се връщат по разреден график, за да ги повториш точно преди да ги забравиш.","Hardest words":"Най-трудни думи","times missed":"пъти сгрешени","Words you keep missing. Drill them to lock them in.":"Думи, които често бъркаш. Упражнявай ги, за да ги закрепиш.","Drill hardest words":"Упражнявай трудните думи","Reminder time":"Час за напомняне","Reminders fire while the app is open in your browser; keep the tab around to be nudged.":"Напомнянията се появяват, докато приложението е отворено в браузъра; дръж раздела отворен.","Reminder time set":"Часът за напомняне е зададен"}
 }`);
 Object.keys(UI_V82).forEach(l=>{ if(UI[l]) Object.assign(UI[l], UI_V82[l]); });
+
+/* v83 — "New words only" toggle strings (translated in all 10 non-English languages). */
+const UI_V83 = JSON.parse(`{
+"fr":{"New words only":"Nouveaux mots seulement","Study only new words — skip reviews":"Étudier uniquement les nouveaux mots — sans révisions","New words only · reviews paused":"Nouveaux mots seulement · révisions en pause","Reviews resumed":"Révisions réactivées","No new words left — turn off “New words only” to review.":"Plus de nouveaux mots — désactivez « Nouveaux mots seulement » pour réviser."},
+"it":{"New words only":"Solo parole nuove","Study only new words — skip reviews":"Studia solo parole nuove — salta i ripassi","New words only · reviews paused":"Solo parole nuove · ripassi in pausa","Reviews resumed":"Ripassi riattivati","No new words left — turn off “New words only” to review.":"Nessuna parola nuova rimasta — disattiva « Solo parole nuove » per ripassare."},
+"es":{"New words only":"Solo palabras nuevas","Study only new words — skip reviews":"Estudiar solo palabras nuevas — sin repasos","New words only · reviews paused":"Solo palabras nuevas · repasos en pausa","Reviews resumed":"Repasos reactivados","No new words left — turn off “New words only” to review.":"No quedan palabras nuevas — desactiva « Solo palabras nuevas » para repasar."},
+"de":{"New words only":"Nur neue Wörter","Study only new words — skip reviews":"Nur neue Wörter lernen — Wiederholungen überspringen","New words only · reviews paused":"Nur neue Wörter · Wiederholungen pausiert","Reviews resumed":"Wiederholungen fortgesetzt","No new words left — turn off “New words only” to review.":"Keine neuen Wörter mehr — schalte „Nur neue Wörter“ aus, um zu wiederholen."},
+"pt":{"New words only":"Só palavras novas","Study only new words — skip reviews":"Estudar só palavras novas — sem revisões","New words only · reviews paused":"Só palavras novas · revisões em pausa","Reviews resumed":"Revisões retomadas","No new words left — turn off “New words only” to review.":"Não há mais palavras novas — desative « Só palavras novas » para rever."},
+"pl":{"New words only":"Tylko nowe słowa","Study only new words — skip reviews":"Ucz się tylko nowych słów — pomiń powtórki","New words only · reviews paused":"Tylko nowe słowa · powtórki wstrzymane","Reviews resumed":"Powtórki wznowione","No new words left — turn off “New words only” to review.":"Brak nowych słów — wyłącz „Tylko nowe słowa”, aby powtarzać."},
+"tr":{"New words only":"Sadece yeni kelimeler","Study only new words — skip reviews":"Sadece yeni kelimeleri çalış — tekrarları atla","New words only · reviews paused":"Sadece yeni kelimeler · tekrarlar duraklatıldı","Reviews resumed":"Tekrarlar sürdürüldü","No new words left — turn off “New words only” to review.":"Yeni kelime kalmadı — tekrar için “Sadece yeni kelimeler” seçeneğini kapat."},
+"uk":{"New words only":"Лише нові слова","Study only new words — skip reviews":"Вивчати лише нові слова — без повторень","New words only · reviews paused":"Лише нові слова · повторення призупинено","Reviews resumed":"Повторення відновлено","No new words left — turn off “New words only” to review.":"Нових слів більше немає — вимкніть « Лише нові слова », щоб повторювати."},
+"ru":{"New words only":"Только новые слова","Study only new words — skip reviews":"Учить только новые слова — без повторений","New words only · reviews paused":"Только новые слова · повторения на паузе","Reviews resumed":"Повторения возобновлены","No new words left — turn off “New words only” to review.":"Новых слов больше нет — выключите « Только новые слова », чтобы повторять."},
+"bg":{"New words only":"Само нови думи","Study only new words — skip reviews":"Учи само нови думи — без преговори","New words only · reviews paused":"Само нови думи · преговорите са на пауза","Reviews resumed":"Преговорите са възобновени","No new words left — turn off “New words only” to review.":"Няма повече нови думи — изключи „Само нови думи“, за да преговаряш."}
+}`);
+Object.keys(UI_V83).forEach(l=>{ if(UI[l]) Object.assign(UI[l], UI_V83[l]); });
 
 /* UI string translation. Key = the exact English string; {x} placeholders are
    substituted AFTER lookup so translations can reorder them. Falls back to English. */
@@ -7050,6 +7066,7 @@ async function init(){
   remindTime = (await Store.get('dutch5k-remindtime')) || '19:00';
   isPro = (await Store.get('dutch5k-pro')) || false;
   learnShuffle = (await Store.get('dutch5k-shuffle')) || false;
+  newOnly = (await Store.get('dutch5k-newonly')) || false;
   learnMode = (await Store.get('dutch5k-mode')) || 'cards';
   if(!LEARN_MODES.some(m=>m.id===learnMode)) learnMode = 'cards';
   applyTheme((await Store.get('dutch5k-theme')) || 'minimalistic');
@@ -7179,8 +7196,15 @@ function buildQueue(){
   // Due reviews, then new words. Not-yet-due words are held back (spaced repetition) —
   // but if nothing is due and nothing is fresh, fall back to them so the deck is never
   // needlessly empty.
-  queue = [...due, ...fresh];
-  if(!queue.length) queue = notDue;
+  // "New words only" (Adi request): hold back every due review too, so the session is
+  // purely fresh words — no fallback to reviews (an empty deck here means "no new words
+  // left", which is the honest, intended state).
+  if(newOnly){
+    queue = [...fresh];
+  } else {
+    queue = [...due, ...fresh];
+    if(!queue.length) queue = notDue;
+  }
   // move any skipped-this-session indices to the back
   if(skipped.size){
     const sk = queue.filter(i=>skipped.has(i));
@@ -7315,9 +7339,21 @@ async function setMode(m){
   try{ const inp=document.getElementById('typeInput'); if(inp) inp.focus(); }catch(e){}
 }
 /* Progress-tab entry points into the Learn queue. */
-function startReview(){ hap(); leechOnly=false; if(learnMode==='dehet'||learnMode==='cloze') learnMode='cards'; skipped=new Set(); buildQueue(); setTab('learn'); }
-function drillLeeches(){ hap(); leechOnly=true; learnMode='cards'; skipped=new Set(); buildQueue(); setTab('learn'); }
+function startReview(){ hap(); leechOnly=false; newOnly=false; Store.set('dutch5k-newonly', false); if(learnMode==='dehet'||learnMode==='cloze') learnMode='cards'; skipped=new Set(); buildQueue(); setTab('learn'); }
+function drillLeeches(){ hap(); leechOnly=true; newOnly=false; Store.set('dutch5k-newonly', false); learnMode='cards'; skipped=new Set(); buildQueue(); setTab('learn'); }
 function exitDrill(){ hap(); leechOnly=false; skipped=new Set(); buildQueue(); render(); }
+/* "New words only" toggle: hold back all due reviews and study only brand-new words.
+   Mutually exclusive with the hardest-words drill (turning it on exits any drill). */
+async function toggleNewOnly(){
+  hap();
+  newOnly = !newOnly;
+  if(newOnly) leechOnly = false;
+  await Store.set('dutch5k-newonly', newOnly);
+  skipped = new Set();
+  buildQueue();
+  render();
+  toast(newOnly ? '&#128308; ' + T('New words only · reviews paused') : T('Reviews resumed'));
+}
 async function toggleShuffle(){
   hap();
   learnShuffle = !learnShuffle;
@@ -8139,7 +8175,10 @@ function learnBars(){
     `</div>`;
   const posBar = `<div class="posfilters posscroll learn-pos">${posFilterButtons(learnPos,'setLearnPos')}</div>`;
   const srcBar = srcFilterOpts().length>2 ? `<div class="srcfilters posfilters posscroll learn-pos">${srcFilterButtons(learnSrc,'setLearnSrc')}</div>` : '';
-  const shuffleBar = `<div class="posfilters learn-pos shuffle-bar"><button class="shuffle-btn${learnShuffle?' active':''}" aria-pressed="${learnShuffle}" onclick="toggleShuffle()">&#128256; ${learnShuffle?T('Shuffle On'):T('Shuffle Off')}</button></div>`;
+  const shuffleBar = `<div class="posfilters learn-pos shuffle-bar">`+
+    `<button class="shuffle-btn${learnShuffle?' active':''}" aria-pressed="${learnShuffle}" onclick="toggleShuffle()">&#128256; ${learnShuffle?T('Shuffle On'):T('Shuffle Off')}</button>`+
+    `<button class="shuffle-btn${newOnly?' active':''}" aria-pressed="${newOnly}" onclick="toggleNewOnly()" title="${T('Study only new words — skip reviews')}">&#128308; ${T('New words only')}</button>`+
+    `</div>`;
   const drillBanner = leechOnly ? `<div class="drill-banner">&#128293; ${T('Drilling hardest words')}<button onclick="exitDrill()" aria-label="${T('Exit drill')}">&#10005;</button></div>` : '';
   return modeBar + drillBanner + shuffleBar + srcBar + posBar;
 }
@@ -8266,7 +8305,9 @@ function deHetCardHtml(e, status, rankTxt){
 function renderLearn(main, c){
   const bars = learnBars();
   if(!queue.length){
-    const msg = leechOnly ? T('No tricky words yet — keep going!') : T('No words available for this mode with these filters.');
+    const msg = leechOnly ? T('No tricky words yet — keep going!')
+      : newOnly ? T('No new words left — turn off “New words only” to review.')
+      : T('No words available for this mode with these filters.');
     main.innerHTML = bars + `<div class="empty">${msg}<br>${T('Try “All”.')}</div>`;
     return;
   }
@@ -8587,7 +8628,7 @@ function render(){
 /* ============ OFFLINE (service worker) ============ */
 if('serviceWorker' in navigator){
   const swCode = `
-    const C = 'dutch5k-v82';
+    const C = 'dutch5k-v83';
     self.addEventListener('install', e => { self.skipWaiting(); });
     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
     self.addEventListener('fetch', e => {
