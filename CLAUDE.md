@@ -261,6 +261,24 @@ one-time-setup boxes that used to bloat the third tab, in order (v55, Adi reques
 > `Import failed…` UI-dict keys are left in place (dead but harmless). The v64 accordion note below now
 > describes **three** boxes, not four.
 
+> **v79 (Adi request):** a fourth drawer box, **Contact us**, was added below Theme (`contact:false` added
+> to `menuSections`; `menuBox('contact', T('Contact us'), contactInner)` appended in `renderMenu()`). It holds
+> a **subject dropdown** (generic categories from the module-level `CONTACT_SUBJECTS` array — General feedback /
+> Report a problem / Word or translation error / Feature request / Question / Other, each `T()`ed) and a
+> **mandatory free-text message** `<textarea>` + a **Send** button. `sendContact()` validates the message is
+> non-empty (empty → red `.cf-err` field + `.cf-hint` "Please enter a message before sending.", no send), then
+> POSTs `{_subject,_template,_captcha,Category,Message}` as JSON to **FormSubmit's AJAX endpoint**
+> (`https://formsubmit.co/ajax/<owner-email>`) — no backend, the app is static. **The owner email is never in
+> the UI:** it's assembled at send time (`['whiskeyneat3060','gmail.com'].join('@')`) inside `sendContact()`
+> only (verified: address appears nowhere in the rendered drawer HTML). On success the field clears, a thank-you
+> toast shows, and the section collapses; on network error a retry hint + toast. **FormSubmit needs a one-time
+> activation** — the first live submission emails the owner a confirmation link; click it once and all later
+> messages arrive silently. **Sending won't work from an offline `file://` copy** (no page origin) — the form
+> UI/validation is testable offline, delivery only on the deployed domain. UI strings are **English-only** (via
+> `T()`, fall back to English in the 10 packs, same as the Pro feature — not yet translated). CSS: `.contact-form`
+> /`.cf-label`/`.cf-input`/`.cf-err`/`.cf-hint`/`.cf-send` right after the `.lang-note` rule. `clearContactErr()`
+> resets the field on input. SW cache bumped v78→v79.
+
 > **v64 (Adi request):** the boxes are now **collapsible accordions** — each shows only its title
 > plus a `›` chevron; tapping the header expands the details and rotates the arrow, tapping again
 > collapses. All start collapsed; they toggle **independently** (several can be open). `renderMenu()`
