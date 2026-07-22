@@ -369,6 +369,8 @@
   }
   .contact-form .cf-send:active{transform:scale(.98);}
   .contact-form .cf-send:disabled{opacity:.55; cursor:default;}
+  .contact-form .cf-locktarget{display:flex; flex-direction:column;}
+  .contact-form .cf-lockwrap{display:flex; flex-direction:column; gap:10px;}
 
   /* ---- settings drawer (v53): hamburger in the header slides a panel in from the left.
      Holds the one-time-setup boxes (Theme, App language, Backup, About) moved out of the
@@ -7259,10 +7261,15 @@ function renderMenu(){
         <label class="cf-label" for="cfEmail">${T('Your email (optional)')}</label>
         <input class="cf-input" id="cfEmail" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" placeholder="${T('you@example.com')}" oninput="clearContactErr()">
         <div class="cf-hint cf-note" id="cfEmailHint">${T('Only if you would like a reply. We will use it just to get back to you.')}</div>
-        <label class="cf-label" for="cfMessage">${T('Message')}</label>
-        <textarea class="cf-input" id="cfMessage" placeholder="${T('What would you like to tell us?')}" oninput="clearContactErr()"></textarea>
-        <div class="cf-hint" id="cfHint"></div>
-        <button class="cf-send" id="cfSend" type="button" onclick="sendContact()">${T('Send')}</button>
+        <div class="cf-locktarget${isPro?'':' pro-lock'}">
+          <div class="cf-lockwrap${isPro?'':' locked-blur'}">
+            <label class="cf-label" for="cfMessage">${T('Message')}</label>
+            <textarea class="cf-input" id="cfMessage" placeholder="${T('What would you like to tell us?')}" oninput="clearContactErr()"></textarea>
+            <div class="cf-hint" id="cfHint"></div>
+            <button class="cf-send" id="cfSend" type="button" onclick="sendContact()">${T('Send')}</button>
+          </div>
+          ${isPro?'':proOverlay()}
+        </div>
       </div>`;
   body.innerHTML =
     proBox() +
@@ -7316,6 +7323,7 @@ function contactEmailError(raw){
    the UI). Message is mandatory; subject comes from the generic category dropdown. */
 async function sendContact(){
   hap();
+  if(!isPro){ openPro(); return; }   // Send is a Pro-only feature — Free mode shows the upsell
   const subEl   = document.getElementById('cfSubject');
   const msgEl   = document.getElementById('cfMessage');
   const emailEl = document.getElementById('cfEmail');
@@ -8155,7 +8163,7 @@ function render(){
 /* ============ OFFLINE (service worker) ============ */
 if('serviceWorker' in navigator){
   const swCode = `
-    const C = 'dutch5k-v80';
+    const C = 'dutch5k-v81';
     self.addEventListener('install', e => { self.skipWaiting(); });
     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
     self.addEventListener('fetch', e => {
