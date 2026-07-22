@@ -298,6 +298,20 @@ one-time-setup boxes that used to bloat the third tab, in order (v55, Adi reques
 > in the 10 packs, same as the rest of the form). Owner email still assembled only in `sendContact()`, never in
 > the rendered drawer (re-verified in jsdom). SW cache bumped v79→v80.
 
+> **v81 (Adi request):** the Contact-us form's **message field + Send button are now Pro-gated** like the
+> other locked features — sending is a Pro-only feature. In `contactInner`, the `<label>Message` + `<textarea>`
+> + `#cfHint` + `#cfSend` are wrapped in a `.cf-locktarget` div (gets `pro-lock` when Free) around a
+> `.cf-lockwrap` (gets `locked-blur` when Free), with `proOverlay()` appended when `!isPro` — the standard 🔒
+> overlay + "Unlock Pro to go" CTA, identical to the Learn card / Progress breakdown gate. The **Subject
+> dropdown and optional email field stay visible/usable** in Free mode; only the free-text message + Send are
+> locked. `sendContact()` gained a defensive first-line guard `if(!isPro){ openPro(); return; }` so it can't
+> fire in Free mode even if the button were somehow reached. Two new CSS rules after `.cf-send:disabled`:
+> `.contact-form .cf-locktarget{display:flex;flex-direction:column;}` and `.cf-lockwrap{display:flex;
+> flex-direction:column;gap:10px;}` preserve the form's column layout inside the wrapper. No new UI-dict keys
+> (overlay reuses existing Pro strings). Verified in jsdom: Free → locktarget has `pro-lock`, overlay present,
+> lockwrap blurred, `sendContact()` opens the upsell instead of sending; Pro → no lock, Send button live. SW
+> cache bumped v80→v81.
+
 > **v64 (Adi request):** the boxes are now **collapsible accordions** — each shows only its title
 > plus a `›` chevron; tapping the header expands the details and rotates the arrow, tapping again
 > collapses. All start collapsed; they toggle **independently** (several can be open). `renderMenu()`
