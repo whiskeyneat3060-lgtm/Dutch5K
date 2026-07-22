@@ -293,8 +293,8 @@
   .posbreak{display:flex; flex-direction:column; gap:8px;}
   .posrow{display:flex; align-items:center; gap:10px; cursor:pointer;}
   .posname{flex:0 0 96px; font-size:13px; font-weight:600;}
-  .posbar{flex:1; height:12px; border:2px solid var(--line); background:var(--paper);}
-  .posbar-fill{display:block; height:100%; background:var(--blue);}
+  .posbar{flex:1; height:12px; border:2px solid var(--line); background:var(--paper); display:flex;}
+  .posbar-fill{display:block; height:100%; background:var(--blue); flex:0 0 auto;}
   .poscount{flex:0 0 auto; font-family:var(--font-head); font-weight:700; font-size:12px; color:var(--muted);}
 
   /* Progress-by-source donut + legend */
@@ -7025,11 +7025,23 @@ function countsByPos(){
   const out={};
   deck.forEach(e=>{
     const p=posOf(e)||'other';
-    if(!out[p]) out[p]={total:0,learned:0};
+    if(!out[p]) out[p]={total:0,learned:0,bySrc:{}};
     out[p].total++;
-    if(progress[e.id]==='learned') out[p].learned++;
+    if(progress[e.id]==='learned'){
+      out[p].learned++;
+      const s=primarySource(e);
+      out[p].bySrc[s]=(out[p].bySrc[s]||0)+1;
+    }
   });
   return out;
+}
+// The single source a learned word is attributed to in the "By word type" stacked bar, so the
+// coloured segments sum to exactly the learned total (unlike the donut's per-source overlap counts).
+// A book word is filed under its book (matches the source-filter taxonomy); non-book words = general.
+function primarySource(e){
+  if(!e.books || !e.books.length) return 'general';
+  for(const s of ['gang','actie','niveau']) if((e.srcTags||[]).includes(s)) return s;
+  return 'general';
 }
 // Learned/total per source (general = no book; book sources via inSource). A word shared
 // between two books counts under each, matching how the source filter presents them.
@@ -7918,10 +7930,15 @@ function render(){
     const cbp = countsByPos();
     const posOrder = ['verb','noun','adjective','adverb','pronoun','preposition','conjunction','number','expression','article'];
     const posRows = posOrder.filter(p=>cbp[p]).map(p=>{
-      const d=cbp[p]; const pc=Math.round(d.learned/d.total*100);
+      const d=cbp[p];
+      // Stack the learned bar into per-source segments (SRC_ORDER, same colours as "By source").
+      const segs = SRC_ORDER.filter(s=>d.bySrc[s]).map(s=>{
+        const w = d.bySrc[s]/d.total*100;
+        return `<span class="posbar-fill" style="width:${w}%;background:var(${SRC_COLORVAR[s]})" title="${SRC_SHORT[s]}: ${d.bySrc[s]}"></span>`;
+      }).join('');
       return `<div class="posrow" onclick="hap();posFilter='${p}';setTab('words')">
         <span class="posname">${T(POS_LABELS[p]||p)}</span>
-        <span class="posbar"><span class="posbar-fill" style="width:${pc}%"></span></span>
+        <span class="posbar">${segs}</span>
         <span class="poscount">${d.learned}/${d.total}</span></div>`;
     }).join('');
 
@@ -7999,7 +8016,7 @@ function render(){
 /* ============ OFFLINE (service worker) ============ */
 if('serviceWorker' in navigator){
   const swCode = `
-    const C = 'dutch5k-v77';
+    const C = 'dutch5k-v78';
     self.addEventListener('install', e => { self.skipWaiting(); });
     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
     self.addEventListener('fetch', e => {
