@@ -351,6 +351,7 @@
   .contact-form{display:flex; flex-direction:column; gap:10px;}
   .contact-form .cf-label{font-size:12px; font-weight:700; color:var(--muted); letter-spacing:.5px; margin-bottom:-4px;}
   .contact-form select.cf-input,
+  .contact-form input.cf-input,
   .contact-form textarea.cf-input{
     width:100%; padding:9px 11px; border:var(--rule); background:var(--card-bg); color:var(--ink);
     border-radius:var(--radius); font-family:var(--font-body); font-size:14px; box-sizing:border-box;
@@ -359,6 +360,8 @@
   .contact-form .cf-input:focus{outline:none; box-shadow:inset 0 0 0 2px var(--accent);}
   .contact-form .cf-input.cf-err{box-shadow:inset 0 0 0 2px var(--red);}
   .contact-form .cf-hint{font-size:12px; color:var(--red); min-height:0;}
+  .contact-form .cf-note{color:var(--muted); line-height:1.4;}
+  .contact-form .cf-note.cf-err-msg{color:var(--red);}
   .contact-form .cf-send{
     width:100%; margin-top:2px; padding:11px; border:var(--rule); background:var(--blue); color:#fff;
     border-radius:var(--radius); font-family:var(--font-head); font-weight:800; font-size:15px;
@@ -7253,6 +7256,9 @@ function renderMenu(){
         <select class="cf-input" id="cfSubject">
           ${CONTACT_SUBJECTS.map(s=>`<option value="${T(s).replace(/"/g,'&quot;')}">${T(s)}</option>`).join('')}
         </select>
+        <label class="cf-label" for="cfEmail">${T('Your email (optional)')}</label>
+        <input class="cf-input" id="cfEmail" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" placeholder="${T('you@example.com')}" oninput="clearContactErr()">
+        <div class="cf-hint cf-note" id="cfEmailHint">${T('Only if you would like a reply. We will use it just to get back to you.')}</div>
         <label class="cf-label" for="cfMessage">${T('Message')}</label>
         <textarea class="cf-input" id="cfMessage" placeholder="${T('What would you like to tell us?')}" oninput="clearContactErr()"></textarea>
         <div class="cf-hint" id="cfHint"></div>
@@ -7270,16 +7276,52 @@ const CONTACT_SUBJECTS = ['General feedback','Report a problem','Word or transla
 function clearContactErr(){
   const t = document.getElementById('cfMessage'); const h = document.getElementById('cfHint');
   if(t) t.classList.remove('cf-err'); if(h) h.textContent='';
+  const e = document.getElementById('cfEmail'); const eh = document.getElementById('cfEmailHint');
+  if(e) e.classList.remove('cf-err');
+  if(eh){ eh.classList.remove('cf-err-msg'); eh.textContent = T('Only if you would like a reply. We will use it just to get back to you.'); }
+}
+/* Disposable / throwaway mail domains we reject so a reply address is real.
+   (Small hand-picked set of the most common ones; the app is offline so no live DNS check.) */
+const CONTACT_DISPOSABLE = new Set([
+  'mailinator.com','guerrillamail.com','guerrillamail.info','sharklasers.com','grr.la',
+  '10minutemail.com','10minutemail.net','tempmail.com','temp-mail.org','tempmail.net',
+  'yopmail.com','yopmail.fr','trashmail.com','throwawaymail.com','getnada.com','nada.email',
+  'maildrop.cc','dispostable.com','fakeinbox.com','mailnesia.com','mailcatch.com','mohmal.com',
+  'mintemail.com','spamgourmet.com','tempinbox.com','emailondeck.com','moakt.com','tmail.com',
+  'discard.email','mailsac.com','inboxkitten.com','harakirimail.com','spam4.me','einrot.com',
+  'burnermail.io','33mail.com','anonaddy.com','anonaddy.me'
+]);
+/* Validate an email address: proper syntax + a real-looking domain, and NOT a disposable
+   provider. Returns '' when ok, or a human error string. Empty input is allowed by the
+   caller (the field is optional) — this is only run on a non-empty value. */
+function contactEmailError(raw){
+  const v = (raw||'').trim();
+  // Single address only (no comma/space-separated lists), no display name.
+  if(/[\s,;<>()]/.test(v)) return T('Please enter a single valid email address.');
+  const m = v.match(/^([^@]+)@([^@]+)$/);
+  if(!m) return T('Please enter a valid email address.');
+  const local = m[1], domain = m[2].toLowerCase();
+  // Local part: printable, no leading/trailing/double dot.
+  if(local.length>64 || /^\.|\.$|\.\./.test(local) || !/^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+$/.test(local))
+    return T('Please enter a valid email address.');
+  // Domain: labels of letters/digits/hyphens, at least one dot, real TLD (2+ letters), no leading/trailing hyphen.
+  if(domain.length>255 || !/^([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/.test(domain))
+    return T('Please enter a valid email address.');
+  if(CONTACT_DISPOSABLE.has(domain))
+    return T('Please use a permanent email address, not a temporary one.');
+  return '';
 }
 /* Send the contact message. No backend: POST via FormSubmit's AJAX endpoint, which
    emails it to the app owner. The recipient address lives only here (never shown in
    the UI). Message is mandatory; subject comes from the generic category dropdown. */
 async function sendContact(){
   hap();
-  const subEl = document.getElementById('cfSubject');
-  const msgEl = document.getElementById('cfMessage');
-  const hint  = document.getElementById('cfHint');
-  const btn   = document.getElementById('cfSend');
+  const subEl   = document.getElementById('cfSubject');
+  const msgEl   = document.getElementById('cfMessage');
+  const emailEl = document.getElementById('cfEmail');
+  const emHint  = document.getElementById('cfEmailHint');
+  const hint    = document.getElementById('cfHint');
+  const btn     = document.getElementById('cfSend');
   if(!msgEl) return;
   const msg = (msgEl.value||'').trim();
   if(!msg){
@@ -7287,6 +7329,17 @@ async function sendContact(){
     if(hint) hint.textContent = T('Please enter a message before sending.');
     msgEl.focus();
     return;
+  }
+  // Email is optional — but if given it must be a real, non-disposable address.
+  const email = emailEl ? (emailEl.value||'').trim() : '';
+  if(email){
+    const err = contactEmailError(email);
+    if(err){
+      if(emailEl) emailEl.classList.add('cf-err');
+      if(emHint){ emHint.classList.add('cf-err-msg'); emHint.textContent = err; }
+      if(emailEl) emailEl.focus();
+      return;
+    }
   }
   const subject = subEl ? subEl.value : 'Contact';
   const CONTACT_TO = ['whiskeyneat3060','gmail.com'].join('@');  // owner inbox — not surfaced in UI
@@ -7299,13 +7352,16 @@ async function sendContact(){
         _subject: 'Dutch To Go — '+subject,
         _template: 'table',
         _captcha: 'false',
+        ...(email ? {_replyto: email} : {}),
         Category: subject,
+        Email: email || '(not provided)',
         Message: msg
       })
     });
     if(!r.ok) throw new Error('http '+r.status);
     await r.json().catch(()=>({}));
     msgEl.value = '';
+    if(emailEl) emailEl.value = '';
     if(hint) hint.textContent = '';
     toast(T('Thanks! Your message has been sent.'));
     if(menuSections.contact){ menuSections.contact = false; renderMenu(); }
@@ -8099,7 +8155,7 @@ function render(){
 /* ============ OFFLINE (service worker) ============ */
 if('serviceWorker' in navigator){
   const swCode = `
-    const C = 'dutch5k-v79';
+    const C = 'dutch5k-v80';
     self.addEventListener('install', e => { self.skipWaiting(); });
     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
     self.addEventListener('fetch', e => {
