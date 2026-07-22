@@ -159,16 +159,71 @@ on modern unfurlers); swap to an absolute URL if a platform needs one.
 ## Storage (client-side, no backend)
 
 `Store` adapter wraps `window.storage` (Claude artifacts) with `localStorage` fallback. Keys:
-`dutch5k-progress`, `-enriched`, `-plan`, `-streak`, `-remind`, `-theme`, `-shuffle`, `-pro`. No server;
+`dutch5k-progress`, `-enriched`, `-srs` (v82 spaced-repetition schedule), `-plan`, `-streak`, `-remind`,
+`-remindtime` (v82), `-theme`, `-shuffle`, `-mode` (v82 study mode), `-pro`. No server;
 losing localStorage loses progress. (The Export/Import JSON backup box was **removed from the drawer in
 v68** — see the Settings drawer note; `exportData()`/`importData()` still exist in the JS but are no
 longer wired to any UI.)
 
 ## Features
 
-Three tabs: **Learn** (flashcards, flip, Again/Learning/Know-it, Skip), **Words** (search, list, detail),
-**Progress** (stats, daily goal, streak, 14-day history, POS breakdown, source breakdown) — plus a
-**settings drawer** (hamburger in the header) holding Theme, App language and the About box.
+Three tabs: **Learn** (six study modes — see v82; flip/Again/Learning/Know-it/Skip on the recognition
+ones), **Words** (search, list, detail), **Progress** (stats, review-due, daily goal, streak, 14-day
+history, hardest words, POS breakdown, source breakdown) — plus a **settings drawer** (hamburger in the
+header) holding Theme, App language, Contact and the About box.
+
+**Spaced repetition + study modes (v82, Adi request "add all these features"):** the app went from a
+"have I seen this word" tracker to a real retention engine. Everything hangs off a new **SM-2-lite
+scheduler**: `srs[id] = {due:'YYYY-MM-DD', iv:intervalDays, ef:easeFactor, reps, lapses, last}`, persisted
+as `dutch5k-srs`. **`progress[id]` stays the source of truth for learned/learning *status*** (so every
+count, filter, donut, streak and Pro gate is byte-for-byte unchanged) — `srs` only adds *when* a word is
+due again. Section `/* ============ SPACED REPETITION ============ */` right above the QUEUE section holds
+`addDays`, `scheduleSrs(id,grade)` (grade 0=Again lapse → reset iv + due today + ef−0.2; 1=Learning/hard,
+2=Know-it/good, 3=easy → grow iv by ef), `isDue(id)` (**legacy words graded before v82 have no srs record
+→ treated as due** so they enter review the first time; new/never-started words are never due),
+`dueCount()`, `leeches()` (ids with ≥2 lapses, hardest first) and `leechSet()`.
+- **`buildQueue()` rewritten:** partitions the filtered+mode-eligible pool into `due`/`notDue`/`fresh`;
+  queue = **due reviews (soonest due date first) → new words**; not-yet-due words are *held back* (the
+  whole point of SRS) but fall back in if nothing is due and nothing is fresh so the deck is never
+  needlessly empty. `mark()` and `setWordStatus()` both call `scheduleSrs` and persist `dutch5k-srs`.
+- **Six study modes**, `learnMode` persisted as `dutch5k-mode`, picked from a **mode bar** (`.modebar`,
+  `LEARN_MODES` array) at the top of Learn; `setMode()` rebuilds the queue. `modeEligible(e)` gates the
+  pool per mode. Two grading philosophies:
+  - **Recognition modes** (`cards` NL→meaning, `reverse` meaning→NL, `listen` audio→meaning): flip +
+    **self-grade** (Again/Learning/Know-it). Rendered by `recogCardHtml()`; `listen` shows a big play
+    button (`.bigplay`, taps `speak()`), reveal shows word + `meaningBlock()`.
+  - **Objective modes** (`type` typed recall, `cloze` fill-the-blank, `dehet` gender drill):
+    **auto-graded** from correctness, stored in `objResult` state, then Continue / "Review again" + "I
+    knew it" / Next advance via `mark()`. `typeCardHtml()` (type+cloze) + `deHetCardHtml()`.
+    `checkAnswer()` compares `normalizeAns()` (case/accent-insensitive, ignores leading de/het/een +
+    trailing punctuation); `clozePick(e)` finds an example that literally contains the headword and blanks
+    it (why cloze pool is smaller — conjugated verbs often don't contain the infinitive);
+    `answerDeHet(choice)` checks `e.a`. de/het correct grades as **`learning`** not `learned` (you only
+    proved the gender), wrong = `again`.
+  - `renderLearn(main,c)` is the dispatcher (was the inline `tab==='learn'` block in `render()`); it
+    builds the bars via `learnBars()`, handles empty/locked, picks the per-mode renderer, and focuses the
+    `#typeInput` (Enter = Check) for typing modes. Locked (Free) cards keep the same blurred + `proOverlay`
+    treatment in every mode.
+- **Progress additions:** a **Review box** (`.review-box`) shows `dueCount()` + a **Start review** button
+  (`startReview()` → Learn, due auto-front); a **Hardest words box** lists `leeches()` (≤8, word + meaning
+  + lapse count) with **Drill hardest words** (`drillLeeches()` sets `leechOnly=true` → `buildQueue()`
+  restricts the pool to leeches, never introduces fresh words; a `.drill-banner` with ✕ / `exitDrill()`
+  shows in Learn while active). Both boxes are **ungated** (core learning, unlike the Pro-gated analytics).
+- **Example-sentence audio:** `examplesHtml()` now appends a `.spk-ex` speaker to each Dutch sentence.
+  `speak()` was generalised — `_speakDutch(text,btn)` speaks any Dutch string; `speakText(text,ev)` is the
+  sentence/arbitrary-text entry point (`speak(idx,ev)` still does the headword).
+- **Reminders upgraded:** `remindTime` (persisted `dutch5k-remindtime`, default `19:00`) with a
+  `<input type=time>` in the plan box (`setRemindTime`). `scheduleReminder()` now sets a real `setTimeout`
+  to the next occurrence of that time and fires `_fireReminder()` (via `navigator.serviceWorker.ready`
+  `reg.showNotification`, falling back to the page `Notification`) if you haven't studied that day; also
+  re-checks on `visibilitychange`. **Honest ceiling for a static PWA** — no push server, so it only fires
+  while the tab is open; the UI says so.
+- **i18n:** unlike the English-only Pro/Contact features, **all 41 new UI strings are translated into all
+  10 non-English languages.** They live in one `UI_V82 = JSON.parse(\`{…}\`)` block right after the `UI`
+  object (values use curly quotes/guillemets, **never ASCII `"`**, so no escaping is needed inside the JSON
+  template literal), merged via `Object.assign` into each `UI[lang]`. `de / het` is a Dutch label, not
+  translated. **Content packs are unaffected** (word meanings/examples are the same strings). SW cache
+  bumped **v81 → v82**.
 
 **Progress "By source" donut (v67, Adi request):** below the "By word type" breakdown, an interactive
 donut chart of words *learned per source* (General / Gang / Actie / Niveau). `countsBySource()` (right
