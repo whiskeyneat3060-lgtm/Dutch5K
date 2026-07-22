@@ -268,6 +268,56 @@
   .wpos{font-family:var(--font-body); font-weight:500; font-size:9px; text-transform:uppercase; letter-spacing:1px; color:var(--muted2); border:1px solid var(--faint); padding:1px 5px; vertical-align:middle;}
   .btn-skip{color:var(--muted); font-size:12px !important;}
 
+  /* ---- Study-mode picker (v82) ---- */
+  .modebar{margin-bottom:10px;}
+  .modebtn{display:inline-flex; align-items:center; gap:5px;}
+  .modebtn.active{background:var(--red); color:#fff; border-color:var(--red);}
+  html[data-theme="midnight"] .modebtn.active{background:var(--blue); border-color:var(--blue);}
+  html[data-theme="sepia"] .modebtn.active{background:var(--accent); border-color:var(--accent); color:var(--paper);}
+  .drill-banner{display:flex; align-items:center; justify-content:space-between; gap:10px; border:2px solid var(--red); color:var(--red); font-family:var(--font-head); font-weight:800; font-size:12px; text-transform:uppercase; letter-spacing:1px; padding:8px 12px; margin-bottom:10px;}
+  .drill-banner button{background:transparent; border:none; color:var(--red); font-size:16px; cursor:pointer; line-height:1;}
+  /* Prompts + reveals shared by the study modes */
+  .prompt-lbl{font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:2px; color:var(--muted2); margin-bottom:6px;}
+  .word-en.big{font-size:26px; line-height:1.25; font-weight:700;}
+  .card.no-flip{cursor:default;}
+  .bigplay-wrap{display:flex; justify-content:center; padding:14px 0;}
+  .bigplay{width:88px; height:88px; border-radius:50%; border:var(--rule); background:var(--paper); color:var(--ink); display:flex; align-items:center; justify-content:center; cursor:pointer; opacity:1;}
+  .bigplay svg{width:44px; height:44px;}
+  .bigplay:active{transform:scale(.94);}
+  .bigplay.speaking{color:var(--red); border-color:var(--red);}
+  .type-input{width:100%; padding:13px 14px; border:var(--rule); font-family:var(--font-body); font-size:18px; margin-top:14px; outline:none; background:var(--paper); color:var(--ink);}
+  .type-input:focus{border-color:var(--blue);}
+  .result{margin-top:14px; padding:12px 14px; border:2px solid var(--line);}
+  .result.ok{border-color:var(--blue); background:color-mix(in srgb, var(--blue) 12%, var(--paper));}
+  .result.bad{border-color:var(--red); background:color-mix(in srgb, var(--red) 12%, var(--paper));}
+  .result-head{font-family:var(--font-head); font-weight:900; font-size:14px; text-transform:uppercase; letter-spacing:1px;}
+  .result.ok .result-head{color:var(--blue);}
+  .result.bad .result-head{color:var(--red);}
+  .ans-reveal{display:flex; align-items:center; gap:4px; margin-top:8px;}
+  .ans-word{font-family:var(--font-head); font-weight:900; font-size:26px;}
+  .ans-yours{font-size:13px; color:var(--muted); margin-top:4px;}
+  .cloze-sent{font-size:19px; line-height:1.5; font-weight:600; margin-bottom:6px;}
+  .cloze-blank{display:inline-block; min-width:70px; text-align:center; border-bottom:3px solid var(--red); color:var(--red); font-weight:800; padding:0 6px;}
+  .cloze-en{font-size:13px; color:var(--muted); font-style:italic;}
+  .dehet-btns{display:flex; gap:12px; margin-top:18px;}
+  .dehet-btn{flex:1; padding:18px 0; border:var(--rule); background:var(--paper); color:var(--ink); font-family:var(--font-head); font-weight:900; font-size:22px; cursor:pointer; text-transform:lowercase;}
+  .dehet-btn:active{transform:scale(.96);}
+  .dehet-answer{color:var(--blue);}
+  .sen-nl{display:block;}
+  .spk-ex{width:22px; height:22px; padding:2px; margin-left:4px; vertical-align:middle;}
+  /* Progress: review + hardest-words */
+  .review-box{border-width:3px;}
+  .review-box .daily-num.c-red{color:var(--red);}
+  .leechlist{margin:4px 0 4px;}
+  .leechrow{display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid var(--faint); cursor:pointer;}
+  .leechrow:last-child{border-bottom:none;}
+  .leech-w{font-family:var(--font-head); font-weight:700; font-size:14px; flex:0 0 auto;}
+  .leech-m{font-size:12px; color:var(--muted); flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .leech-x{font-size:12px; font-weight:700; color:var(--red); flex:0 0 auto;}
+  .remind-time{display:flex; align-items:center; gap:10px; margin-top:10px;}
+  .remind-time label{font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:1px; color:var(--muted);}
+  .remind-time input[type=time]{width:auto; margin:0; padding:7px 10px;}
+
   /* ---- daily plan / streak ---- */
   .plan-box{border-width:3px;}
   .daily-head{display:flex; justify-content:space-between; align-items:center; margin:6px 0 10px;}
@@ -1150,12 +1200,24 @@ let deck = [];            // ordered entries
 let byId = {};            // id -> entry
 let enriched = {};        // id -> enriched data (persisted overlay)
 let progress = {};        // id -> 'learned' | 'learning'
+/* ---- Spaced repetition (v82) ----
+   `srs[id]` holds scheduling metadata for every word you've graded: an SM-2-lite
+   record {due:'YYYY-MM-DD', iv:intervalDays, ef:easeFactor, reps, lapses, last}.
+   `progress` stays the source of truth for learned/learning *status* (so every count,
+   filter, donut and Pro gate is untouched); `srs` adds *when* a word is due again so
+   the queue can resurface it before you forget it. Persisted as dutch5k-srs. Legacy
+   started words with no srs record are treated as due (see isDue). */
+let srs = {};
 let apiKey = '';
 let tab = 'learn';
 let queue = []; let qPos = 0; let flipped = false;
+let learnMode = 'cards';   // Learn study mode: cards | reverse | type | listen | cloze | dehet (persisted dutch5k-mode)
+let objResult = null;      // objective-mode (type/cloze/dehet) result: {correct, grade:'good'|'again', answer, given}
+let leechOnly = false;     // when true, the Learn queue drills only your hardest (repeatedly-missed) words
 let filter = 'all'; let posFilter = 'all'; let srcFilter = 'all'; let search = ''; let expanded = null; let listLimit = 100;
 let learnPos = 'all'; let learnSrc = 'all';     // filters for the Learn queue
 let learnShuffle = false;   // Learn queue: strategic shuffle of new words (persisted dutch5k-shuffle). off = frequency order
+let remindTime = '19:00';   // time of day for the daily-study reminder (persisted dutch5k-remindtime)
 let wordView = null;      // when set, Words tab shows a full card for this deck index
 let wordViewStack = [];   // for synonym/antonym hyperlink navigation (back button)
 let enrichInFlight = false;
@@ -1876,6 +1938,23 @@ bg:{
   'Card preparation failed — check your API key in Progress':'Подготовката на картата не успя — провери API ключа си',
 },
 };
+
+/* v82 study-mode + spaced-repetition strings, merged into the UI dicts above. Kept as a
+   JSON block (values use curly quotes/guillemets, never ASCII ", so no escaping is needed)
+   so all 10 languages sit in one readable place. Missing keys fall back to English via T(). */
+const UI_V82 = JSON.parse(`{
+"fr":{"Cards":"Cartes","Reverse":"Inversé","Type":"Écrire","Listen":"Écouter","Cloze":"Texte à trou","What is this in Dutch?":"Comment dit-on en néerlandais ?","Tap to reveal the Dutch word":"Touchez pour révéler le mot néerlandais","Listen, then recall the meaning":"Écoutez, puis retrouvez le sens","Play audio":"Lire l’audio","Tap the card to reveal":"Touchez la carte pour révéler","Fill in the missing word":"Complétez le mot manquant","Type the Dutch word":"Écrivez le mot néerlandais","Type here…":"Écrivez ici…","Check":"Vérifier","Correct!":"Correct !","Not quite":"Presque","You typed:":"Vous avez écrit :","Continue":"Continuer","Review again":"Revoir","I knew it":"Je le savais","de or het?":"de ou het ?","It is “{a}”":"C’est « {a} »","Next":"Suivant","Hear this sentence":"Écouter cette phrase","{n} due for review":"{n} à réviser","Drilling hardest words":"Révision des mots difficiles","Exit drill":"Quitter l’exercice","No tricky words yet — keep going!":"Aucun mot difficile pour l’instant — continuez !","No words available for this mode with these filters.":"Aucun mot disponible pour ce mode avec ces filtres.","Review":"Révision","due for review":"à réviser","Words you’ve started that are scheduled to come back today. Reviewing on time is what moves them into long-term memory.":"Les mots que vous avez commencés et qui doivent revenir aujourd’hui. Réviser au bon moment, c’est ce qui les ancre dans la mémoire à long terme.","Start review":"Commencer la révision","All caught up — nothing due right now. Words you learn come back on a spaced schedule so you review them right before you’d forget.":"Tout est à jour — rien à réviser pour l’instant. Les mots appris reviennent selon un calendrier espacé, pour les revoir juste avant de les oublier.","Hardest words":"Mots les plus difficiles","times missed":"fois manquées","Words you keep missing. Drill them to lock them in.":"Les mots que vous ratez souvent. Entraînez-vous pour les ancrer.","Drill hardest words":"Réviser les mots difficiles","Reminder time":"Heure du rappel","Reminders fire while the app is open in your browser; keep the tab around to be nudged.":"Les rappels se déclenchent quand l’app est ouverte dans votre navigateur ; gardez l’onglet ouvert pour être averti.","Reminder time set":"Heure du rappel définie"},
+"it":{"Cards":"Carte","Reverse":"Inverso","Type":"Scrivi","Listen":"Ascolta","Cloze":"Testo bucato","What is this in Dutch?":"Come si dice in olandese?","Tap to reveal the Dutch word":"Tocca per rivelare la parola olandese","Listen, then recall the meaning":"Ascolta, poi ricorda il significato","Play audio":"Riproduci audio","Tap the card to reveal":"Tocca la carta per rivelare","Fill in the missing word":"Completa la parola mancante","Type the Dutch word":"Scrivi la parola olandese","Type here…":"Scrivi qui…","Check":"Verifica","Correct!":"Corretto!","Not quite":"Non proprio","You typed:":"Hai scritto:","Continue":"Continua","Review again":"Rivedi","I knew it":"Lo sapevo","de or het?":"de o het?","It is “{a}”":"È « {a} »","Next":"Avanti","Hear this sentence":"Ascolta questa frase","{n} due for review":"{n} da ripassare","Drilling hardest words":"Ripasso delle parole difficili","Exit drill":"Esci dall’esercizio","No tricky words yet — keep going!":"Nessuna parola difficile per ora — continua così!","No words available for this mode with these filters.":"Nessuna parola disponibile per questa modalità con questi filtri.","Review":"Ripasso","due for review":"da ripassare","Words you’ve started that are scheduled to come back today. Reviewing on time is what moves them into long-term memory.":"Le parole che hai iniziato e che devono tornare oggi. Ripassare al momento giusto è ciò che le fissa nella memoria a lungo termine.","Start review":"Inizia il ripasso","All caught up — nothing due right now. Words you learn come back on a spaced schedule so you review them right before you’d forget.":"Tutto in pari — niente da ripassare adesso. Le parole imparate tornano con un ritmo dilazionato, così le rivedi poco prima di dimenticarle.","Hardest words":"Parole più difficili","times missed":"volte sbagliate","Words you keep missing. Drill them to lock them in.":"Le parole che sbagli spesso. Allenati per fissarle.","Drill hardest words":"Ripassa le parole difficili","Reminder time":"Ora del promemoria","Reminders fire while the app is open in your browser; keep the tab around to be nudged.":"I promemoria scattano quando l’app è aperta nel browser; tieni la scheda aperta per essere avvisato.","Reminder time set":"Ora del promemoria impostata"},
+"es":{"Cards":"Tarjetas","Reverse":"Inverso","Type":"Escribir","Listen":"Escuchar","Cloze":"Rellenar hueco","What is this in Dutch?":"¿Cómo se dice en neerlandés?","Tap to reveal the Dutch word":"Toca para revelar la palabra neerlandesa","Listen, then recall the meaning":"Escucha y recuerda el significado","Play audio":"Reproducir audio","Tap the card to reveal":"Toca la tarjeta para revelar","Fill in the missing word":"Completa la palabra que falta","Type the Dutch word":"Escribe la palabra neerlandesa","Type here…":"Escribe aquí…","Check":"Comprobar","Correct!":"¡Correcto!","Not quite":"Casi","You typed:":"Escribiste:","Continue":"Continuar","Review again":"Repasar de nuevo","I knew it":"Lo sabía","de or het?":"¿de o het?","It is “{a}”":"Es « {a} »","Next":"Siguiente","Hear this sentence":"Escuchar esta frase","{n} due for review":"{n} para repasar","Drilling hardest words":"Repasando las palabras difíciles","Exit drill":"Salir del ejercicio","No tricky words yet — keep going!":"Aún no hay palabras difíciles — ¡sigue así!","No words available for this mode with these filters.":"No hay palabras para este modo con estos filtros.","Review":"Repaso","due for review":"para repasar","Words you’ve started that are scheduled to come back today. Reviewing on time is what moves them into long-term memory.":"Palabras que empezaste y que toca repasar hoy. Repasar a tiempo es lo que las fija en la memoria a largo plazo.","Start review":"Empezar repaso","All caught up — nothing due right now. Words you learn come back on a spaced schedule so you review them right before you’d forget.":"Todo al día — nada que repasar ahora. Las palabras aprendidas vuelven en un calendario espaciado, para repasarlas justo antes de olvidarlas.","Hardest words":"Palabras más difíciles","times missed":"veces fallada","Words you keep missing. Drill them to lock them in.":"Palabras que fallas a menudo. Practícalas para fijarlas.","Drill hardest words":"Repasar palabras difíciles","Reminder time":"Hora del recordatorio","Reminders fire while the app is open in your browser; keep the tab around to be nudged.":"Los recordatorios saltan cuando la app está abierta en tu navegador; deja la pestaña abierta para recibir el aviso.","Reminder time set":"Hora del recordatorio guardada"},
+"de":{"Cards":"Karten","Reverse":"Umgekehrt","Type":"Tippen","Listen":"Hören","Cloze":"Lückentext","What is this in Dutch?":"Wie heißt das auf Niederländisch?","Tap to reveal the Dutch word":"Tippen, um das niederländische Wort zu zeigen","Listen, then recall the meaning":"Hör zu und erinnere dich an die Bedeutung","Play audio":"Audio abspielen","Tap the card to reveal":"Tippe auf die Karte zum Aufdecken","Fill in the missing word":"Ergänze das fehlende Wort","Type the Dutch word":"Tippe das niederländische Wort","Type here…":"Hier tippen…","Check":"Prüfen","Correct!":"Richtig!","Not quite":"Nicht ganz","You typed:":"Du hast getippt:","Continue":"Weiter","Review again":"Nochmal üben","I knew it":"Wusste ich","de or het?":"de oder het?","It is “{a}”":"Es ist „{a}“","Next":"Weiter","Hear this sentence":"Diesen Satz anhören","{n} due for review":"{n} zur Wiederholung","Drilling hardest words":"Schwierigste Wörter üben","Exit drill":"Übung beenden","No tricky words yet — keep going!":"Noch keine schwierigen Wörter — weiter so!","No words available for this mode with these filters.":"Keine Wörter für diesen Modus mit diesen Filtern.","Review":"Wiederholung","due for review":"zur Wiederholung","Words you’ve started that are scheduled to come back today. Reviewing on time is what moves them into long-term memory.":"Wörter, die du begonnen hast und die heute wieder dran sind. Rechtzeitiges Wiederholen verankert sie im Langzeitgedächtnis.","Start review":"Wiederholung starten","All caught up — nothing due right now. Words you learn come back on a spaced schedule so you review them right before you’d forget.":"Alles erledigt — gerade nichts fällig. Gelernte Wörter kommen nach einem gestaffelten Plan zurück, damit du sie kurz vor dem Vergessen wiederholst.","Hardest words":"Schwierigste Wörter","times missed":"mal verpasst","Words you keep missing. Drill them to lock them in.":"Wörter, die du oft falsch hast. Übe sie, um sie zu festigen.","Drill hardest words":"Schwierigste Wörter üben","Reminder time":"Erinnerungszeit","Reminders fire while the app is open in your browser; keep the tab around to be nudged.":"Erinnerungen erscheinen, solange die App im Browser geöffnet ist; lass den Tab offen, um erinnert zu werden.","Reminder time set":"Erinnerungszeit gespeichert"},
+"pt":{"Cards":"Cartões","Reverse":"Inverso","Type":"Escrever","Listen":"Ouvir","Cloze":"Preencher lacuna","What is this in Dutch?":"Como se diz em neerlandês?","Tap to reveal the Dutch word":"Toque para revelar a palavra neerlandesa","Listen, then recall the meaning":"Ouça e recorde o significado","Play audio":"Reproduzir áudio","Tap the card to reveal":"Toque no cartão para revelar","Fill in the missing word":"Complete a palavra que falta","Type the Dutch word":"Escreva a palavra neerlandesa","Type here…":"Escreva aqui…","Check":"Verificar","Correct!":"Correto!","Not quite":"Quase","You typed:":"Você escreveu:","Continue":"Continuar","Review again":"Rever","I knew it":"Eu sabia","de or het?":"de ou het?","It is “{a}”":"É « {a} »","Next":"Próximo","Hear this sentence":"Ouvir esta frase","{n} due for review":"{n} para rever","Drilling hardest words":"Revendo as palavras difíceis","Exit drill":"Sair do exercício","No tricky words yet — keep going!":"Ainda não há palavras difíceis — continue!","No words available for this mode with these filters.":"Nenhuma palavra disponível para este modo com estes filtros.","Review":"Revisão","due for review":"para rever","Words you’ve started that are scheduled to come back today. Reviewing on time is what moves them into long-term memory.":"Palavras que você começou e que devem voltar hoje. Rever na hora certa é o que as fixa na memória de longo prazo.","Start review":"Começar revisão","All caught up — nothing due right now. Words you learn come back on a spaced schedule so you review them right before you’d forget.":"Tudo em dia — nada para rever agora. As palavras aprendidas voltam num calendário espaçado, para você revê-las mesmo antes de esquecer.","Hardest words":"Palavras mais difíceis","times missed":"vezes erradas","Words you keep missing. Drill them to lock them in.":"Palavras que você erra sempre. Pratique para fixá-las.","Drill hardest words":"Rever palavras difíceis","Reminder time":"Hora do lembrete","Reminders fire while the app is open in your browser; keep the tab around to be nudged.":"Os lembretes aparecem enquanto a app está aberta no navegador; mantenha a aba aberta para ser avisado.","Reminder time set":"Hora do lembrete definida"},
+"pl":{"Cards":"Karty","Reverse":"Odwrotnie","Type":"Wpisz","Listen":"Słuchaj","Cloze":"Luka w zdaniu","What is this in Dutch?":"Jak to jest po niderlandzku?","Tap to reveal the Dutch word":"Dotknij, aby odkryć niderlandzkie słowo","Listen, then recall the meaning":"Posłuchaj i przypomnij sobie znaczenie","Play audio":"Odtwórz dźwięk","Tap the card to reveal":"Dotknij karty, aby odkryć","Fill in the missing word":"Uzupełnij brakujące słowo","Type the Dutch word":"Wpisz niderlandzkie słowo","Type here…":"Wpisz tutaj…","Check":"Sprawdź","Correct!":"Dobrze!","Not quite":"Nie do końca","You typed:":"Wpisałeś:","Continue":"Dalej","Review again":"Powtórz jeszcze raz","I knew it":"Wiedziałem","de or het?":"de czy het?","It is “{a}”":"To „{a}”","Next":"Dalej","Hear this sentence":"Posłuchaj tego zdania","{n} due for review":"{n} do powtórki","Drilling hardest words":"Powtarzanie najtrudniejszych słów","Exit drill":"Zakończ ćwiczenie","No tricky words yet — keep going!":"Na razie brak trudnych słów — tak trzymaj!","No words available for this mode with these filters.":"Brak słów dla tego trybu z tymi filtrami.","Review":"Powtórka","due for review":"do powtórki","Words you’ve started that are scheduled to come back today. Reviewing on time is what moves them into long-term memory.":"Słowa, które zacząłeś i które mają wrócić dziś. Powtarzanie w odpowiednim momencie utrwala je w pamięci długotrwałej.","Start review":"Zacznij powtórkę","All caught up — nothing due right now. Words you learn come back on a spaced schedule so you review them right before you’d forget.":"Wszystko na bieżąco — nic do powtórki. Nauczone słowa wracają w odstępach, byś powtórzył je tuż przed zapomnieniem.","Hardest words":"Najtrudniejsze słowa","times missed":"razy pomylone","Words you keep missing. Drill them to lock them in.":"Słowa, które często mylisz. Poćwicz je, by je utrwalić.","Drill hardest words":"Ćwicz najtrudniejsze słowa","Reminder time":"Godzina przypomnienia","Reminders fire while the app is open in your browser; keep the tab around to be nudged.":"Przypomnienia pojawiają się, gdy aplikacja jest otwarta w przeglądarce; zostaw kartę otwartą, aby dostać powiadomienie.","Reminder time set":"Ustawiono godzinę przypomnienia"},
+"tr":{"Cards":"Kartlar","Reverse":"Ters","Type":"Yaz","Listen":"Dinle","Cloze":"Boşluk doldurma","What is this in Dutch?":"Flemenkçesi nasıl?","Tap to reveal the Dutch word":"Flemenkçe kelimeyi görmek için dokun","Listen, then recall the meaning":"Dinle, sonra anlamı hatırla","Play audio":"Sesi oynat","Tap the card to reveal":"Kartı görmek için dokun","Fill in the missing word":"Eksik kelimeyi tamamla","Type the Dutch word":"Flemenkçe kelimeyi yaz","Type here…":"Buraya yaz…","Check":"Kontrol et","Correct!":"Doğru!","Not quite":"Tam değil","You typed:":"Şunu yazdın:","Continue":"Devam","Review again":"Tekrar çalış","I knew it":"Biliyordum","de or het?":"de mi het mi?","It is “{a}”":"Doğrusu “{a}”","Next":"Sonraki","Hear this sentence":"Bu cümleyi dinle","{n} due for review":"{n} tekrar edilecek","Drilling hardest words":"En zor kelimeler çalışılıyor","Exit drill":"Alıştırmadan çık","No tricky words yet — keep going!":"Henüz zor kelime yok — devam et!","No words available for this mode with these filters.":"Bu mod ve filtrelerle uygun kelime yok.","Review":"Tekrar","due for review":"tekrar edilecek","Words you’ve started that are scheduled to come back today. Reviewing on time is what moves them into long-term memory.":"Başladığın ve bugün geri gelmesi gereken kelimeler. Zamanında tekrar etmek, onları uzun süreli belleğe yerleştirir.","Start review":"Tekrara başla","All caught up — nothing due right now. Words you learn come back on a spaced schedule so you review them right before you’d forget.":"Her şey güncel — şu an tekrar edilecek bir şey yok. Öğrendiğin kelimeler aralıklı bir programla geri gelir, böylece unutmadan hemen önce tekrar edersin.","Hardest words":"En zor kelimeler","times missed":"kez yanlış","Words you keep missing. Drill them to lock them in.":"Sık yanıldığın kelimeler. Pekiştirmek için çalış.","Drill hardest words":"En zor kelimeleri çalış","Reminder time":"Hatırlatma saati","Reminders fire while the app is open in your browser; keep the tab around to be nudged.":"Hatırlatmalar uygulama tarayıcında açıkken çalışır; uyarılmak için sekmeyi açık tut.","Reminder time set":"Hatırlatma saati ayarlandı"},
+"uk":{"Cards":"Картки","Reverse":"Навпаки","Type":"Друкувати","Listen":"Слухати","Cloze":"Пропуск","What is this in Dutch?":"Як це нідерландською?","Tap to reveal the Dutch word":"Торкніться, щоб показати нідерландське слово","Listen, then recall the meaning":"Послухайте й пригадайте значення","Play audio":"Відтворити аудіо","Tap the card to reveal":"Торкніться картки, щоб показати","Fill in the missing word":"Впишіть пропущене слово","Type the Dutch word":"Впишіть нідерландське слово","Type here…":"Друкуйте тут…","Check":"Перевірити","Correct!":"Правильно!","Not quite":"Не зовсім","You typed:":"Ви ввели:","Continue":"Далі","Review again":"Повторити ще раз","I knew it":"Я знав","de or het?":"de чи het?","It is “{a}”":"Це « {a} »","Next":"Далі","Hear this sentence":"Прослухати це речення","{n} due for review":"{n} на повторення","Drilling hardest words":"Повторення найважчих слів","Exit drill":"Вийти з вправи","No tricky words yet — keep going!":"Поки що немає складних слів — так тримати!","No words available for this mode with these filters.":"Немає слів для цього режиму з цими фільтрами.","Review":"Повторення","due for review":"на повторення","Words you’ve started that are scheduled to come back today. Reviewing on time is what moves them into long-term memory.":"Слова, які ви почали й які треба повторити сьогодні. Вчасне повторення закріплює їх у довготривалій пам’яті.","Start review":"Почати повторення","All caught up — nothing due right now. Words you learn come back on a spaced schedule so you review them right before you’d forget.":"Усе виконано — зараз нічого повторювати. Вивчені слова повертаються за інтервальним графіком, щоб ви повторили їх саме перед тим, як забути.","Hardest words":"Найважчі слова","times missed":"разів помилились","Words you keep missing. Drill them to lock them in.":"Слова, які ви часто плутаєте. Потренуйте їх, щоб закріпити.","Drill hardest words":"Тренувати найважчі слова","Reminder time":"Час нагадування","Reminders fire while the app is open in your browser; keep the tab around to be nudged.":"Нагадування спрацьовують, коли застосунок відкритий у браузері; тримайте вкладку відкритою.","Reminder time set":"Час нагадування встановлено"},
+"ru":{"Cards":"Карточки","Reverse":"Наоборот","Type":"Печатать","Listen":"Слушать","Cloze":"Пропуск","What is this in Dutch?":"Как это по-нидерландски?","Tap to reveal the Dutch word":"Нажмите, чтобы показать нидерландское слово","Listen, then recall the meaning":"Послушайте и вспомните значение","Play audio":"Воспроизвести аудио","Tap the card to reveal":"Нажмите на карточку, чтобы показать","Fill in the missing word":"Впишите пропущенное слово","Type the Dutch word":"Впишите нидерландское слово","Type here…":"Печатайте здесь…","Check":"Проверить","Correct!":"Верно!","Not quite":"Не совсем","You typed:":"Вы ввели:","Continue":"Продолжить","Review again":"Повторить ещё раз","I knew it":"Я знал","de or het?":"de или het?","It is “{a}”":"Это « {a} »","Next":"Далее","Hear this sentence":"Прослушать это предложение","{n} due for review":"{n} на повторение","Drilling hardest words":"Повторение самых сложных слов","Exit drill":"Выйти из тренировки","No tricky words yet — keep going!":"Пока нет сложных слов — так держать!","No words available for this mode with these filters.":"Нет слов для этого режима с этими фильтрами.","Review":"Повторение","due for review":"на повторение","Words you’ve started that are scheduled to come back today. Reviewing on time is what moves them into long-term memory.":"Слова, которые вы начали и которые пора повторить сегодня. Своевременное повторение закрепляет их в долговременной памяти.","Start review":"Начать повторение","All caught up — nothing due right now. Words you learn come back on a spaced schedule so you review them right before you’d forget.":"Всё выполнено — сейчас нечего повторять. Выученные слова возвращаются по интервальному графику, чтобы вы повторили их прямо перед тем, как забыть.","Hardest words":"Самые сложные слова","times missed":"раз ошиблись","Words you keep missing. Drill them to lock them in.":"Слова, в которых вы часто ошибаетесь. Потренируйте их, чтобы закрепить.","Drill hardest words":"Тренировать сложные слова","Reminder time":"Время напоминания","Reminders fire while the app is open in your browser; keep the tab around to be nudged.":"Напоминания срабатывают, когда приложение открыто в браузере; держите вкладку открытой.","Reminder time set":"Время напоминания задано"},
+"bg":{"Cards":"Карти","Reverse":"Обратно","Type":"Пиши","Listen":"Слушай","Cloze":"Празнина","What is this in Dutch?":"Как е на нидерландски?","Tap to reveal the Dutch word":"Докосни, за да видиш нидерландската дума","Listen, then recall the meaning":"Чуй и си спомни значението","Play audio":"Пусни звука","Tap the card to reveal":"Докосни картата, за да разкриеш","Fill in the missing word":"Попълни липсващата дума","Type the Dutch word":"Напиши нидерландската дума","Type here…":"Пиши тук…","Check":"Провери","Correct!":"Вярно!","Not quite":"Почти","You typed:":"Ти написа:","Continue":"Продължи","Review again":"Повтори пак","I knew it":"Знаех го","de or het?":"de или het?","It is “{a}”":"Това е „{a}”","Next":"Напред","Hear this sentence":"Чуй това изречение","{n} due for review":"{n} за преговор","Drilling hardest words":"Преговор на най-трудните думи","Exit drill":"Излез от упражнението","No tricky words yet — keep going!":"Още няма трудни думи — продължавай!","No words available for this mode with these filters.":"Няма думи за този режим с тези филтри.","Review":"Преговор","due for review":"за преговор","Words you’ve started that are scheduled to come back today. Reviewing on time is what moves them into long-term memory.":"Думи, които си започнал и които трябва да се върнат днес. Навременният преговор ги закрепва в дългосрочната памет.","Start review":"Започни преговор","All caught up — nothing due right now. Words you learn come back on a spaced schedule so you review them right before you’d forget.":"Всичко е наред — нищо за преговор сега. Научените думи се връщат по разреден график, за да ги повториш точно преди да ги забравиш.","Hardest words":"Най-трудни думи","times missed":"пъти сгрешени","Words you keep missing. Drill them to lock them in.":"Думи, които често бъркаш. Упражнявай ги, за да ги закрепиш.","Drill hardest words":"Упражнявай трудните думи","Reminder time":"Час за напомняне","Reminders fire while the app is open in your browser; keep the tab around to be nudged.":"Напомнянията се появяват, докато приложението е отворено в браузъра; дръж раздела отворен.","Reminder time set":"Часът за напомняне е зададен"}
+}`);
+Object.keys(UI_V82).forEach(l=>{ if(UI[l]) Object.assign(UI[l], UI_V82[l]); });
 
 /* UI string translation. Key = the exact English string; {x} placeholders are
    substituted AFTER lookup so translations can reorder them. Falls back to English. */
@@ -6963,12 +7042,16 @@ async function migrate(){
 async function init(){
   enriched = (await Store.get('dutch5k-enriched')) || {};
   progress = (await Store.get('dutch5k-progress')) || {__v2:true};
+  srs = (await Store.get('dutch5k-srs')) || {};
   apiKey = (await Store.get('dutch5k-apikey')) || '';
   plan = (await Store.get('dutch5k-plan')) || null;
   streak = (await Store.get('dutch5k-streak')) || {count:0, lastStudied:null, history:{}};
   remindOn = (await Store.get('dutch5k-remind')) || false;
+  remindTime = (await Store.get('dutch5k-remindtime')) || '19:00';
   isPro = (await Store.get('dutch5k-pro')) || false;
   learnShuffle = (await Store.get('dutch5k-shuffle')) || false;
+  learnMode = (await Store.get('dutch5k-mode')) || 'cards';
+  if(!LEARN_MODES.some(m=>m.id===learnMode)) learnMode = 'cards';
   applyTheme((await Store.get('dutch5k-theme')) || 'minimalistic');
   lang = (await Store.get('dutch5k-lang')) || 'en';
   if(!LANGS.some(l=>l.id===lang)) lang = 'en';
@@ -6989,20 +7072,93 @@ async function init(){
   window.addEventListener('online', ()=>setTimeout(backgroundFill, 1000));
 }
 
+/* ============ SPACED REPETITION (SM-2-lite) ============ */
+/* One record per graded word. A grade of 0 (Again) is a lapse: reset the interval and
+   make it due again immediately. Grades 1 (Learning / "hard"), 2 (Know it / "good") and
+   3 (Easy) grow the interval by the ease factor. Due dates are plain YYYY-MM-DD strings
+   compared lexicographically (works because the format is zero-padded and fixed-width). */
+function addDays(dateStr, n){
+  const d = new Date(dateStr + 'T00:00:00');
+  d.setDate(d.getDate() + n);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function scheduleSrs(id, grade){
+  const t = todayStr();
+  const s = srs[id] || {iv:0, ef:2.5, reps:0, lapses:0};
+  if(grade <= 0){
+    s.lapses = (s.lapses||0) + 1;
+    s.reps = 0; s.iv = 0;
+    s.ef = Math.max(1.3, (s.ef||2.5) - 0.2);
+    s.due = t;                                   // see it again this session / today
+  } else {
+    if(s.reps === 0)      s.iv = 1;              // first correct recall → tomorrow
+    else if(s.reps === 1) s.iv = (grade >= 2 ? 4 : 2);
+    else                  s.iv = Math.max(1, Math.round(s.iv * (s.ef||2.5) * (grade===1?0.5 : grade>=3?1.3 : 1)));
+    s.reps = (s.reps||0) + 1;
+    const q = grade + 2;                          // map 1..3 → 3..5 (SM-2 quality)
+    s.ef = Math.max(1.3, (s.ef||2.5) + (0.1 - (5-q)*(0.08 + (5-q)*0.02)));
+    s.due = addDays(t, s.iv);
+  }
+  s.last = t;
+  srs[id] = s;
+}
+/* A started word (learning/learned) is "due" when its scheduled date has arrived.
+   Legacy words graded before v82 have no srs record — treat them as due so they enter
+   the review rotation the first time. New/never-started words are never "due". */
+function isDue(id){
+  const s = srs[id];
+  if(s) return s.due <= todayStr();
+  const p = progress[id];
+  return p === 'learning' || p === 'learned';
+}
+function dueCount(){
+  let n = 0;
+  deck.forEach(e=>{ const p = progress[e.id]; if((p==='learning'||p==='learned') && isDue(e.id)) n++; });
+  return n;
+}
+/* Leeches = words you keep getting wrong (≥2 lapses), hardest first. */
+function leeches(){
+  const out = [];
+  deck.forEach((e,i)=>{ const s = srs[e.id]; if(s && (s.lapses||0) >= 2) out.push(i); });
+  out.sort((a,b)=> (srs[deck[b].id].lapses||0) - (srs[deck[a].id].lapses||0));
+  return out;
+}
+function leechSet(){ const s = new Set(); leeches().forEach(i=> s.add(deck[i].id)); return s; }
+
 /* ============ QUEUE ============ */
 let skipped = new Set();  // deck indices skipped this session, pushed to the back
+/* Which words a given study mode can use. cards works on anything; the meaning-based
+   modes need a meaning; cloze needs an example that literally contains the word; the
+   de/het drill needs a noun with an article. */
+function modeEligible(e){
+  switch(learnMode){
+    case 'reverse':
+    case 'type':
+    case 'listen': return !!(e.m && (e.rich || e.hasMeaning));
+    case 'cloze':  return !!clozePick(e);
+    case 'dehet':  return (e.a==='de' || e.a==='het');
+    default:       return true;   // cards
+  }
+}
 function buildQueue(){
-  const learning=[], learned=[];
+  const due=[], notDue=[];
   let fresh=[];
+  const lset = leechOnly ? leechSet() : null;
   deck.forEach((e,i)=>{
     if(learnPos!=='all' && posOf(e)!==learnPos) return;
     if(learnSrc!=='all' && !inSource(e, learnSrc)) return;
+    if(!modeEligible(e)) return;                       // mode needs specific data (meaning / example / article)
+    if(lset && !lset.has(e.id)) return;                // hardest-words drill: only leeches
     const s = progress[e.id];
-    if(s==='learning') learning.push(i);
-    else if(s==='learned') learned.push(i);
-    else fresh.push(i);
+    if(s==='learning' || s==='learned'){ (isDue(e.id) ? due : notDue).push(i); }
+    else if(!leechOnly) fresh.push(i);                 // never introduce brand-new words during a leech drill
   });
-  shuffle(learning); shuffle(learned);
+  // Due reviews first, most-overdue (soonest due date) leading.
+  due.sort((a,b)=>{
+    const da = (srs[deck[a].id] && srs[deck[a].id].due) || '0000-00-00';
+    const db = (srs[deck[b].id] && srs[deck[b].id].due) || '0000-00-00';
+    return da < db ? -1 : da > db ? 1 : 0;
+  });
   if(learnShuffle){
     // Strategic shuffle (opt-in): frequency-weighted randomisation (Efraimidis–Spirakis).
     // Each fresh word gets key = random^log2(rank+2); we sort by key descending. Common words
@@ -7020,13 +7176,17 @@ function buildQueue(){
     // free word in one run before reaching the Pro-locked ones.
     fresh = freeFirst(fresh);
   }
-  queue = [...learning, ...fresh, ...learned.slice(0, Math.max(3, Math.floor(learned.length*0.1)))];
+  // Due reviews, then new words. Not-yet-due words are held back (spaced repetition) —
+  // but if nothing is due and nothing is fresh, fall back to them so the deck is never
+  // needlessly empty.
+  queue = [...due, ...fresh];
+  if(!queue.length) queue = notDue;
   // move any skipped-this-session indices to the back
   if(skipped.size){
     const sk = queue.filter(i=>skipped.has(i));
     queue = queue.filter(i=>!skipped.has(i)).concat(sk);
   }
-  qPos = 0; flipped = false;
+  qPos = 0; flipped = false; objResult = null;
 }
 function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } }
 
@@ -7038,7 +7198,7 @@ function skipCard(){
   // move current to the end of the queue
   queue.splice(qPos,1); queue.push(idx);
   if(qPos>=queue.length) qPos=0;
-  flipped=false; render();
+  flipped=false; objResult=null; render();
 }
 
 function counts(){
@@ -7094,9 +7254,12 @@ async function mark(status){
   if(status==='again'){ delete progress[e.id]; }
   else progress[e.id] = status;
   progress.__v2 = true;
+  // Feed the spaced-repetition scheduler: again→lapse(0), learning→hard(1), learned→good(2).
+  scheduleSrs(e.id, status==='again' ? 0 : status==='learning' ? 1 : 2);
   await Store.set('dutch5k-progress', progress);
+  await Store.set('dutch5k-srs', srs);
   if(status==='learned' && !wasLearned){ await recordLearned(); }
-  qPos++; flipped = false;
+  qPos++; flipped = false; objResult = null;
   if(qPos >= queue.length) buildQueue();
   render();
   maybeEnrichAhead();
@@ -7131,6 +7294,30 @@ function setSrcFilter(s){
   } else render();
 }
 function setLearnSrc(s){ learnSrc=s; skipped=new Set(); buildQueue(); render(); }
+/* Study-mode switch. Each mode reshapes the queue (some need a meaning / example /
+   article), so rebuild it and clear any in-progress answer. */
+const LEARN_MODES = [
+  {id:'cards',   label:'Cards',   icon:'&#128196;'},   // 📄  Dutch → meaning (flip)
+  {id:'reverse', label:'Reverse', icon:'&#128260;'},   // 🔄  meaning → Dutch (flip)
+  {id:'type',    label:'Type',    icon:'&#9000;'},      // ⌨  type the Dutch word
+  {id:'listen',  label:'Listen',  icon:'&#128266;'},    // 🔊  hear it → recall meaning
+  {id:'cloze',   label:'Cloze',   icon:'&#9986;'},      // ✂  fill the blank in a sentence
+  {id:'dehet',   label:'de / het', icon:'&#127475;&#127473;'}, // 🇳🇱 gender drill
+];
+async function setMode(m){
+  hap();
+  if(!LEARN_MODES.some(x=>x.id===m)) m='cards';
+  learnMode = m;
+  await Store.set('dutch5k-mode', m);
+  skipped = new Set(); objResult = null; flipped = false;
+  buildQueue();
+  render();
+  try{ const inp=document.getElementById('typeInput'); if(inp) inp.focus(); }catch(e){}
+}
+/* Progress-tab entry points into the Learn queue. */
+function startReview(){ hap(); leechOnly=false; if(learnMode==='dehet'||learnMode==='cloze') learnMode='cards'; skipped=new Set(); buildQueue(); setTab('learn'); }
+function drillLeeches(){ hap(); leechOnly=true; learnMode='cards'; skipped=new Set(); buildQueue(); setTab('learn'); }
+function exitDrill(){ hap(); leechOnly=false; skipped=new Set(); buildQueue(); render(); }
 async function toggleShuffle(){
   hap();
   learnShuffle = !learnShuffle;
@@ -7465,16 +7652,50 @@ async function enableReminders(){
   else toast(T('Reminder permission denied'));
   render();
 }
+async function setRemindTime(v){
+  if(!/^\d{2}:\d{2}$/.test(v||'')) return;
+  remindTime = v;
+  await Store.set('dutch5k-remindtime', remindTime);
+  scheduleReminder();
+  toast(T('Reminder time set'));
+}
+/* Fire the actual notification (via the service worker registration when available, so it
+   behaves like a proper notification; falls back to the page Notification constructor). */
+function _fireReminder(){
+  if(!('Notification' in window) || Notification.permission!=='granted') return;
+  if(todayCount()>0) return;   // already studied today — nothing to nudge
+  const body = T("Time for today's words! Keep your streak going.");
+  try{
+    if(navigator.serviceWorker && navigator.serviceWorker.ready){
+      navigator.serviceWorker.ready.then(reg=>{ try{ reg.showNotification('Dutch To Go', {body, tag:'dutch5k-daily'}); }catch(e){ try{ new Notification('Dutch To Go',{body}); }catch(_){} } });
+    } else { new Notification('Dutch To Go', {body}); }
+  }catch(e){}
+}
+/* Best-effort daily reminder for a static PWA (no push server): while the app/tab is open,
+   set a timer for the next occurrence of the chosen time and fire a notification then. Also
+   fires immediately on load if that time has already passed today and you haven't studied. */
+let _remindTimer = null;
 function scheduleReminder(){
-  // If studied already today, remind tomorrow; else remind this evening.
+  if(_remindTimer){ clearTimeout(_remindTimer); _remindTimer=null; }
   Store.get('dutch5k-remind').then(on=>{
+    remindOn = !!on;
     if(!on || !('Notification' in window) || Notification.permission!=='granted') return;
-    // fire a gentle in-session check: if it's past 19:00 and no study today, notify now
-    const now=new Date();
-    if(now.getHours()>=19 && todayCount()===0){
-      try{ new Notification('Dutch To Go', {body:T("Time for today's words! Keep your streak going.")}); }catch(e){}
+    const [hh,mm] = (remindTime||'19:00').split(':').map(Number);
+    const now = new Date();
+    // Already past today's time and nothing studied → gentle nudge now.
+    if((now.getHours()>hh || (now.getHours()===hh && now.getMinutes()>=mm)) && todayCount()===0){
+      _fireReminder();
     }
+    // Schedule the next occurrence (today if still ahead, else tomorrow).
+    const next = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hh, mm, 0, 0);
+    if(next <= now) next.setDate(next.getDate()+1);
+    const delay = Math.min(next - now, 0x7fffffff);   // clamp to setTimeout's max
+    _remindTimer = setTimeout(()=>{ _fireReminder(); scheduleReminder(); }, delay);
   });
+}
+// Re-check the reminder whenever the tab comes back to the foreground.
+if(typeof document!=='undefined'){
+  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) scheduleReminder(); });
 }
 
 async function saveKey(v){
@@ -7698,7 +7919,7 @@ function synAntHtml(e){
 function examplesHtml(e){
   if(!e.ex || !e.ex.length) return '';
   return `<div class="section"><div class="sec-h">${T('Examples')}</div>` +
-    e.ex.map(sn=>`<div class="sentence">${esc(sn[0])}<em>${esc(ct(sn[1]))}</em></div>`).join('') + `</div>`;
+    e.ex.map(sn=>`<div class="sentence"><span class="sen-nl">${esc(sn[0])}<button class="spk spk-ex" title="${T('Hear this sentence')}" aria-label="${T('Hear this sentence')}" onclick="speakText('${esc(sn[0]).replace(/'/g,"\\'")}',event)">${SPK_SVG}</button></span><em>${esc(ct(sn[1]))}</em></div>`).join('') + `</div>`;
 }
 /* Legacy chip view kept for compact contexts */
 function chipsHtml(e){
@@ -7762,18 +7983,14 @@ if('speechSynthesis' in window){
   _loadNlVoice();
   try{ window.speechSynthesis.onvoiceschanged=_loadNlVoice; }catch(e){}
 }
-function speak(idx, ev){
-  const btn = ev && (ev.currentTarget || (ev.target && ev.target.closest && ev.target.closest('.spk')));
-  if(ev && ev.stopPropagation) ev.stopPropagation();
-  hap();
-  const word = (deck[idx] && deck[idx].w) || '';
-  if(!word) return;
+/* Speak arbitrary Dutch text (a word or a whole example sentence) in the Dutch voice. */
+function _speakDutch(text, btn){
   if(!('speechSynthesis' in window)){ toast(T("Pronunciation isn't supported on this device")); return; }
   try{
     window.speechSynthesis.cancel();
     document.querySelectorAll('.spk.speaking').forEach(b=>b.classList.remove('speaking'));
     if(!_nlVoice) _loadNlVoice();
-    const u=new SpeechSynthesisUtterance(word);
+    const u=new SpeechSynthesisUtterance(text);
     u.lang='nl-NL';
     if(_nlVoice) u.voice=_nlVoice;
     u.rate=0.9;
@@ -7784,6 +8001,72 @@ function speak(idx, ev){
     }
     window.speechSynthesis.speak(u);
   }catch(e){}
+}
+function speak(idx, ev){
+  const btn = ev && (ev.currentTarget || (ev.target && ev.target.closest && ev.target.closest('.spk')));
+  if(ev && ev.stopPropagation) ev.stopPropagation();
+  hap();
+  const word = (deck[idx] && deck[idx].w) || '';
+  if(word) _speakDutch(word, btn);
+}
+function speakText(text, ev){
+  const btn = ev && (ev.currentTarget || (ev.target && ev.target.closest && ev.target.closest('.spk')));
+  if(ev && ev.stopPropagation) ev.stopPropagation();
+  hap();
+  if(text) _speakDutch(String(text), btn);
+}
+
+/* ---- Typed-answer / cloze / de-het grading ---- */
+/* Loose match: case- and accent-insensitive, ignores a leading article and trailing
+   punctuation, so "Huis", "huis" and "het huis" all count for the noun "huis". */
+function normalizeAns(s){
+  return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')
+    .replace(/\s+/g,' ').trim()
+    .replace(/^(de|het|een)\s+/,'')
+    .replace(/[.!?,;:]+$/,'').trim();
+}
+/* Find an example sentence that literally contains the headword, so we can blank it out.
+   Returns {pre, answer, post, en} or null if no example contains the word as a whole word. */
+function clozeRe(w){
+  const esc = w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  return new RegExp('(^|[^\\p{L}])(' + esc + ')($|[^\\p{L}])', 'iu');
+}
+function clozePick(e){
+  if(!e || !e.ex || !e.ex.length) return null;
+  for(const sn of e.ex){
+    if(!sn || !sn[0]) continue;
+    const m = clozeRe(e.w).exec(sn[0]);
+    if(m){
+      const start = m.index + m[1].length;
+      const end = start + m[2].length;
+      return {pre: sn[0].slice(0,start), answer: sn[0].slice(start,end), post: sn[0].slice(end), en: sn[1]||'', full: sn[0]};
+    }
+  }
+  return null;
+}
+/* Check the typed answer for the current type/cloze card; stores the result and re-renders
+   (no advance — the grade buttons do that). */
+function checkAnswer(){
+  if(!queue.length) return;
+  const inp = document.getElementById('typeInput');
+  if(!inp) return;
+  const e = deck[queue[qPos]];
+  let answer = e.w;
+  if(learnMode==='cloze'){ const c = clozePick(e); if(c) answer = c.answer; }
+  const given = inp.value;
+  const na = normalizeAns(given);
+  const correct = na !== '' && na === normalizeAns(answer);
+  objResult = {correct, given, answer};
+  hap(correct ? 12 : 24);
+  render();
+}
+/* de/het gender drill answer. */
+function answerDeHet(choice){
+  if(!queue.length) return;
+  const e = deck[queue[qPos]];
+  objResult = {correct: choice===e.a, given:choice, answer:e.a};
+  hap(objResult.correct ? 12 : 24);
+  render();
 }
 
 /* Words list: updates only the list container, so the search box keeps focus */
@@ -7839,10 +8122,188 @@ async function setWordStatus(idx, status){
   const e = deck[idx];
   if(status==='again') delete progress[e.id]; else progress[e.id] = status;
   progress.__v2 = true;
+  scheduleSrs(e.id, status==='again' ? 0 : status==='learning' ? 1 : 2);
   await Store.set('dutch5k-progress', progress);
+  await Store.set('dutch5k-srs', srs);
   if(status==='learned') await recordLearned();
   buildQueue();
   render();
+}
+
+/* ============ LEARN TAB (study modes) ============ */
+function learnModeLabel(m){ return m.id==='dehet' ? 'de / het' : m.label; }
+/* Filter/mode bars shown above the study card. */
+function learnBars(){
+  const modeBar = `<div class="posfilters posscroll modebar">` +
+    LEARN_MODES.map(m=>`<button class="modebtn${learnMode===m.id?' active':''}" onclick="setMode('${m.id}')" title="${T(learnModeLabel(m))}">${m.icon} <span>${T(learnModeLabel(m))}</span></button>`).join('') +
+    `</div>`;
+  const posBar = `<div class="posfilters posscroll learn-pos">${posFilterButtons(learnPos,'setLearnPos')}</div>`;
+  const srcBar = srcFilterOpts().length>2 ? `<div class="srcfilters posfilters posscroll learn-pos">${srcFilterButtons(learnSrc,'setLearnSrc')}</div>` : '';
+  const shuffleBar = `<div class="posfilters learn-pos shuffle-bar"><button class="shuffle-btn${learnShuffle?' active':''}" aria-pressed="${learnShuffle}" onclick="toggleShuffle()">&#128256; ${learnShuffle?T('Shuffle On'):T('Shuffle Off')}</button></div>`;
+  const drillBanner = leechOnly ? `<div class="drill-banner">&#128293; ${T('Drilling hardest words')}<button onclick="exitDrill()" aria-label="${T('Exit drill')}">&#10005;</button></div>` : '';
+  return modeBar + drillBanner + shuffleBar + srcBar + posBar;
+}
+/* Reusable card fragments. */
+function wordBlock(e, idx, rankTxt){
+  return `<div class="word-nl">${esc(e.w)}${spkBtn(idx)}</div>
+    <div class="rankline">${rankTxt}</div>
+    ${e.books&&e.books.length?`<div class="rankline booktag">&#128218; ${bookTag(e)}</div>`:''}`;
+}
+function meaningBlock(e){
+  if(e.rich) return `<div class="word-en">${esc(ct(e.m))}</div>${formsHtml(e)}${examplesHtml(e)}${synAntHtml(e)}`;
+  if(e.hasMeaning) return `<div class="word-en">${esc(ct(e.m))}</div>${synAntHtml(e)}<div class="word-hint" style="margin-top:14px">${T('More examples and grammar forms are being added.')}</div>`;
+  if(enrichInFlight) return `<div class="word-en">${T('Preparing this card…')}</div>`;
+  return `<div class="word-en">${T('Not translated yet')}</div>`;
+}
+/* Recognition modes: cards (NL→meaning), reverse (meaning→NL), listen (audio→meaning). All flip + self-grade. */
+function recogCardHtml(e, status, rankTxt){
+  const idx = queue[qPos];
+  let front, back, hint;
+  if(learnMode==='reverse'){
+    front = `<div class="prompt-lbl">${T('What is this in Dutch?')}</div><div class="word-en big">${esc(ct(e.m||''))}</div>`;
+    back  = wordBlock(e, idx, rankTxt) + meaningBlock(e);
+    hint  = T('Tap to reveal the Dutch word');
+  } else if(learnMode==='listen'){
+    front = `<div class="prompt-lbl">${T('Listen, then recall the meaning')}</div><div class="bigplay-wrap"><button class="bigplay spk" onclick="speak(${idx},event)" aria-label="${T('Play audio')}">${SPK_SVG}</button></div>`;
+    back  = wordBlock(e, idx, rankTxt) + meaningBlock(e);
+    hint  = T('Tap the card to reveal');
+  } else {
+    front = wordBlock(e, idx, rankTxt);
+    back  = meaningBlock(e);
+    hint  = T('Tap to reveal meaning, forms, examples &amp; related words');
+  }
+  return `
+    <div class="card" tabindex="0" role="button" aria-label="${T('Flip card')}" onclick="flip()">
+      <div class="card-tag"><span>${esc(T(e.t||'word'))}${e.a?` &#183; ${esc(e.a)}`:''}</span><span>${T(status).toUpperCase()}</span></div>
+      <div class="card-body">
+        ${flipped ? back : front + `<div class="word-hint">${hint}</div>`}
+      </div>
+    </div>
+    ${flipped ? `
+    <div class="actions">
+      <button class="btn-again" onclick="event&&event.stopPropagation();hap();mark('again')">&#10007; ${T('Again')}</button>
+      <button class="btn-learning" onclick="event&&event.stopPropagation();hap();mark('learning')">&#8776; ${T('Learning')}</button>
+      <button class="btn-know" onclick="event&&event.stopPropagation();hap();mark('learned')">&#10003; ${T('Know it')}</button>
+    </div>
+    <div class="actions"><button class="btn-skip" onclick="event&&event.stopPropagation();skipCard()">&#8631; ${T('Skip for now')}</button></div>` : `
+    <div class="actions">
+      <button onclick="flip()">${T('Show answer')}</button>
+      <button class="btn-skip" onclick="event&&event.stopPropagation();skipCard()">&#8631; ${T('Skip')}</button>
+    </div>`}`;
+}
+/* Objective typing modes: type (meaning→typed NL) and cloze (fill the blank). Auto-graded. */
+function typeCardHtml(e, status, rankTxt){
+  const idx = queue[qPos];
+  const isCloze = learnMode==='cloze';
+  let promptHtml;
+  if(isCloze){
+    const c = clozePick(e) || {pre:'', answer:e.w, post:'', en:''};
+    promptHtml = `<div class="prompt-lbl">${T('Fill in the missing word')}</div>
+      <div class="cloze-sent">${esc(c.pre)}<span class="cloze-blank">${objResult?esc(objResult.answer):'_____'}</span>${esc(c.post)}</div>
+      ${c.en?`<div class="cloze-en">${esc(ct(c.en))}</div>`:''}`;
+  } else {
+    promptHtml = `<div class="prompt-lbl">${T('Type the Dutch word')}</div>
+      <div class="word-en big">${esc(ct(e.m||''))}</div>
+      ${e.t?`<div class="rankline">${esc(T(e.t))}${e.a?` &#183; ${esc(e.a)}`:''}</div>`:''}`;
+  }
+  let body, actions;
+  if(!objResult){
+    body = promptHtml + `<input type="text" id="typeInput" class="type-input" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="${T('Type here…')}">`;
+    actions = `<div class="actions">
+        <button class="btn-know" onclick="checkAnswer()">${T('Check')}</button>
+        <button class="btn-skip" onclick="skipCard()">&#8631; ${T('Skip')}</button>
+      </div>`;
+  } else {
+    const r = objResult;
+    const yourLine = (!r.correct && r.given) ? `<div class="ans-yours">${T('You typed:')} <s>${esc(r.given)}</s></div>` : '';
+    const answerLine = `<div class="ans-reveal"><span class="ans-word">${esc(r.answer)}</span>${spkBtn(idx)}</div>`;
+    body = promptHtml + `<div class="result ${r.correct?'ok':'bad'}">
+        <div class="result-head">${r.correct?'&#10003; '+T('Correct!'):'&#10007; '+T('Not quite')}</div>
+        ${answerLine}${yourLine}
+        <div class="word-en" style="margin-top:8px">${esc(ct(e.m||''))}</div>
+      </div>`;
+    actions = r.correct
+      ? `<div class="actions"><button class="btn-know" onclick="mark('learned')">${T('Continue')} &#8594;</button></div>`
+      : `<div class="actions">
+          <button class="btn-again" onclick="mark('again')">&#8631; ${T('Review again')}</button>
+          <button class="btn-know" onclick="mark('learned')">${T('I knew it')}</button>
+        </div>`;
+  }
+  return `
+    <div class="card no-flip">
+      <div class="card-tag"><span>${esc(T(isCloze?'Cloze':'Type'))}</span><span>${T(status).toUpperCase()}</span></div>
+      <div class="card-body">${body}</div>
+    </div>
+    ${actions}`;
+}
+/* de/het gender drill. */
+function deHetCardHtml(e, status, rankTxt){
+  const idx = queue[qPos];
+  const meaning = (e.rich||e.hasMeaning) ? `<div class="word-en" style="margin-top:6px">${esc(ct(e.m||''))}</div>` : '';
+  let body, actions;
+  if(!objResult){
+    body = `<div class="prompt-lbl">${T('de or het?')}</div>
+      <div class="word-nl">${esc(e.w)}${spkBtn(idx)}</div>
+      <div class="dehet-btns">
+        <button class="dehet-btn" onclick="answerDeHet('de')">de</button>
+        <button class="dehet-btn" onclick="answerDeHet('het')">het</button>
+      </div>`;
+    actions = `<div class="actions"><button class="btn-skip" onclick="skipCard()">&#8631; ${T('Skip')}</button></div>`;
+  } else {
+    const r = objResult;
+    body = `<div class="prompt-lbl">${T('de or het?')}</div>
+      <div class="word-nl"><span class="dehet-answer">${esc(r.answer)}</span> ${esc(e.w)}${spkBtn(idx)}</div>
+      ${meaning}
+      <div class="result ${r.correct?'ok':'bad'}"><div class="result-head">${r.correct?'&#10003; '+T('Correct!'):'&#10007; '+T('It is “{a}”', {a:r.answer})}</div></div>`;
+    actions = `<div class="actions"><button class="btn-know" onclick="mark('${r.correct?'learning':'again'}')">${T('Next')} &#8594;</button></div>`;
+  }
+  return `
+    <div class="card no-flip">
+      <div class="card-tag"><span>${T('article')}</span><span>${T(status).toUpperCase()}</span></div>
+      <div class="card-body">${body}</div>
+    </div>${actions}`;
+}
+function renderLearn(main, c){
+  const bars = learnBars();
+  if(!queue.length){
+    const msg = leechOnly ? T('No tricky words yet — keep going!') : T('No words available for this mode with these filters.');
+    main.innerHTML = bars + `<div class="empty">${msg}<br>${T('Try “All”.')}</div>`;
+    return;
+  }
+  const e = deck[queue[qPos]];
+  const status = progress[e.id] || 'new';
+  const rankTxt = e.rank ? T('#{n} most frequent', {n:e.rank}) : (e.books&&e.books.length ? bookTag(e) : T('curated extra'));
+  if(isLocked(e)){
+    main.innerHTML = bars + `
+      ${mondrianStrip(c)}
+      <div class="card pro-lock">
+        <div class="card-tag"><span>${esc(T(e.t||'word'))}${e.a?` &#183; ${esc(e.a)}`:''}</span><span>${T(status).toUpperCase()}</span></div>
+        <div class="card-body locked-blur">
+          <div class="word-nl">${esc(e.w)}</div>
+          <div class="rankline">${rankTxt}</div>
+          <div class="word-hint">${T('Tap to reveal meaning, forms, examples &amp; related words')}</div>
+        </div>
+        ${proOverlay()}
+      </div>
+      <div class="actions"><button class="btn-skip" onclick="skipCard()">&#8631; ${T('Skip')}</button></div>
+      <div class="deckinfo">${T('Card {a} of {b} in this round · {c} words in deck', {a:qPos+1, b:queue.length, c:c.total})}</div>`;
+    return;
+  }
+  let cardHtml;
+  if(learnMode==='type' || learnMode==='cloze') cardHtml = typeCardHtml(e, status, rankTxt);
+  else if(learnMode==='dehet')                 cardHtml = deHetCardHtml(e, status, rankTxt);
+  else                                         cardHtml = recogCardHtml(e, status, rankTxt);
+  const dailyLine = plan ? `<div class="deckinfo">${T('Today: {n} learned · streak {s}', {n:`<b>${todayCount()}</b>${plan.perDay?` / ${plan.perDay}`:''}`, s:`<b>${currentStreak()}</b>`})} &#128293;</div>` : '';
+  const dc = dueCount();
+  const dueLine = dc ? `<div class="deckinfo">&#8635; ${T('{n} due for review', {n:dc})}</div>` : '';
+  main.innerHTML = bars + `${mondrianStrip(c)}` + cardHtml +
+    `<div class="deckinfo">${T('Card {a} of {b} in this round · {c} words in deck', {a:qPos+1, b:queue.length, c:c.total})}</div>` +
+    dailyLine + dueLine;
+  // Focus + Enter-to-check for the typing modes (before an answer is submitted).
+  if((learnMode==='type'||learnMode==='cloze') && !objResult){
+    const inp = document.getElementById('typeInput');
+    if(inp){ try{ inp.focus(); }catch(_){} inp.onkeydown = ev=>{ if(ev.key==='Enter'){ ev.preventDefault(); checkAnswer(); } }; }
+  }
 }
 
 /* The nav bar used to vanish after a tab tap and only a page refresh brought it
@@ -7860,81 +8321,7 @@ function render(){
   });
   const main = document.getElementById('main');
 
-  if(tab==='learn'){
-    const posBar = `<div class="posfilters posscroll learn-pos">${posFilterButtons(learnPos,'setLearnPos')}</div>`;
-    // Source filter bar — only if book sources are loaded
-    const srcBar = srcFilterOpts().length>2 ? `<div class="srcfilters posfilters posscroll learn-pos">${srcFilterButtons(learnSrc,'setLearnSrc')}</div>` : '';
-    // Shuffle toggle — off = frequency order (default), on = strategic mix of new words
-    const shuffleBar = `<div class="posfilters learn-pos shuffle-bar"><button class="shuffle-btn${learnShuffle?' active':''}" aria-pressed="${learnShuffle}" onclick="toggleShuffle()">&#128256; ${learnShuffle?T('Shuffle On'):T('Shuffle Off')}</button></div>`;
-    if(!queue.length){
-      main.innerHTML = shuffleBar + srcBar + posBar + `<div class="empty">${T('No words left in this round with these filters.')}<br>${T('Try “All”.')}</div>`;
-      return;
-    }
-    const e = deck[queue[qPos]];
-    const status = progress[e.id] || 'new';
-    const rankTxt = e.rank ? T('#{n} most frequent', {n:e.rank}) : (e.books&&e.books.length ? bookTag(e) : T('curated extra'));
-    if(isLocked(e)){
-      // Free plan: word stays visible (blurred) behind a Pro upsell overlay.
-      main.innerHTML = shuffleBar + srcBar + posBar + `
-        ${mondrianStrip(c)}
-        <div class="card pro-lock">
-          <div class="card-tag"><span>${esc(T(e.t||'word'))}${e.a?` &#183; ${esc(e.a)}`:''}</span><span>${T(status).toUpperCase()}</span></div>
-          <div class="card-body locked-blur">
-            <div class="word-nl">${esc(e.w)}</div>
-            <div class="rankline">${rankTxt}</div>
-            <div class="word-hint">${T('Tap to reveal meaning, forms, examples &amp; related words')}</div>
-          </div>
-          ${proOverlay()}
-        </div>
-        <div class="actions"><button class="btn-skip" onclick="skipCard()">&#8631; ${T('Skip')}</button></div>
-        <div class="deckinfo">${T('Card {a} of {b} in this round · {c} words in deck', {a:qPos+1, b:queue.length, c:c.total})}</div>
-      `;
-      return;
-    }
-    let back;
-    if(e.rich){
-      back = `
-        <div class="word-en">${esc(ct(e.m))}</div>
-        ${formsHtml(e)}
-        ${examplesHtml(e)}
-        ${synAntHtml(e)}`;
-    } else if(e.hasMeaning){
-      back = `
-        <div class="word-en">${esc(ct(e.m))}</div>
-        ${synAntHtml(e)}
-        <div class="word-hint" style="margin-top:14px">${T('More examples and grammar forms are being added.')}</div>`;
-    } else if(enrichInFlight){
-      back = `<div class="word-en">${T('Preparing this card…')}</div>`;
-    } else {
-      back = `<div class="word-en">${T('Not translated yet')}</div>`;
-    }
-    const dailyLine = plan ? `<div class="deckinfo">${T('Today: {n} learned · streak {s}', {n:`<b>${todayCount()}</b>${plan.perDay?` / ${plan.perDay}`:''}`, s:`<b>${currentStreak()}</b>`})} &#128293;</div>` : '';
-    main.innerHTML = shuffleBar + srcBar + posBar + `
-      ${mondrianStrip(c)}
-      <div class="card" tabindex="0" role="button" aria-label="${T('Flip card')}" onclick="flip()">
-        <div class="card-tag"><span>${esc(T(e.t||'word'))}${e.a?` &#183; ${esc(e.a)}`:''}</span><span>${T(status).toUpperCase()}</span></div>
-        <div class="card-body">
-          <div class="word-nl">${esc(e.w)}${spkBtn(queue[qPos])}</div>
-          <div class="rankline">${rankTxt}</div>
-          ${e.books&&e.books.length?`<div class="rankline booktag">&#128218; ${bookTag(e)}</div>`:''}
-          ${flipped ? back : `<div class="word-hint">${T('Tap to reveal meaning, forms, examples &amp; related words')}</div>`}
-        </div>
-      </div>
-      ${flipped ? `
-      <div class="actions">
-        <button class="btn-again" onclick="event&&event.stopPropagation();hap();mark('again')">&#10007; ${T('Again')}</button>
-        <button class="btn-learning" onclick="event&&event.stopPropagation();hap();mark('learning')">&#8776; ${T('Learning')}</button>
-        <button class="btn-know" onclick="event&&event.stopPropagation();hap();mark('learned')">&#10003; ${T('Know it')}</button>
-      </div>
-      <div class="actions"><button class="btn-skip" onclick="event&&event.stopPropagation();skipCard()">&#8631; ${T('Skip for now')}</button></div>` : `
-      <div class="actions">
-        <button onclick="flip()">${T('Show answer')}</button>
-        <button class="btn-skip" onclick="event&&event.stopPropagation();skipCard()">&#8631; ${T('Skip')}</button>
-      </div>`}
-      <div class="deckinfo">${T('Card {a} of {b} in this round · {c} words in deck', {a:qPos+1, b:queue.length, c:c.total})}</div>
-      ${dailyLine}
-    `;
-  }
+  if(tab==='learn'){ renderLearn(main, c); return; }
 
   if(tab==='words'){
     // Detail card view for a tapped word
@@ -8043,7 +8430,8 @@ function render(){
           <button onclick="hap();editPlan()">${T('Edit plan')}</button>
           <button onclick="hap();clearPlan()">${T('Remove')}</button>
         </div>
-        ${('Notification' in window) ? `<button class="loadmore" style="margin-top:10px" onclick="enableReminders()">${remindOn?'&#10003; '+T('Daily reminders on'):'&#128276; '+T('Turn on daily reminders')}</button>` : ''}
+        ${('Notification' in window) ? `<button class="loadmore" style="margin-top:10px" onclick="enableReminders()">${remindOn?'&#10003; '+T('Daily reminders on'):'&#128276; '+T('Turn on daily reminders')}</button>
+        ${remindOn?`<div class="remind-time"><label>${T('Reminder time')}</label><input type="time" value="${remindTime}" onchange="setRemindTime(this.value)"></div><div class="note">${T('Reminders fire while the app is open in your browser; keep the tab around to be nudged.')}</div>`:''}` : ''}
       </div>`;
     } else {
       planBox = `
@@ -8132,6 +8520,38 @@ function render(){
         ${isPro?'':proOverlay()}
       </div>`;
 
+    // Spaced-repetition review box: how many started words are due to be seen again today.
+    const dueN = dueCount();
+    const reviewBox = `
+      <div class="genbox review-box">
+        <h3>&#8635; ${T('Review')}</h3>
+        ${dueN
+          ? `<div class="daily-head"><div><div class="daily-num c-red">${dueN}</div><div class="lbl">${T('due for review')}</div></div></div>
+             <p style="margin-top:10px">${T('Words you’ve started that are scheduled to come back today. Reviewing on time is what moves them into long-term memory.')}</p>
+             <button class="genbtn" style="margin-top:4px" onclick="startReview()">&#8635; ${T('Start review')}</button>`
+          : `<p style="margin-top:10px">${T('All caught up — nothing due right now. Words you learn come back on a spaced schedule so you review them right before you’d forget.')}</p>`}
+      </div>`;
+
+    // Hardest words (leeches): words repeatedly answered "Again".
+    const lch = leeches();
+    let hardestBox = '';
+    if(lch.length){
+      const rows = lch.slice(0,8).map(i=>{
+        const e=deck[i]; const lp=(srs[e.id].lapses||0);
+        return `<div class="leechrow" onclick="hap();openWord(${i})">
+          <span class="leech-w">${e.a?esc(e.a)+' ':''}${esc(e.w)}</span>
+          <span class="leech-m">${esc(ct(e.m||''))}</span>
+          <span class="leech-x" title="${T('times missed')}">&#10007;${lp}</span></div>`;
+      }).join('');
+      hardestBox = `
+        <div class="genbox">
+          <h3>&#128293; ${T('Hardest words')}</h3>
+          <div class="leechlist">${rows}</div>
+          <div class="note">${T('Words you keep missing. Drill them to lock them in.')}</div>
+          <button class="genbtn" style="margin-top:10px" onclick="drillLeeches()">&#128293; ${T('Drill hardest words')}</button>
+        </div>`;
+    }
+
     main.innerHTML = `
       ${mondrianStrip(c)}
       <div class="stats">
@@ -8141,7 +8561,11 @@ function render(){
         <div class="stat"><div class="num c-red">${pct}%</div><div class="lbl">${T('Of 5,000 goal')}</div></div>
       </div>
 
+      ${reviewBox}
+
       ${planBox}
+
+      ${hardestBox}
 
       <div class="genbox">
         <h3>${T('Last 14 days')}</h3>
@@ -8163,7 +8587,7 @@ function render(){
 /* ============ OFFLINE (service worker) ============ */
 if('serviceWorker' in navigator){
   const swCode = `
-    const C = 'dutch5k-v81';
+    const C = 'dutch5k-v82';
     self.addEventListener('install', e => { self.skipWaiting(); });
     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
     self.addEventListener('fetch', e => {
