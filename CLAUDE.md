@@ -75,6 +75,25 @@ fills words with no examples yet; safe to append. **Add book-word examples here,
 > example remain. Reproducible: extract GENEX+TRANS, flag array-form entries whose gloss stems don't intersect
 > the example-English stems, review, rewrite in place at each entry's line.
 
+> **v77 meaning sweep — TRANS glosses overriding correct book meanings (Adi spotted `waar`→"authentic; genuine;
+> deserving" while its example "Waar woon je?" means "where"):** a *book* word that's also a frequency word takes
+> its meaning from FreeDict `TRANS` in `buildDeck` — `TRANS` sets `m`+`hasMeaning` first, and the book-merge guard
+> (`else if(!target.rich && !target.hasMeaning …)`) then **won't apply the curated book meaning**. So when FreeDict
+> picked the wrong homograph, the card showed FreeDict's gloss and contradicted its own (book-sourced) example.
+> Audited **every book word whose displayed `TRANS` gloss shares no word-stem with its book meaning** (201
+> candidates, hand-reviewed) and fixed **109** genuinely wrong/misleading ones via `GENEX {m}` overrides — **9
+> existing example-only entries converted to `{m, ex}` in place, 100 new `{m}` entries** appended before the
+> `--GENEX-APPEND--` anchor (all tagged `v77 meaning fixes`). Sample: `waar`→where, `weer`→again/weather,
+> `leven`→to live, `soms`→sometimes, `slim`→clever, `spiegel`→mirror, `verdriet`→grief, `eventueel`→possibly
+> (false friend, NOT "eventually"), `tas`→bag, `bericht`→message. **False positives deliberately left alone**:
+> synonyms/spellings (`foto`→"photograph"≈"photo", `niemand`→"no one"≈"nobody"), and words where the book meaning
+> is a chapter-specific *inflected* form so FreeDict's infinitive is actually better (`spelen`→"play" kept over
+> book "played"). `GENEX` overrides book words because `byId[bareword]` resolves the freq-stub entry (same as
+> `kan`/`moet`/`mee`). **i18n packs still show old English** for these 109 until a delta-regen (`ct()` falls back
+> safely). Reproducible: `scratchpad/audit.js` (extract FREQ/SEED/TRANS/BOOKS/GENEX, simulate the meaning merge,
+> flag no-stem-overlap book words) → hand-curate `scratchpad/fixes.json` (`word→gloss`, each based on the book
+> meaning + Dutch) → in-place-convert array entries + append the rest. SW cache bumped v76→v77.
+
 `buildDeck()` merges all into `deck[]`. Stable `id`:
 - curated/enriched: `"word|type"` (homographs like `eten` verb vs noun must not collide)
 - frequency stubs: `"word"`
