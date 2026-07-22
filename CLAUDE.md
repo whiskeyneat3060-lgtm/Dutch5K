@@ -160,7 +160,7 @@ on modern unfurlers); swap to an absolute URL if a platform needs one.
 
 `Store` adapter wraps `window.storage` (Claude artifacts) with `localStorage` fallback. Keys:
 `dutch5k-progress`, `-enriched`, `-srs` (v82 spaced-repetition schedule), `-plan`, `-streak`, `-remind`,
-`-remindtime` (v82), `-theme`, `-shuffle`, `-mode` (v82 study mode), `-pro`. No server;
+`-remindtime` (v82), `-theme`, `-shuffle`, `-newonly` (v83 new-words-only toggle), `-mode` (v82 study mode), `-pro`. No server;
 losing localStorage loses progress. (The Export/Import JSON backup box was **removed from the drawer in
 v68** — see the Settings drawer note; `exportData()`/`importData()` still exist in the JS but are no
 longer wired to any UI.)
@@ -224,6 +224,21 @@ due again. Section `/* ============ SPACED REPETITION ============ */` right abo
   template literal), merged via `Object.assign` into each `UI[lang]`. `de / het` is a Dutch label, not
   translated. **Content packs are unaffected** (word meanings/examples are the same strings). SW cache
   bumped **v81 → v82**.
+
+> **"New words only" toggle (v83, Adi: "what if I want to learn new words and not review — there's no
+> option"):** the v82 queue always leads with due reviews, so there was no way to study *only* fresh words.
+> Added `newOnly` (module-level `let`, persisted `dutch5k-newonly`, default **false**) + a **`🔴 New words
+> only` toggle** in the Learn shuffle-bar next to Shuffle (reuses `.shuffle-btn`, `aria-pressed`, active =
+> blue). When on, `buildQueue()` sets `queue = [...fresh]` — **every due review is held back and there is no
+> `notDue` fallback** (an empty deck = "no new words left", the honest intended state; a dedicated empty-state
+> message says so and points back at the toggle). `toggleNewOnly()` mirrors `toggleShuffle()` (persist +
+> rebuild + render + toast) and **exits any hardest-words drill** (`if(newOnly) leechOnly=false`) since the
+> two are mutually exclusive; conversely `startReview()` and `drillLeeches()` now set `newOnly=false` (+
+> persist) because those entry points are explicitly about reviewing. Only the *fresh* partition is affected
+> — mode/POS/source filters and free-first ordering still apply inside it, and a word marked during a
+> new-only session leaves the fresh pool on the next `buildQueue()` exactly like normal. **5 new UI strings
+> translated in all 10 non-English languages** via a `UI_V83 = JSON.parse(\`{…}\`)` block right after
+> `UI_V82` (same curly-quote/guillemet convention, `Object.assign` merge). SW cache bumped **v82 → v83**.
 
 **Progress "By source" donut (v67, Adi request):** below the "By word type" breakdown, an interactive
 donut chart of words *learned per source* (General / Gang / Actie / Niveau). `countsBySource()` (right
