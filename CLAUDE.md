@@ -279,6 +279,25 @@ one-time-setup boxes that used to bloat the third tab, in order (v55, Adi reques
 > /`.cf-label`/`.cf-input`/`.cf-err`/`.cf-hint`/`.cf-send` right after the `.lang-note` rule. `clearContactErr()`
 > resets the field on input. SW cache bumped v78→v79.
 
+> **v80 (Adi request):** the Contact-us form gained an **optional "Your email" field** (above the message)
+> so Adi can reply if needed. It's a real `<input type="email">` (`id="cfEmail"`, email inputmode/autocomplete)
+> with a muted helper note (`.cf-note`, "Only if you would like a reply…"). **Validation only runs when the
+> field is non-empty** (blank sends exactly as before). `contactEmailError(raw)` (just below `clearContactErr`)
+> returns `''` when ok or a human error string: it requires a **single** syntactically-valid address (rejects
+> whitespace/comma/`;`/`<>()` → lists & display names), a proper local part (≤64, no leading/trailing/double
+> dot, RFC-ish charset) and a real domain (labels of a-z0-9/hyphen, ≥1 dot, TLD ≥2 letters, no leading/trailing
+> hyphen), **and** rejects **disposable/throwaway providers** via the module-level `CONTACT_DISPOSABLE` Set
+> (~40 hand-picked domains — mailinator/yopmail/guerrillamail/10minutemail/tempmail/maildrop/getnada/… — "no
+> fake ids"; offline app so no live DNS/MX check). On a bad value the email field goes red and `sendContact()`
+> returns early with the error shown in `#cfEmailHint` (reuses `.cf-err-msg` red override on the note); on a good
+> or empty value it sends. When provided, the address is added to the FormSubmit JSON as **`_replyto`** (so
+> reply-to works) plus an **`Email`** field; when omitted, `Email:'(not provided)'` and no `_replyto` (delivery
+> unchanged). `clearContactErr()` now also clears the email field/hint and restores the helper note;
+> `sendContact()` clears `cfEmail` on success. New CSS: `input.cf-input` added to the `select/textarea.cf-input`
+> selector, `.cf-note`/`.cf-note.cf-err-msg` after `.cf-hint`. UI strings **English-only** via `T()` (fall back
+> in the 10 packs, same as the rest of the form). Owner email still assembled only in `sendContact()`, never in
+> the rendered drawer (re-verified in jsdom). SW cache bumped v79→v80.
+
 > **v64 (Adi request):** the boxes are now **collapsible accordions** — each shows only its title
 > plus a `›` chevron; tapping the header expands the details and rotates the arrow, tapping again
 > collapses. All start collapsed; they toggle **independently** (several can be open). `renderMenu()`
