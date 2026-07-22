@@ -347,6 +347,26 @@
   .themebtn.langbtn{min-width:52px; justify-content:center; font-family:var(--font-head); font-weight:800; font-size:13px; letter-spacing:1px;}
   .lang-note{font-size:12px; color:var(--muted); margin-top:10px; line-height:1.4;}
 
+  /* ---- Contact us form (drawer accordion body) ---- */
+  .contact-form{display:flex; flex-direction:column; gap:10px;}
+  .contact-form .cf-label{font-size:12px; font-weight:700; color:var(--muted); letter-spacing:.5px; margin-bottom:-4px;}
+  .contact-form select.cf-input,
+  .contact-form textarea.cf-input{
+    width:100%; padding:9px 11px; border:var(--rule); background:var(--card-bg); color:var(--ink);
+    border-radius:var(--radius); font-family:var(--font-body); font-size:14px; box-sizing:border-box;
+  }
+  .contact-form textarea.cf-input{resize:vertical; min-height:96px; line-height:1.4;}
+  .contact-form .cf-input:focus{outline:none; box-shadow:inset 0 0 0 2px var(--accent);}
+  .contact-form .cf-input.cf-err{box-shadow:inset 0 0 0 2px var(--red);}
+  .contact-form .cf-hint{font-size:12px; color:var(--red); min-height:0;}
+  .contact-form .cf-send{
+    width:100%; margin-top:2px; padding:11px; border:var(--rule); background:var(--blue); color:#fff;
+    border-radius:var(--radius); font-family:var(--font-head); font-weight:800; font-size:15px;
+    letter-spacing:.5px; cursor:pointer; text-transform:uppercase;
+  }
+  .contact-form .cf-send:active{transform:scale(.98);}
+  .contact-form .cf-send:disabled{opacity:.55; cursor:default;}
+
   /* ---- settings drawer (v53): hamburger in the header slides a panel in from the left.
      Holds the one-time-setup boxes (Theme, App language, Backup, About) moved out of the
      Progress tab. Lives outside .topbar/#main as a direct body child, so its own
@@ -7186,7 +7206,7 @@ let menuOpen = false;
 /* Which drawer sections are expanded. Kept module-level so it survives the
    renderMenu() re-runs triggered by theme/language switches while the drawer
    is open. Every section starts collapsed — tap a header to reveal its body. */
-let menuSections = { about:false, lang:false, theme:false };
+let menuSections = { about:false, lang:false, theme:false, contact:false };
 function toggleSection(id){
   hap();
   menuSections[id] = !menuSections[id];
@@ -7227,11 +7247,74 @@ function renderMenu(){
             <span class="swatch">${t.sw.map(c=>`<i style="background:${c}"></i>`).join('')}</span>
           </button>`).join('')}
       </div>`;
+  const contactInner = `
+      <div class="contact-form">
+        <label class="cf-label" for="cfSubject">${T('Subject')}</label>
+        <select class="cf-input" id="cfSubject">
+          ${CONTACT_SUBJECTS.map(s=>`<option value="${T(s).replace(/"/g,'&quot;')}">${T(s)}</option>`).join('')}
+        </select>
+        <label class="cf-label" for="cfMessage">${T('Message')}</label>
+        <textarea class="cf-input" id="cfMessage" placeholder="${T('What would you like to tell us?')}" oninput="clearContactErr()"></textarea>
+        <div class="cf-hint" id="cfHint"></div>
+        <button class="cf-send" id="cfSend" type="button" onclick="sendContact()">${T('Send')}</button>
+      </div>`;
   body.innerHTML =
     proBox() +
     menuBox('about', T('About the app'), aboutInner) +
     menuBox('lang',  T('App language'),  langInner) +
-    menuBox('theme', T('Theme'),         themeInner);
+    menuBox('theme', T('Theme'),         themeInner) +
+    menuBox('contact', T('Contact us'),  contactInner);
+}
+/* Generic subject categories offered in the Contact-us form (translated via T()). */
+const CONTACT_SUBJECTS = ['General feedback','Report a problem','Word or translation error','Feature request','Question','Other'];
+function clearContactErr(){
+  const t = document.getElementById('cfMessage'); const h = document.getElementById('cfHint');
+  if(t) t.classList.remove('cf-err'); if(h) h.textContent='';
+}
+/* Send the contact message. No backend: POST via FormSubmit's AJAX endpoint, which
+   emails it to the app owner. The recipient address lives only here (never shown in
+   the UI). Message is mandatory; subject comes from the generic category dropdown. */
+async function sendContact(){
+  hap();
+  const subEl = document.getElementById('cfSubject');
+  const msgEl = document.getElementById('cfMessage');
+  const hint  = document.getElementById('cfHint');
+  const btn   = document.getElementById('cfSend');
+  if(!msgEl) return;
+  const msg = (msgEl.value||'').trim();
+  if(!msg){
+    msgEl.classList.add('cf-err');
+    if(hint) hint.textContent = T('Please enter a message before sending.');
+    msgEl.focus();
+    return;
+  }
+  const subject = subEl ? subEl.value : 'Contact';
+  const CONTACT_TO = ['whiskeyneat3060','gmail.com'].join('@');  // owner inbox — not surfaced in UI
+  if(btn){ btn.disabled = true; btn.textContent = T('Sending…'); }
+  try{
+    const r = await fetch('https://formsubmit.co/ajax/'+encodeURIComponent(CONTACT_TO), {
+      method:'POST',
+      headers:{'Content-Type':'application/json', 'Accept':'application/json'},
+      body: JSON.stringify({
+        _subject: 'Dutch To Go — '+subject,
+        _template: 'table',
+        _captcha: 'false',
+        Category: subject,
+        Message: msg
+      })
+    });
+    if(!r.ok) throw new Error('http '+r.status);
+    await r.json().catch(()=>({}));
+    msgEl.value = '';
+    if(hint) hint.textContent = '';
+    toast(T('Thanks! Your message has been sent.'));
+    if(menuSections.contact){ menuSections.contact = false; renderMenu(); }
+  }catch(e){
+    if(hint){ hint.textContent = T('Could not send right now. Please check your connection and try again.'); }
+    toast(T('Could not send your message.'));
+  }finally{
+    if(btn){ btn.disabled = false; btn.textContent = T('Send'); }
+  }
 }
 /* ---- Pro / Free ---- */
 function proBox(){
@@ -8016,7 +8099,7 @@ function render(){
 /* ============ OFFLINE (service worker) ============ */
 if('serviceWorker' in navigator){
   const swCode = `
-    const C = 'dutch5k-v78';
+    const C = 'dutch5k-v79';
     self.addEventListener('install', e => { self.skipWaiting(); });
     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
     self.addEventListener('fetch', e => {
