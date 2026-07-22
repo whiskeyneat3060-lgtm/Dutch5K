@@ -189,6 +189,22 @@ non-English dicts; short legend labels (`SRC_SHORT`: General/Gang/Actie/Niveau) 
 CSS (`.srcbreak`/`.srcdonut`/`.donut-seg`/`.donut-num`/`.donut-lbl`/`.srclegend`/`.srcrow`/`.srcdot`/
 `.srcname`) sits right after the `.posbreak` block; colours use theme tokens so it adapts per theme.
 
+**Progress "By word type" bars coloured by source (v78, Adi request):** each type row's learned bar is
+no longer a single blue fill — it's now **stacked source-coloured segments** (General grey / Gang blue /
+Actie red / Niveau yellow), reusing the same `SRC_COLORVAR` palette as the "By source" chart below it, so
+the bar shows *what kind of words* make up that type's learned count. `countsByPos()` now also tallies a
+per-row `bySrc{}` map, attributing each learned word to **one** source via `primarySource(e)` (defined
+just after `countsByPos`): a book word → its book (`gang`→`actie`→`niveau` order, matching `inSource`'s
+taxonomy), a non-book word → `general`. Single-source attribution (unlike the donut's overlap-counting
+`inSource`) means the segment counts **sum to exactly the row's learned total** — the whole point per Adi
+("total will be 100, but the bar will be of different colours based on sources"). In `renderProgress()`
+each row renders one `.posbar-fill` span per present source in `SRC_ORDER`, width = `bySrc[s]/total*100`
+(unrounded; segment widths sum to the old `pc%`), `background:var(${SRC_COLORVAR[s]})`, `title` = short
+name + count on hover. CSS: `.posbar` gained `display:flex` and `.posbar-fill` gained `flex:0 0 auto` so
+the segments lay out horizontally (the single-fill `.srcrow .posbar` legend bars still work — one flex
+child at `pc%`). No new UI-dict keys (segment titles use the literal `SRC_SHORT`). SW cache bumped
+v77→v78.
+
 **Pro / Free plan (v65, Adi request):** the app ships as a **freemium** gate. `isPro` (persisted
 `dutch5k-pro`, default **false** = Free) is flipped on by the **"Pro to go"** box — a prominent
 (non-accordion) `genbox.probox` rendered **first** in the drawer via `proBox()` in `renderMenu()`.
