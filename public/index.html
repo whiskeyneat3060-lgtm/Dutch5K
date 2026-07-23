@@ -7532,7 +7532,11 @@ let menuOpen = false;
 let menuSections = { about:false, lang:false, theme:false, contact:false };
 function toggleSection(id){
   hap();
-  menuSections[id] = !menuSections[id];
+  const willOpen = !menuSections[id];
+  // Only one section open at a time: collapse the others before opening this one,
+  // otherwise stacked-open bodies leave no room in the drawer.
+  Object.keys(menuSections).forEach(k=>{ menuSections[k] = false; });
+  menuSections[id] = willOpen;
   renderMenu();
 }
 function menuBox(id, title, inner){
@@ -8747,7 +8751,7 @@ function render(){
 /* ============ OFFLINE (service worker) ============ */
 if('serviceWorker' in navigator){
   const swCode = `
-    const C = 'dutch5k-v86';
+    const C = 'dutch5k-v87';
     self.addEventListener('install', e => { self.skipWaiting(); });
     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
     self.addEventListener('fetch', e => {
