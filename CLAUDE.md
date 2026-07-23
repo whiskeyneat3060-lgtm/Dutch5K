@@ -248,6 +248,19 @@ due again. Section `/* ============ SPACED REPETITION ============ */` right abo
   - **Recognition modes** (`cards` NL→meaning, `reverse` meaning→NL, `listen` audio→meaning): flip +
     **self-grade** (Again/Learning/Know-it). Rendered by `recogCardHtml()`; `listen` shows a big play
     button (`.bigplay`, taps `speak()`), reveal shows word + `meaningBlock()`.
+    > **Flip animation (v89, Adi: "give some animation to the flashcard while changing… like a page flip,
+    > quick"):** the flip was an instant `render()` swap; now it's a **two-phase ~350ms page-flip**. `flip()`
+    > (only wired to recognition cards) grabs the live `.card`, adds **`.card-flip-out`** (CSS
+    > `transition:transform .15s`, `rotateY(90deg)` so the face turns edge-on and hides the content change),
+    > then after **150ms** `setTimeout` does `flipped=!flipped; flipAnimateIn=true; render()`. `recogCardHtml()`
+    > consumes the module-level **`flipAnimateIn`** flag (set → clears it) to add **`.card-flip-in`** to the
+    > fresh card, whose `@keyframes cardFlipIn` rotates the new face in from `rotateY(-90deg)`→`0` over 200ms.
+    > Both use `perspective(1400px)` for the 3D feel. A **`flipping`** guard (module `let`) blocks double-taps
+    > mid-animation. **Respects reduced-motion twice**: a `matchMedia('(prefers-reduced-motion: reduce)')`
+    > check in `flip()` falls back to the old instant swap, and a CSS `@media (prefers-reduced-motion: reduce)`
+    > rule neutralises both classes. **Objective modes untouched** (`.card.no-flip` never calls `flip()`). CSS
+    > sits right after the `.card.no-flip` rule; state vars (`flipAnimateIn`, `flipping`) next to `flipped`.
+    > SW cache bumped **v88 → v89**.
   - **Objective modes** (`type` typed recall, `cloze` fill-the-blank, `dehet` gender drill):
     **auto-graded** from correctness, stored in `objResult` state, then Continue / "Review again" + "I
     knew it" / Next advance via `mark()`. `typeCardHtml()` (type+cloze) + `deHetCardHtml()`.
