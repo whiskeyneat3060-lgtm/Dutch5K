@@ -446,13 +446,21 @@ one-time-setup boxes that used to bloat the third tab, in order (v55, Adi reques
 
 > **v64 (Adi request):** the boxes are now **collapsible accordions** — each shows only its title
 > plus a `›` chevron; tapping the header expands the details and rotates the arrow, tapping again
-> collapses. All start collapsed; they toggle **independently** (several can be open). `renderMenu()`
+> collapses. All start collapsed. `renderMenu()`
 > builds each box via `menuBox(id,title,inner)`; `toggleSection(id)` flips a per-section flag in the
 > module-level `menuSections` object. That object lives **outside** `renderMenu()` on purpose so open
 > state survives the `renderMenu()` re-runs fired by `setTheme`/`setLang` while the drawer is open.
 > CSS: `.accbox`/`.acc-h` (header button, real `<button>` + `aria-expanded`)/`.acc-arrow` (rotates
 > 90° when `.accbox.open`)/`.acc-body` (`max-height` reveal, `1200px` cap when open). The old
 > `.genbox h3` heading rule is now unused by the drawer (still used by the Progress-tab `.genbox`es).
+>
+> **v87 (Adi: "when one menu is open and another is clicked both remain open… minimize the previous
+> menu and then open the new one, otherwise there's no space left"):** the drawer accordions are now
+> **single-open** (was v64 "toggle independently, several can be open"). `toggleSection(id)` collapses
+> **every** section in `menuSections` before opening the tapped one — so at most one body is expanded at
+> a time and the drawer never runs out of room. Tapping an already-open header still just closes it
+> (nothing left open). One-line logic change only (`willOpen` captured, all flags zeroed, then the tapped
+> flag set); markup/CSS untouched. SW cache bumped **v86 → v87**.
 
 How it works / gotchas:
 - **About box rewritten (v55–v56, Adi request — keep this framing):** intro = "build Dutch vocabulary in a
