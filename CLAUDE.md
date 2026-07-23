@@ -632,6 +632,18 @@ with scoped `button[data-p]` update so POS refresh doesn't clobber the source ba
 source bar sits *above* the POS bar on both tabs** — Words already did this; the Learn tab was flipped to
 match (`shuffleBar + srcBar + posBar` in the two `main.innerHTML` spots; the shuffle toggle stays on top).
 
+> **Filter/mode bar scroll preserved on Learn (v85, Adi: "when scrolling thru filters and then something is
+> selected, the filter goes back to original state… keep the filters there itself"):** the Learn handlers
+> `setLearnPos`/`setLearnSrc`/`setMode` called a **full `render()`**, which rebuilds all of `#main` — so the
+> horizontally-scrollable mode/filter bars (`.posscroll`) were recreated scrolled to the left. Scrolling to a
+> filter near the end and tapping it snapped the bar back to the start, putting the next pick out of reach.
+> New helper **`renderKeepBars()`** (just above `setLearnPos`) captures each scrollable bar's `scrollLeft` by a
+> stable selector (`.modebar`, `.srcfilters.learn-pos`, `.posscroll.learn-pos:not(.srcfilters)` — the last
+> excludes the non-scrolling `.shuffle-bar`), runs `render()`, then restores the saved offsets on the freshly
+> built bars. Wired into all three Learn handlers. **Words tab needed no change** — `setPosFilter`/`setSrcFilter`
+> already do partial updates (className swap + `renderWordList()`) and never rebuild the bars. SW cache bumped
+> v84→v85.
+
 **Search result ordering (v76, Adi request):** the Words search matches the query as a substring of the
 Dutch word **or** the (English/translated) meaning, but results were left in corpus-frequency order — so an
 exact hit (searching "tell" → the word `tell`) sat far below words that merely contain it (`teller`,
