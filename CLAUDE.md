@@ -160,7 +160,8 @@ on modern unfurlers); swap to an absolute URL if a platform needs one.
 
 `Store` adapter wraps `window.storage` (Claude artifacts) with `localStorage` fallback. Keys:
 `dutch5k-progress`, `-enriched`, `-srs` (v82 spaced-repetition schedule), `-plan`, `-streak`, `-remind`,
-`-remindtime` (v82), `-theme`, `-shuffle`, `-newonly` (v83 new-words-only toggle), `-mode` (v82 study mode), `-pro`. No server;
+`-remindtime` (v82), `-theme`, `-shuffle`, `-newonly` (v83 new-words-only toggle), `-mode` (v82 study mode), `-pro`,
+`-wordgoal` (v84 custom learning-goal target). No server;
 losing localStorage loses progress. (The Export/Import JSON backup box was **removed from the drawer in
 v68** — see the Settings drawer note; `exportData()`/`importData()` still exist in the JS but are no
 longer wired to any UI.)
@@ -239,6 +240,31 @@ due again. Section `/* ============ SPACED REPETITION ============ */` right abo
 > new-only session leaves the fresh pool on the next `buildQueue()` exactly like normal. **5 new UI strings
 > translated in all 10 non-English languages** via a `UI_V83 = JSON.parse(\`{…}\`)` block right after
 > `UI_V82` (same curly-quote/guillemet convention, `Object.assign` merge). SW cache bumped **v82 → v83**.
+
+> **Learning goal — real word count + settable target (v84, Adi: "the goal 5000 isn't the actual count;
+> let me set how many words I want to learn"):** the progress goal was a hardcoded `const GOAL = 5000`,
+> but the deck actually holds **~5,959** words, so the header (`x / 5000`), the "Of 5,000 goal" stat %, and
+> the daily-plan ETA were all measured against the wrong denominator. Replaced `GOAL` with **`goalTotal()`**
+> (just above `POS_LABELS`): returns `wordGoal` when the user set a custom target (capped at `deck.length`),
+> else the real `deck.length`; `goalStr()` is its `toLocaleString(langLocale())` form. All four call sites
+> now use it (header count, `pct` — **capped at 100%**, `remainingWords`, and the endDate `goalN` fallback).
+> - **New `wordGoal`** (module-level `let`, persisted `dutch5k-wordgoal`, default **null** = whole deck),
+>   loaded in `init()` right after `plan`. `setWordGoal(n)` (parses/floors, caps at `deck.length`, persists,
+>   re-renders, toasts), `clearWordGoal()` (resets to null = all words), `saveWordGoalFromInput()` (reads
+>   `#goalInput`) sit just below `editPlan()`.
+> - **"Learning goal" box** (`.goal-box`, `renderProgress()`): preset `.planchip`s [100,250,500,1000,2000,3000]
+>   (filtered `< deck.length`) + an **All** chip (`clearWordGoal`), an exact-number `<input type=number
+>   id="goalInput">` (Enter submits), a **Set goal** button, and a "Learn all {n} words" reset shown only
+>   when a custom goal is set. Active chip highlighted via new `.planchip.active{background:var(--blue)}`.
+>   **Rendered LAST on the Progress tab — after the "By source" donut** (Adi asked it be moved to the bottom
+>   after the charts). Ungated (core config, like the plan box).
+> - **i18n:** the four goal strings that embedded a literal "5,000" (`Of {goal} goal`, the two ETA lines,
+>   `Or reach {goal} by a date`) were **re-keyed to a `{goal}` placeholder** and the number swapped for
+>   `{goal}` in **all 10 non-English values** (locale-formatted via `goalStr()` — fr/ru space, de/tr dot, pl
+>   none, en comma). The **new box's own strings are English-only** via `T()` (fall back like Pro/Contact —
+>   not yet in the 10 packs). **Marketing copy left alone on purpose:** the `<meta>` descriptions / FREQ
+>   comment still say "5,000 most common words" — that's the real FREQ corpus size, not the goal. SW cache
+>   bumped **v83 → v84**.
 
 **Progress "By source" donut (v67, Adi request):** below the "By word type" breakdown, an interactive
 donut chart of words *learned per source* (General / Gang / Actie / Niveau). `countsBySource()` (right
