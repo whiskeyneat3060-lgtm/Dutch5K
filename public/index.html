@@ -331,7 +331,8 @@
   .chiprow{display:flex; gap:6px; flex-wrap:wrap;}
   .planchip{flex:1; min-width:48px; padding:12px 0; border:var(--rule); background:var(--paper); font-family:var(--font-head); font-weight:900; font-size:16px; cursor:pointer;}
   .planchip:hover{background:var(--yellow);}
-  input[type=date]{width:100%; padding:11px 12px; border:var(--rule); font-family:var(--font-body); font-size:14px; outline:none;}
+  .planchip.active{background:var(--blue); color:#fff;}
+  input[type=date],input[type=number]{width:100%; padding:11px 12px; border:var(--rule); font-family:var(--font-body); font-size:14px; outline:none;}
 
   .histgrid{display:grid; grid-template-columns:repeat(14,1fr); gap:4px;}
   .histcell{aspect-ratio:1; border:2px solid var(--line);}
@@ -629,7 +630,7 @@
     <button class="menu-btn" id="menuBtn" aria-label="Menu" aria-expanded="false" aria-controls="drawer" onclick="toggleMenu()"><span></span><span></span><span></span></button>
     <div class="logo">DUTCH <span>to go</span></div>
   </div>
-  <div class="counter"><small>Words learned</small><span id="hdrCount">0 / 5000</span></div>
+  <div class="counter"><small>Words learned</small><span id="hdrCount">0</span></div>
 </header>
 
 <nav>
@@ -1223,6 +1224,7 @@ let wordView = null;      // when set, Words tab shows a full card for this deck
 let wordViewStack = [];   // for synonym/antonym hyperlink navigation (back button)
 let enrichInFlight = false;
 let plan = null;          // {perDay, endDate, startDate} daily study plan
+let wordGoal = null;      // custom "words I want to learn" target (persisted dutch5k-wordgoal); null = whole deck
 let streak = null;        // {count, lastStudied, todayCount, history:{date:count}}
 let remindOn = false;
 /* ---- Pro / Free gating (v65) ----
@@ -1293,16 +1295,16 @@ fr:{
   'Show more ({n} remaining)':'Afficher plus ({n} restants)', '{n} words':'{n} mots', '1 word':'1 mot',
   'Back':'Retour', 'Back to list':'Retour à la liste',
   'Meaning will be added when you add an API key, or from the app online.':"Le sens sera ajouté avec une clé API, ou depuis l'app en ligne.",
-  'Learned':'Appris', 'Still learning':'En cours', 'Not started':'Pas commencé', 'Of 5,000 goal':"De l'objectif de 5 000",
+  'Learned':'Appris', 'Still learning':'En cours', 'Not started':'Pas commencé', 'Of {goal} goal':"De l'objectif de {goal}",
   "Today's plan":'Plan du jour', 'words today':"mots aujourd'hui", 'day streak':'jours de suite',
-  "At {n}/day you'll reach 5,000 in about {d} days (~{date}).":'À {n}/jour, vous atteindrez 5 000 dans environ {d} jours (~{date}).',
-  'To hit 5,000 by {date}, learn about {n}/day ({d} days left).':"Pour atteindre 5 000 d'ici le {date}, apprenez environ {n}/jour ({d} jours restants).",
+  "At {n}/day you'll reach {goal} in about {d} days (~{date}).":'À {n}/jour, vous atteindrez {goal} dans environ {d} jours (~{date}).',
+  'To hit {goal} by {date}, learn about {n}/day ({d} days left).':"Pour atteindre {goal} d'ici le {date}, apprenez environ {n}/jour ({d} jours restants).",
   'Daily goal complete — nice work!':'Objectif du jour atteint — bravo !', 'Study now':'Étudier maintenant',
   'Edit plan':'Modifier le plan', 'Remove':'Supprimer',
   'Daily reminders on':'Rappels quotidiens activés', 'Turn on daily reminders':'Activer les rappels quotidiens',
   'Set a daily goal':'Fixez un objectif quotidien',
   'Pick how many words to learn per day (or a target date), and the app tracks your streak and shows exactly how many to do each day.':"Choisissez combien de mots apprendre par jour (ou une date cible) ; l'app suit votre série et indique exactement combien en faire chaque jour.",
-  'Words per day':'Mots par jour', 'Or reach 5,000 by a date':'Ou atteindre 5 000 pour une date', 'Set target date':'Définir la date cible',
+  'Words per day':'Mots par jour', 'Or reach {goal} by a date':'Ou atteindre {goal} pour une date', 'Set target date':'Définir la date cible',
   'Pick a date or tap a number above':'Choisissez une date ou touchez un nombre ci-dessus',
   'Last 14 days':'Les 14 derniers jours',
   'Each square is a day; darker means more words learned. Learn at least one word a day to keep your streak alive.':'Chaque carré est un jour ; plus il est foncé, plus vous avez appris de mots. Apprenez au moins un mot par jour pour garder votre série.',
@@ -1360,16 +1362,16 @@ it:{
   'Show more ({n} remaining)':'Mostra altre ({n} rimanenti)', '{n} words':'{n} parole', '1 word':'1 parola',
   'Back':'Indietro', 'Back to list':"Torna all'elenco",
   'Meaning will be added when you add an API key, or from the app online.':"Il significato sarà aggiunto con una chiave API o dall'app online.",
-  'Learned':'Apprese', 'Still learning':'In corso', 'Not started':'Da iniziare', 'Of 5,000 goal':"Dell'obiettivo di 5.000",
+  'Learned':'Apprese', 'Still learning':'In corso', 'Not started':'Da iniziare', 'Of {goal} goal':"Dell'obiettivo di {goal}",
   "Today's plan":'Piano di oggi', 'words today':'parole oggi', 'day streak':'giorni di fila',
-  "At {n}/day you'll reach 5,000 in about {d} days (~{date}).":'A {n}/giorno raggiungerai 5.000 in circa {d} giorni (~{date}).',
-  'To hit 5,000 by {date}, learn about {n}/day ({d} days left).':'Per arrivare a 5.000 entro il {date}, impara circa {n}/giorno ({d} giorni rimasti).',
+  "At {n}/day you'll reach {goal} in about {d} days (~{date}).":'A {n}/giorno raggiungerai {goal} in circa {d} giorni (~{date}).',
+  'To hit {goal} by {date}, learn about {n}/day ({d} days left).':'Per arrivare a {goal} entro il {date}, impara circa {n}/giorno ({d} giorni rimasti).',
   'Daily goal complete — nice work!':'Obiettivo di oggi raggiunto — ottimo lavoro!', 'Study now':'Studia ora',
   'Edit plan':'Modifica piano', 'Remove':'Rimuovi',
   'Daily reminders on':'Promemoria giornalieri attivi', 'Turn on daily reminders':'Attiva i promemoria giornalieri',
   'Set a daily goal':'Imposta un obiettivo giornaliero',
   'Pick how many words to learn per day (or a target date), and the app tracks your streak and shows exactly how many to do each day.':"Scegli quante parole imparare al giorno (o una data obiettivo): l'app segue la tua serie e mostra esattamente quante farne ogni giorno.",
-  'Words per day':'Parole al giorno', 'Or reach 5,000 by a date':'Oppure raggiungi 5.000 entro una data', 'Set target date':'Imposta la data obiettivo',
+  'Words per day':'Parole al giorno', 'Or reach {goal} by a date':'Oppure raggiungi {goal} entro una data', 'Set target date':'Imposta la data obiettivo',
   'Pick a date or tap a number above':'Scegli una data o tocca un numero qui sopra',
   'Last 14 days':'Ultimi 14 giorni',
   'Each square is a day; darker means more words learned. Learn at least one word a day to keep your streak alive.':'Ogni quadrato è un giorno; più è scuro, più parole hai imparato. Impara almeno una parola al giorno per mantenere la serie.',
@@ -1427,16 +1429,16 @@ es:{
   'Show more ({n} remaining)':'Mostrar más ({n} restantes)', '{n} words':'{n} palabras', '1 word':'1 palabra',
   'Back':'Atrás', 'Back to list':'Volver a la lista',
   'Meaning will be added when you add an API key, or from the app online.':'El significado se añadirá con una clave API o desde la app en línea.',
-  'Learned':'Aprendidas', 'Still learning':'En curso', 'Not started':'Sin empezar', 'Of 5,000 goal':'Del objetivo de 5.000',
+  'Learned':'Aprendidas', 'Still learning':'En curso', 'Not started':'Sin empezar', 'Of {goal} goal':'Del objetivo de {goal}',
   "Today's plan":'Plan de hoy', 'words today':'palabras hoy', 'day streak':'días seguidos',
-  "At {n}/day you'll reach 5,000 in about {d} days (~{date}).":'A {n}/día alcanzarás 5.000 en unos {d} días (~{date}).',
-  'To hit 5,000 by {date}, learn about {n}/day ({d} days left).':'Para llegar a 5.000 antes del {date}, aprende unas {n}/día (quedan {d} días).',
+  "At {n}/day you'll reach {goal} in about {d} days (~{date}).":'A {n}/día alcanzarás {goal} en unos {d} días (~{date}).',
+  'To hit {goal} by {date}, learn about {n}/day ({d} days left).':'Para llegar a {goal} antes del {date}, aprende unas {n}/día (quedan {d} días).',
   'Daily goal complete — nice work!':'Objetivo diario cumplido — ¡buen trabajo!', 'Study now':'Estudiar ahora',
   'Edit plan':'Editar plan', 'Remove':'Quitar',
   'Daily reminders on':'Recordatorios diarios activados', 'Turn on daily reminders':'Activar recordatorios diarios',
   'Set a daily goal':'Fija un objetivo diario',
   'Pick how many words to learn per day (or a target date), and the app tracks your streak and shows exactly how many to do each day.':'Elige cuántas palabras aprender al día (o una fecha objetivo); la app sigue tu racha y muestra exactamente cuántas hacer cada día.',
-  'Words per day':'Palabras al día', 'Or reach 5,000 by a date':'O llega a 5.000 para una fecha', 'Set target date':'Fijar fecha objetivo',
+  'Words per day':'Palabras al día', 'Or reach {goal} by a date':'O llega a {goal} para una fecha', 'Set target date':'Fijar fecha objetivo',
   'Pick a date or tap a number above':'Elige una fecha o toca un número arriba',
   'Last 14 days':'Últimos 14 días',
   'Each square is a day; darker means more words learned. Learn at least one word a day to keep your streak alive.':'Cada cuadrado es un día; cuanto más oscuro, más palabras aprendidas. Aprende al menos una palabra al día para mantener tu racha.',
@@ -1494,16 +1496,16 @@ de:{
   'Show more ({n} remaining)':'Mehr anzeigen ({n} übrig)', '{n} words':'{n} Wörter', '1 word':'1 Wort',
   'Back':'Zurück', 'Back to list':'Zurück zur Liste',
   'Meaning will be added when you add an API key, or from the app online.':'Die Bedeutung wird mit einem API-Schlüssel oder aus der Online-App ergänzt.',
-  'Learned':'Gelernt', 'Still learning':'In Arbeit', 'Not started':'Nicht begonnen', 'Of 5,000 goal':'Vom Ziel: 5.000',
+  'Learned':'Gelernt', 'Still learning':'In Arbeit', 'Not started':'Nicht begonnen', 'Of {goal} goal':'Vom Ziel: {goal}',
   "Today's plan":'Plan für heute', 'words today':'Wörter heute', 'day streak':'Tage in Folge',
-  "At {n}/day you'll reach 5,000 in about {d} days (~{date}).":'Mit {n}/Tag erreichst du 5.000 in etwa {d} Tagen (~{date}).',
-  'To hit 5,000 by {date}, learn about {n}/day ({d} days left).':'Um 5.000 bis zum {date} zu erreichen, lerne etwa {n}/Tag ({d} Tage übrig).',
+  "At {n}/day you'll reach {goal} in about {d} days (~{date}).":'Mit {n}/Tag erreichst du {goal} in etwa {d} Tagen (~{date}).',
+  'To hit {goal} by {date}, learn about {n}/day ({d} days left).':'Um {goal} bis zum {date} zu erreichen, lerne etwa {n}/Tag ({d} Tage übrig).',
   'Daily goal complete — nice work!':'Tagesziel erreicht — gut gemacht!', 'Study now':'Jetzt lernen',
   'Edit plan':'Plan bearbeiten', 'Remove':'Entfernen',
   'Daily reminders on':'Tägliche Erinnerungen an', 'Turn on daily reminders':'Tägliche Erinnerungen aktivieren',
   'Set a daily goal':'Setze ein Tagesziel',
   'Pick how many words to learn per day (or a target date), and the app tracks your streak and shows exactly how many to do each day.':'Wähle, wie viele Wörter du pro Tag lernen willst (oder ein Zieldatum) — die App verfolgt deine Serie und zeigt genau, wie viele täglich anstehen.',
-  'Words per day':'Wörter pro Tag', 'Or reach 5,000 by a date':'Oder 5.000 bis zu einem Datum erreichen', 'Set target date':'Zieldatum festlegen',
+  'Words per day':'Wörter pro Tag', 'Or reach {goal} by a date':'Oder {goal} bis zu einem Datum erreichen', 'Set target date':'Zieldatum festlegen',
   'Pick a date or tap a number above':'Wähle ein Datum oder tippe oben auf eine Zahl',
   'Last 14 days':'Die letzten 14 Tage',
   'Each square is a day; darker means more words learned. Learn at least one word a day to keep your streak alive.':'Jedes Quadrat ist ein Tag; je dunkler, desto mehr gelernte Wörter. Lerne mindestens ein Wort pro Tag, um deine Serie zu halten.',
@@ -1561,16 +1563,16 @@ pt:{
   'Show more ({n} remaining)':'Mostrar mais ({n} restantes)', '{n} words':'{n} palavras', '1 word':'1 palavra',
   'Back':'Voltar', 'Back to list':'Voltar à lista',
   'Meaning will be added when you add an API key, or from the app online.':'O significado será adicionado com uma chave API ou a partir da app online.',
-  'Learned':'Aprendidas', 'Still learning':'A aprender', 'Not started':'Por começar', 'Of 5,000 goal':'Do objetivo de 5.000',
+  'Learned':'Aprendidas', 'Still learning':'A aprender', 'Not started':'Por começar', 'Of {goal} goal':'Do objetivo de {goal}',
   "Today's plan":'Plano de hoje', 'words today':'palavras hoje', 'day streak':'dias seguidos',
-  "At {n}/day you'll reach 5,000 in about {d} days (~{date}).":'A {n}/dia chegarás a 5.000 em cerca de {d} dias (~{date}).',
-  'To hit 5,000 by {date}, learn about {n}/day ({d} days left).':'Para chegar a 5.000 até {date}, aprende cerca de {n}/dia (faltam {d} dias).',
+  "At {n}/day you'll reach {goal} in about {d} days (~{date}).":'A {n}/dia chegarás a {goal} em cerca de {d} dias (~{date}).',
+  'To hit {goal} by {date}, learn about {n}/day ({d} days left).':'Para chegar a {goal} até {date}, aprende cerca de {n}/dia (faltam {d} dias).',
   'Daily goal complete — nice work!':'Objetivo diário cumprido — bom trabalho!', 'Study now':'Estudar agora',
   'Edit plan':'Editar plano', 'Remove':'Remover',
   'Daily reminders on':'Lembretes diários ativados', 'Turn on daily reminders':'Ativar lembretes diários',
   'Set a daily goal':'Define um objetivo diário',
   'Pick how many words to learn per day (or a target date), and the app tracks your streak and shows exactly how many to do each day.':'Escolhe quantas palavras aprender por dia (ou uma data-alvo); a app acompanha a tua sequência e mostra exatamente quantas fazer por dia.',
-  'Words per day':'Palavras por dia', 'Or reach 5,000 by a date':'Ou chega a 5.000 até uma data', 'Set target date':'Definir data-alvo',
+  'Words per day':'Palavras por dia', 'Or reach {goal} by a date':'Ou chega a {goal} até uma data', 'Set target date':'Definir data-alvo',
   'Pick a date or tap a number above':'Escolhe uma data ou toca num número acima',
   'Last 14 days':'Últimos 14 dias',
   'Each square is a day; darker means more words learned. Learn at least one word a day to keep your streak alive.':'Cada quadrado é um dia; quanto mais escuro, mais palavras aprendidas. Aprende pelo menos uma palavra por dia para manter a sequência.',
@@ -1628,16 +1630,16 @@ pl:{
   'Show more ({n} remaining)':'Pokaż więcej (pozostało {n})', '{n} words':'{n} słów', '1 word':'1 słowo',
   'Back':'Wstecz', 'Back to list':'Wróć do listy',
   'Meaning will be added when you add an API key, or from the app online.':'Znaczenie pojawi się po dodaniu klucza API lub z aplikacji online.',
-  'Learned':'Nauczone', 'Still learning':'W trakcie', 'Not started':'Nierozpoczęte', 'Of 5,000 goal':'Z celu 5000',
+  'Learned':'Nauczone', 'Still learning':'W trakcie', 'Not started':'Nierozpoczęte', 'Of {goal} goal':'Z celu {goal}',
   "Today's plan":'Plan na dziś', 'words today':'słów dzisiaj', 'day streak':'dni z rzędu',
-  "At {n}/day you'll reach 5,000 in about {d} days (~{date}).":'Przy {n}/dzień osiągniesz 5000 za około {d} dni (~{date}).',
-  'To hit 5,000 by {date}, learn about {n}/day ({d} days left).':'Aby osiągnąć 5000 do {date}, ucz się około {n}/dzień (zostało {d} dni).',
+  "At {n}/day you'll reach {goal} in about {d} days (~{date}).":'Przy {n}/dzień osiągniesz {goal} za około {d} dni (~{date}).',
+  'To hit {goal} by {date}, learn about {n}/day ({d} days left).':'Aby osiągnąć {goal} do {date}, ucz się około {n}/dzień (zostało {d} dni).',
   'Daily goal complete — nice work!':'Cel dnia osiągnięty — świetna robota!', 'Study now':'Ucz się teraz',
   'Edit plan':'Edytuj plan', 'Remove':'Usuń',
   'Daily reminders on':'Codzienne przypomnienia włączone', 'Turn on daily reminders':'Włącz codzienne przypomnienia',
   'Set a daily goal':'Ustaw dzienny cel',
   'Pick how many words to learn per day (or a target date), and the app tracks your streak and shows exactly how many to do each day.':'Wybierz, ile słów uczyć się dziennie (lub datę docelową), a aplikacja będzie śledzić twoją serię i pokazywać dokładnie, ile zrobić każdego dnia.',
-  'Words per day':'Słów dziennie', 'Or reach 5,000 by a date':'Albo osiągnij 5000 do wybranej daty', 'Set target date':'Ustaw datę docelową',
+  'Words per day':'Słów dziennie', 'Or reach {goal} by a date':'Albo osiągnij {goal} do wybranej daty', 'Set target date':'Ustaw datę docelową',
   'Pick a date or tap a number above':'Wybierz datę lub dotknij liczby powyżej',
   'Last 14 days':'Ostatnie 14 dni',
   'Each square is a day; darker means more words learned. Learn at least one word a day to keep your streak alive.':'Każdy kwadrat to jeden dzień; im ciemniejszy, tym więcej nauczonych słów. Ucz się co najmniej jednego słowa dziennie, aby utrzymać serię.',
@@ -1695,16 +1697,16 @@ tr:{
   'Show more ({n} remaining)':'Daha fazla göster ({n} kaldı)', '{n} words':'{n} kelime', '1 word':'1 kelime',
   'Back':'Geri', 'Back to list':'Listeye dön',
   'Meaning will be added when you add an API key, or from the app online.':'Anlam, bir API anahtarı eklediğinde veya çevrimiçi uygulamadan eklenecek.',
-  'Learned':'Öğrenildi', 'Still learning':'Öğreniliyor', 'Not started':'Başlanmadı', 'Of 5,000 goal':'5.000 hedefinden',
+  'Learned':'Öğrenildi', 'Still learning':'Öğreniliyor', 'Not started':'Başlanmadı', 'Of {goal} goal':'{goal} hedefinden',
   "Today's plan":'Bugünün planı', 'words today':'kelime bugün', 'day streak':'günlük seri',
-  "At {n}/day you'll reach 5,000 in about {d} days (~{date}).":"Günde {n} ile 5.000'e yaklaşık {d} günde ulaşırsın (~{date}).",
-  'To hit 5,000 by {date}, learn about {n}/day ({d} days left).':'{date} tarihine kadar 5.000 için günde yaklaşık {n} öğren ({d} gün kaldı).',
+  "At {n}/day you'll reach {goal} in about {d} days (~{date}).":"Günde {n} ile {goal}'e yaklaşık {d} günde ulaşırsın (~{date}).",
+  'To hit {goal} by {date}, learn about {n}/day ({d} days left).':'{date} tarihine kadar {goal} için günde yaklaşık {n} öğren ({d} gün kaldı).',
   'Daily goal complete — nice work!':'Günlük hedef tamam — harika iş!', 'Study now':'Şimdi çalış',
   'Edit plan':'Planı düzenle', 'Remove':'Kaldır',
   'Daily reminders on':'Günlük hatırlatıcılar açık', 'Turn on daily reminders':'Günlük hatırlatıcıları aç',
   'Set a daily goal':'Günlük hedef belirle',
   'Pick how many words to learn per day (or a target date), and the app tracks your streak and shows exactly how many to do each day.':'Günde kaç kelime öğreneceğini (veya bir hedef tarihi) seç; uygulama serini takip eder ve her gün tam olarak kaç kelime yapman gerektiğini gösterir.',
-  'Words per day':'Günlük kelime', 'Or reach 5,000 by a date':"Veya bir tarihe kadar 5.000'e ulaş", 'Set target date':'Hedef tarihi belirle',
+  'Words per day':'Günlük kelime', 'Or reach {goal} by a date':"Veya bir tarihe kadar {goal}'e ulaş", 'Set target date':'Hedef tarihi belirle',
   'Pick a date or tap a number above':'Bir tarih seç veya yukarıdan bir sayıya dokun',
   'Last 14 days':'Son 14 gün',
   'Each square is a day; darker means more words learned. Learn at least one word a day to keep your streak alive.':'Her kare bir gündür; koyulaştıkça o gün daha çok kelime öğrenilmiş demektir. Serini korumak için günde en az bir kelime öğren.',
@@ -1762,16 +1764,16 @@ uk:{
   'Show more ({n} remaining)':'Показати ще (залишилося {n})', '{n} words':'{n} слів', '1 word':'1 слово',
   'Back':'Назад', 'Back to list':'Назад до списку',
   'Meaning will be added when you add an API key, or from the app online.':'Значення зʼявиться після додавання ключа API або із застосунку онлайн.',
-  'Learned':'Вивчені', 'Still learning':'Вивчаються', 'Not started':'Не розпочаті', 'Of 5,000 goal':'З цілі 5 000',
+  'Learned':'Вивчені', 'Still learning':'Вивчаються', 'Not started':'Не розпочаті', 'Of {goal} goal':'З цілі {goal}',
   "Today's plan":'План на сьогодні', 'words today':'слів сьогодні', 'day streak':'днів поспіль',
-  "At {n}/day you'll reach 5,000 in about {d} days (~{date}).":'З темпом {n}/день ви досягнете 5 000 приблизно за {d} днів (~{date}).',
-  'To hit 5,000 by {date}, learn about {n}/day ({d} days left).':'Щоб досягти 5 000 до {date}, вивчайте приблизно {n}/день (залишилося {d} днів).',
+  "At {n}/day you'll reach {goal} in about {d} days (~{date}).":'З темпом {n}/день ви досягнете {goal} приблизно за {d} днів (~{date}).',
+  'To hit {goal} by {date}, learn about {n}/day ({d} days left).':'Щоб досягти {goal} до {date}, вивчайте приблизно {n}/день (залишилося {d} днів).',
   'Daily goal complete — nice work!':'Денну ціль виконано — чудова робота!', 'Study now':'Вчитися зараз',
   'Edit plan':'Змінити план', 'Remove':'Видалити',
   'Daily reminders on':'Щоденні нагадування увімкнено', 'Turn on daily reminders':'Увімкнути щоденні нагадування',
   'Set a daily goal':'Встановіть денну ціль',
   'Pick how many words to learn per day (or a target date), and the app tracks your streak and shows exactly how many to do each day.':'Виберіть, скільки слів вивчати щодня (або цільову дату) — застосунок відстежує вашу серію та показує, скільки саме робити щодня.',
-  'Words per day':'Слів на день', 'Or reach 5,000 by a date':'Або досягніть 5 000 до дати', 'Set target date':'Встановити цільову дату',
+  'Words per day':'Слів на день', 'Or reach {goal} by a date':'Або досягніть {goal} до дати', 'Set target date':'Встановити цільову дату',
   'Pick a date or tap a number above':'Виберіть дату або торкніться числа вище',
   'Last 14 days':'Останні 14 днів',
   'Each square is a day; darker means more words learned. Learn at least one word a day to keep your streak alive.':'Кожен квадрат — це день; що темніший, то більше вивчених слів. Вивчайте хоча б одне слово на день, щоб зберегти серію.',
@@ -1829,16 +1831,16 @@ ru:{
   'Show more ({n} remaining)':'Показать ещё (осталось {n})', '{n} words':'{n} слов', '1 word':'1 слово',
   'Back':'Назад', 'Back to list':'Назад к списку',
   'Meaning will be added when you add an API key, or from the app online.':'Значение появится после добавления ключа API или из онлайн-приложения.',
-  'Learned':'Изученные', 'Still learning':'Изучаются', 'Not started':'Не начаты', 'Of 5,000 goal':'Из цели 5 000',
+  'Learned':'Изученные', 'Still learning':'Изучаются', 'Not started':'Не начаты', 'Of {goal} goal':'Из цели {goal}',
   "Today's plan":'План на сегодня', 'words today':'слов сегодня', 'day streak':'дней подряд',
-  "At {n}/day you'll reach 5,000 in about {d} days (~{date}).":'В темпе {n}/день вы достигнете 5 000 примерно за {d} дней (~{date}).',
-  'To hit 5,000 by {date}, learn about {n}/day ({d} days left).':'Чтобы достичь 5 000 к {date}, учите примерно {n}/день (осталось {d} дней).',
+  "At {n}/day you'll reach {goal} in about {d} days (~{date}).":'В темпе {n}/день вы достигнете {goal} примерно за {d} дней (~{date}).',
+  'To hit {goal} by {date}, learn about {n}/day ({d} days left).':'Чтобы достичь {goal} к {date}, учите примерно {n}/день (осталось {d} дней).',
   'Daily goal complete — nice work!':'Дневная цель выполнена — отличная работа!', 'Study now':'Заниматься сейчас',
   'Edit plan':'Изменить план', 'Remove':'Удалить',
   'Daily reminders on':'Ежедневные напоминания включены', 'Turn on daily reminders':'Включить ежедневные напоминания',
   'Set a daily goal':'Поставьте дневную цель',
   'Pick how many words to learn per day (or a target date), and the app tracks your streak and shows exactly how many to do each day.':'Выберите, сколько слов учить в день (или целевую дату) — приложение отслеживает вашу серию и показывает, сколько именно делать каждый день.',
-  'Words per day':'Слов в день', 'Or reach 5,000 by a date':'Или достигните 5 000 к дате', 'Set target date':'Установить целевую дату',
+  'Words per day':'Слов в день', 'Or reach {goal} by a date':'Или достигните {goal} к дате', 'Set target date':'Установить целевую дату',
   'Pick a date or tap a number above':'Выберите дату или нажмите на число выше',
   'Last 14 days':'Последние 14 дней',
   'Each square is a day; darker means more words learned. Learn at least one word a day to keep your streak alive.':'Каждый квадрат — это день; чем темнее, тем больше изученных слов. Учите хотя бы одно слово в день, чтобы сохранить серию.',
@@ -1896,16 +1898,16 @@ bg:{
   'Show more ({n} remaining)':'Покажи още (остават {n})', '{n} words':'{n} думи', '1 word':'1 дума',
   'Back':'Назад', 'Back to list':'Обратно към списъка',
   'Meaning will be added when you add an API key, or from the app online.':'Значението ще се добави с API ключ или от приложението онлайн.',
-  'Learned':'Научени', 'Still learning':'В процес', 'Not started':'Незапочнати', 'Of 5,000 goal':'От целта 5 000',
+  'Learned':'Научени', 'Still learning':'В процес', 'Not started':'Незапочнати', 'Of {goal} goal':'От целта {goal}',
   "Today's plan":'План за днес', 'words today':'думи днес', 'day streak':'дни подред',
-  "At {n}/day you'll reach 5,000 in about {d} days (~{date}).":'С {n}/ден ще стигнеш 5 000 за около {d} дни (~{date}).',
-  'To hit 5,000 by {date}, learn about {n}/day ({d} days left).':'За да стигнеш 5 000 до {date}, учи около {n}/ден (остават {d} дни).',
+  "At {n}/day you'll reach {goal} in about {d} days (~{date}).":'С {n}/ден ще стигнеш {goal} за около {d} дни (~{date}).',
+  'To hit {goal} by {date}, learn about {n}/day ({d} days left).':'За да стигнеш {goal} до {date}, учи около {n}/ден (остават {d} дни).',
   'Daily goal complete — nice work!':'Дневната цел е изпълнена — браво!', 'Study now':'Учи сега',
   'Edit plan':'Редактирай плана', 'Remove':'Премахни',
   'Daily reminders on':'Дневните напомняния са включени', 'Turn on daily reminders':'Включи дневните напомняния',
   'Set a daily goal':'Задай дневна цел',
   'Pick how many words to learn per day (or a target date), and the app tracks your streak and shows exactly how many to do each day.':'Избери колко думи да учиш на ден (или целева дата) — приложението следи серията ти и показва точно колко да правиш всеки ден.',
-  'Words per day':'Думи на ден', 'Or reach 5,000 by a date':'Или стигни 5 000 до дата', 'Set target date':'Задай целева дата',
+  'Words per day':'Думи на ден', 'Or reach {goal} by a date':'Или стигни {goal} до дата', 'Set target date':'Задай целева дата',
   'Pick a date or tap a number above':'Избери дата или докосни число по-горе',
   'Last 14 days':'Последните 14 дни',
   'Each square is a day; darker means more words learned. Learn at least one word a day to keep your streak alive.':'Всеки квадрат е един ден; колкото по-тъмен, толкова повече научени думи. Учи поне по една дума на ден, за да запазиш серията си.',
@@ -2016,7 +2018,11 @@ async function setLang(id){
   if(menuOpen) renderMenu();   // the drawer holds the language picker — retranslate it in place
 }
 
-const GOAL = 5000;
+/* Learning-goal total. Default = the app's actual word count (deck.length); the user
+   can set a smaller custom target via the "Learning goal" box on the Progress tab.
+   Always capped at the real deck size, so the goal can never exceed the words that exist. */
+function goalTotal(){ const d = deck.length || 5000; return (wordGoal && wordGoal>0) ? Math.min(wordGoal, d) : d; }
+function goalStr(){ return goalTotal().toLocaleString(langLocale()); }
 const POS_LABELS = {verb:'Verbs', noun:'Nouns', adjective:'Adjectives', adverb:'Adverbs', pronoun:'Pronouns', preposition:'Prepositions', conjunction:'Conjunctions', number:'Numbers', expression:'Expressions', article:'Articles'};
 
 /* Shared filter definitions so the Learn and Words tabs stay consistent (same options + order). */
@@ -7061,6 +7067,7 @@ async function init(){
   srs = (await Store.get('dutch5k-srs')) || {};
   apiKey = (await Store.get('dutch5k-apikey')) || '';
   plan = (await Store.get('dutch5k-plan')) || null;
+  wordGoal = (await Store.get('dutch5k-wordgoal')) || null;
   streak = (await Store.get('dutch5k-streak')) || {count:0, lastStudied:null, history:{}};
   remindOn = (await Store.get('dutch5k-remind')) || false;
   remindTime = (await Store.get('dutch5k-remindtime')) || '19:00';
@@ -7402,6 +7409,23 @@ async function savePlan(perDay, endDate){
 }
 async function clearPlan(){ plan=null; await Store.set('dutch5k-plan', null); render(); }
 function editPlan(){ plan=null; render(); }
+
+/* ---- Learning goal: how many words the user wants to learn (default = whole deck) ---- */
+async function setWordGoal(n){
+  n = parseInt(n, 10);
+  if(!n || n<1){ toast(T('Enter how many words you want to learn.')); return; }
+  wordGoal = Math.min(n, deck.length);
+  await Store.set('dutch5k-wordgoal', wordGoal);
+  render();
+  toast(T('Goal set: {n} words.', {n:goalStr()}));
+}
+async function clearWordGoal(){
+  wordGoal = null;
+  await Store.set('dutch5k-wordgoal', null);
+  render();
+  toast(T('Goal reset to all {n} words.', {n:deck.length.toLocaleString(langLocale())}));
+}
+function saveWordGoalFromInput(){ const v=document.getElementById('goalInput'); if(v) setWordGoal(v.value); }
 
 /* ============ THEME ============ */
 /* Only swaps CSS custom-property values via html[data-theme]; content/DOM untouched. */
@@ -8356,7 +8380,7 @@ function renderLearn(main, c){
    repaint hack at all. */
 function render(){
   const c = counts();
-  document.getElementById('hdrCount').textContent = `${c.learned} / ${GOAL}`;
+  document.getElementById('hdrCount').textContent = `${c.learned} / ${goalTotal()}`;
   ['learn','words','progress'].forEach(t=>{
     document.getElementById('tab'+t[0].toUpperCase()+t.slice(1)).className = (tab===t)?'active':'';
   });
@@ -8438,26 +8462,26 @@ function render(){
   }
 
   if(tab==='progress'){
-    const pct = ((c.learned/GOAL)*100).toFixed(1);
+    const pct = Math.min(100, (c.learned/goalTotal())*100).toFixed(1);
     const tc = todayCount();
     const st = currentStreak();
 
     // Daily plan box
     let planBox;
     if(plan){
-      const remainingWords = GOAL - c.learned;
+      const remainingWords = Math.max(0, goalTotal() - c.learned);
       let etaLine = '';
       if(plan.perDay>0){
         const days = Math.ceil(remainingWords / plan.perDay);
         const eta = new Date(Date.now() + days*86400000);
-        etaLine = T("At {n}/day you'll reach 5,000 in about {d} days (~{date}).", {n:plan.perDay, d:`<b>${days}</b>`, date:eta.toLocaleDateString(langLocale(),{month:'short',day:'numeric',year:'numeric'})});
+        etaLine = T("At {n}/day you'll reach {goal} in about {d} days (~{date}).", {goal:goalStr(), n:plan.perDay, d:`<b>${days}</b>`, date:eta.toLocaleDateString(langLocale(),{month:'short',day:'numeric',year:'numeric'})});
       }
       if(plan.endDate){
         const daysLeft = Math.max(1, daysBetween(todayStr(), plan.endDate));
         const need = Math.ceil(remainingWords / daysLeft);
-        etaLine = T('To hit 5,000 by {date}, learn about {n}/day ({d} days left).', {date:new Date(plan.endDate).toLocaleDateString(langLocale(),{month:'short',day:'numeric'}), n:`<b>${need}</b>`, d:daysLeft});
+        etaLine = T('To hit {goal} by {date}, learn about {n}/day ({d} days left).', {goal:goalStr(), date:new Date(plan.endDate).toLocaleDateString(langLocale(),{month:'short',day:'numeric'}), n:`<b>${need}</b>`, d:daysLeft});
       }
-      const done = tc; const goalN = plan.perDay || (plan.endDate ? Math.ceil((GOAL-c.learned)/Math.max(1,daysBetween(todayStr(),plan.endDate))) : 10);
+      const done = tc; const goalN = plan.perDay || (plan.endDate ? Math.ceil(Math.max(0,goalTotal()-c.learned)/Math.max(1,daysBetween(todayStr(),plan.endDate))) : 10);
       const barPct = Math.min(100, Math.round(done/goalN*100));
       planBox = `
       <div class="genbox plan-box">
@@ -8484,12 +8508,33 @@ function render(){
           <div class="chiprow">
             ${[5,10,15,20,30].map(n=>`<button class="planchip" onclick="hap();savePlan(${n},null)">${n}</button>`).join('')}
           </div>
-          <label style="margin-top:12px">${T('Or reach 5,000 by a date')}</label>
+          <label style="margin-top:12px">${T('Or reach {goal} by a date', {goal:goalStr()})}</label>
           <input type="date" id="planDate" min="${todayStr()}">
           <button class="genbtn" style="margin-top:10px" onclick="hap();const d=document.getElementById('planDate').value; if(d) savePlan(0,d); else toast(T('Pick a date or tap a number above'));">${T('Set target date')}</button>
         </div>
       </div>`;
     }
+
+    // Learning-goal box: how many words the user wants to learn (default = whole deck)
+    const dl = deck.length;
+    const presets = [100,250,500,1000,2000,3000].filter(n=>n<dl);
+    const goalBox = `
+      <div class="genbox goal-box">
+        <h3>&#127919; ${T('Learning goal')}</h3>
+        <p>${T('Set how many words you want to learn. Your progress percentage and daily plan are measured against this target.')}</p>
+        <div class="daily-num" style="margin-bottom:10px">${c.learned.toLocaleString(langLocale())} <span>/ ${goalStr()}</span></div>
+        <div class="plan-form">
+          <label>${T('Words to learn')}</label>
+          <div class="chiprow">
+            ${presets.map(n=>`<button class="planchip${wordGoal===n?' active':''}" onclick="hap();setWordGoal(${n})">${n.toLocaleString(langLocale())}</button>`).join('')}
+            <button class="planchip${wordGoal?'':' active'}" onclick="hap();clearWordGoal()">${T('All')}</button>
+          </div>
+          <label style="margin-top:12px">${T('Or enter an exact number')}</label>
+          <input type="number" id="goalInput" min="1" max="${dl}" value="${goalTotal()}" inputmode="numeric" onkeydown="if(event.key==='Enter'){event.preventDefault();saveWordGoalFromInput();}">
+          <button class="genbtn" style="margin-top:10px" onclick="hap();saveWordGoalFromInput()">${T('Set goal')}</button>
+          ${wordGoal?`<button class="loadmore" style="margin-top:8px" onclick="hap();clearWordGoal()">${T('Learn all {n} words', {n:dl.toLocaleString(langLocale())})}</button>`:''}
+        </div>
+      </div>`;
 
     // Streak history mini-calendar (last 14 days)
     const hist = (streak && streak.history) || {};
@@ -8599,12 +8644,14 @@ function render(){
         <div class="stat"><div class="num c-blue">${c.learned}</div><div class="lbl">${T('Learned')}</div></div>
         <div class="stat"><div class="num c-yellow">${c.learning}</div><div class="lbl">${T('Still learning')}</div></div>
         <div class="stat"><div class="num">${c.fresh}</div><div class="lbl">${T('Not started')}</div></div>
-        <div class="stat"><div class="num c-red">${pct}%</div><div class="lbl">${T('Of 5,000 goal')}</div></div>
+        <div class="stat"><div class="num c-red">${pct}%</div><div class="lbl">${T('Of {goal} goal', {goal:goalStr()})}</div></div>
       </div>
 
       ${reviewBox}
 
       ${planBox}
+
+      ${goalBox}
 
       ${hardestBox}
 
@@ -8628,7 +8675,7 @@ function render(){
 /* ============ OFFLINE (service worker) ============ */
 if('serviceWorker' in navigator){
   const swCode = `
-    const C = 'dutch5k-v83';
+    const C = 'dutch5k-v84';
     self.addEventListener('install', e => { self.skipWaiting(); });
     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
     self.addEventListener('fetch', e => {
