@@ -7316,7 +7316,18 @@ function setPosFilter(p){
     renderWordList();
   } else render();
 }
-function setLearnPos(p){ learnPos=p; skipped=new Set(); buildQueue(); render(); }
+/* Re-render Learn while KEEPING the horizontal scroll position of the mode/filter
+   bars. render() rebuilds all of #main, so a freshly-built bar starts scrolled to
+   the left — meaning if you scroll to a filter/mode near the end and tap it, the
+   bar snaps back to the start and the next pick is out of reach. Capture each
+   scrollable bar's scrollLeft by a stable selector, render, then restore. */
+function renderKeepBars(){
+  const sels = ['.modebar', '.srcfilters.learn-pos', '.posscroll.learn-pos:not(.srcfilters)'];
+  const saved = sels.map(s=>{ const el=document.querySelector(s); return el?el.scrollLeft:null; });
+  render();
+  sels.forEach((s,i)=>{ if(saved[i]!=null){ const el=document.querySelector(s); if(el) el.scrollLeft=saved[i]; } });
+}
+function setLearnPos(p){ learnPos=p; skipped=new Set(); buildQueue(); renderKeepBars(); }
 function setSrcFilter(s){
   srcFilter=s; listLimit=100;
   if(tab==='words' && document.getElementById('wlist')){
@@ -7324,7 +7335,7 @@ function setSrcFilter(s){
     renderWordList();
   } else render();
 }
-function setLearnSrc(s){ learnSrc=s; skipped=new Set(); buildQueue(); render(); }
+function setLearnSrc(s){ learnSrc=s; skipped=new Set(); buildQueue(); renderKeepBars(); }
 /* Study-mode switch. Each mode reshapes the queue (some need a meaning / example /
    article), so rebuild it and clear any in-progress answer. */
 const LEARN_MODES = [
@@ -7342,7 +7353,7 @@ async function setMode(m){
   await Store.set('dutch5k-mode', m);
   skipped = new Set(); objResult = null; flipped = false;
   buildQueue();
-  render();
+  renderKeepBars();
   try{ const inp=document.getElementById('typeInput'); if(inp) inp.focus(); }catch(e){}
 }
 /* Progress-tab entry points into the Learn queue. */
@@ -8675,7 +8686,7 @@ function render(){
 /* ============ OFFLINE (service worker) ============ */
 if('serviceWorker' in navigator){
   const swCode = `
-    const C = 'dutch5k-v84';
+    const C = 'dutch5k-v85';
     self.addEventListener('install', e => { self.skipWaiting(); });
     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
     self.addEventListener('fetch', e => {
