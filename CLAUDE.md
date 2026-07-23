@@ -41,7 +41,7 @@ auto-deploy from `main` via Workers Builds. Push to `main` = live in ~60s.
 | `TRANS` | 3,887 | Offline English meanings (FreeDict NL-EN + lemmatisation + manual). `word -> {m, t?}` |
 | `BOOKS` | 2,233 | Textbook vocab: 1,236 Nederlands in Actie + 997 Nederlands in Gang |
 | `NIVEAU` | 501 | Nederlands op Niveau vocab (499 words, 2 cross-chapter tag dups) — separate blob, pushed into `BOOKS` at load |
-| `PERFECTIE` | 47 | Nederlands naar Perfectie vocab (v86, Chapter 1 only so far) — separate blob, pushed into `BOOKS` at load |
+| `PERFECTIE` | 371 | Nederlands naar Perfectie vocab (all 8 chapters since v88) — separate blob, pushed into `BOOKS` at load |
 
 **`NIVEAU`** (right after the `BOOKS` line, v58): third book as its own readable blob so the giant
 `BOOKS` line never needs editing — `NIVEAU.forEach(b=>BOOKS.push(b))` merges it before `buildDeck()`
@@ -57,14 +57,12 @@ chapters appear once rich + once as a minimal `{w,src,ch,t}` tag entry. **Top-up
 > BOOKS.push(b))`), same self-contained pattern as `NIVEAU` — every entry carries full inline enrichment
 > (`m`/`ex`/`syn`/`ant`/`f`), `src:"perfectie"`, so all downstream code needed zero changes. **Top-ups: append
 > before the `--PERFECTIE-APPEND--` anchor.**
-> - **Only Chapter 1 (Economie en cultuur, 47 headwords) so far.** Adi's `nederlands-naar-perfectie.pdf` in
->   Drive is a **98 MB scan with no text layer**, and the Google Drive connector hard-caps downloads at **10 MB**,
->   so it could not be read. Chapter 1 was instead sourced from Coutinho's **public preview PDF**
->   (`nt2.nl/media/65/inkijk_nederlands_naar_perfectie_hd.pdf` — has a real text layer): only the Dutch
->   headwords/articles/`sep.` markers were taken; **all meanings + example sentences are hand-written** (no book
->   sentences reproduced, same provenance rule as the others). **Chapters 2–8** (themes: Welzijn en voeding,
->   Maatschappij en onderwijs, Psychologie, Duurzaamheid en klimaat, Rechten, Filosofie en ethiek, Techniek en
->   vooruitgang) await a readable source — append them at the anchor when available.
+> - **ALL 8 chapters, 371 entries (since v88).** The v86 blob held only a 47-word "Chapter 1" placeholder
+>   sourced from Coutinho's public preview PDF (`nt2.nl/media/65/inkijk_nederlands_naar_perfectie_hd.pdf`).
+>   That preview turned out to be a **different edition** — only `fors` + `maar liefst` matched this book's
+>   real Ch1 — so v88 **replaced** the placeholder wholesale (see the v88 note below). The 8 real chapters
+>   are: **1 Taal en cultuur, 2 Onderwijs, 3 Economie en bedrijfsleven, 4 Gezondheid en voeding, 5 Filosofie
+>   en ethiek, 6 Psychologie, 7 Rechten, 8 Mens en techniek.**
 > - **New 5th source `perfectie` wired everywhere** (mirrors Niveau): `SRC_ORDER`/`SRC_SHORT`/`SRC_COLORVAR`
 >   (new **`--green`** palette token added to all three theme blocks + `.sb-perfectie` badge), `FREE_LIMITS`
 >   (`perfectie:0` — locks in Free like Actie/Niveau), `primarySource`, `srcFilterOpts` ("Nederlands naar
@@ -75,10 +73,29 @@ chapters appear once rich + once as a minimal `{w,src,ch,t}` tag entry. **Top-up
 > - **App renamed A0 → B2 ⟶ A0 → C1** (v60's range label bumped): `<title>`, `og:title`, `twitter:title`,
 >   `og:image:alt`, and `site.webmanifest` `name`. `short_name` stays plain "Dutch To Go". The painted
 >   `og-image.png` tagline was **not** regenerated. SW cache **v85 → v86**.
-> - **FREQ collisions:** 5 Ch1 words are also frequency words (`uitkomen`, `vrees`, `onderling`, `immers`,
->   `aanzienlijk`) → they become the freq stub tagged `perfectie` (id = bare word). The book merge upgrades them
->   (`b.rich && !target.rich`); the later `GENEX` overlay still overrides the *meaning* of `uitkomen`/`aanzienlijk`
->   (both correct glosses), examples stay mine. Fine — no contradiction.
+> - **FREQ collisions:** several Perfectie words are also frequency words (e.g. `nauw`, `scherp`, `duurzaam`,
+>   `gericht`, `citaat`, `fraude`, `nuance`, `tak`, `kern`) → they become the freq stub tagged `perfectie`
+>   (id = bare word). The book merge upgrades them (`b.rich && !target.rich`); a later `GENEX` overlay may still
+>   override the *meaning* of a few (curated glosses), examples stay mine. Fine — no contradiction.
+>
+> **v88 (Adi: "this is the entire book to enrich the vocab for naar perfectie, do it" — uploaded the full
+> scanned book as 7 PDFs):** replaced the v86 47-word Chapter-1 placeholder with the **complete 8-chapter
+> vocabulary, 371 `PERFECTIE` entries.** The uploaded PDFs are **scans with no text layer**, so — like Niveau —
+> each chapter's two `Vocabulaire tekst` list pages were **rendered to page images (`pymupdf`, ~108 dpi) and
+> read visually**; only Dutch headwords / de-het articles / verb principal parts were taken, **all meanings +
+> examples hand-written** (no book sentences reproduced). PDF page offsets **drift ~1 per split file** (full-page
+> images), so calibrate each file empirically by the printed page number, not a fixed formula. **The old 47
+> placeholder entries were dropped** — they came from a *different edition's* preview (only `fors` + `maar liefst`
+> matched this book's real Ch1), so keeping them tagged this book's Ch1 would misrepresent it; both survivors are
+> re-authored in the real Ch1. **Cross-chapter duplicates** (`afzonderlijk` H2+H8, `verschuiven` H2+H8,
+> `beheersen` H2+H4) follow the Niveau pattern: rich entry in the first chapter + a minimal `{w,src,ch,t}` tag
+> entry in the later one, which the book-merge (`deck.find` fallback) folds into the same deck entry so the card
+> shows **both** tags (`bookTag` joins them with ` · `). **Zero downstream code changes** — `bookTag` already
+> emits "Perfectie HN" for any N and the About box counts `perfectie` words dynamically. A couple of suffix
+> headwords (`-bestendig`, `-besparing`) carry `t:"other"` (not in the POS filter; shows raw). SW cache
+> **v87 → v88**. Rebuild the blob from the scratchpad flow: render vocab pages → read → author compact JSON
+> objects → splice between `const PERFECTIE = [` and `];` (append top-ups before the `--PERFECTIE-APPEND--`
+> anchor). i18n packs still show English for the new meanings until regenerated (`ct()` falls back safely).
 
 **`BOOKEX`** (just above `buildDeck`): hand-written examples for textbook words lacking them. Key
 `"<src>:<word-lowercase>"` (same as `BOOKS` merge), value `[[dutch,english],…]`. `buildDeck()` applies
@@ -154,10 +171,12 @@ two older schemes; breaking ids silently destroys progress.
   non-rich card is a cross-referenced tag). Includes each chapter's verb+preposition collocations,
   conjunctions and irregular-verb lists as their own cards.
 
-- **Nederlands naar Perfectie** (8 ch, B2 → C1, v86): Adi's PDF is a 98 MB *scan* with no text layer, and the
-  Drive connector caps downloads at 10 MB, so it was unreadable. **Chapter 1 (47 words)** was sourced from
-  Coutinho's public preview PDF instead (real text layer); words + de/het articles only, **all meanings +
-  examples hand-written**. Chapters 2–8 still to be added (see the `PERFECTIE` blob note above).
+- **Nederlands naar Perfectie** (8 ch, B2 → C1, all chapters since v88; 371 entries): the scanned book (7
+  uploaded PDFs, no text layer) was read by **rendering each chapter's `Vocabulaire tekst 1`+`2` list pages
+  to page images and reading them visually** (same method as Niveau). Only Dutch headwords + de/het articles
+  + verb principal parts taken; **all meanings + example sentences hand-written** (no book sentences
+  reproduced). The old v86 47-word "Chapter 1" placeholder came from a different edition's preview and was
+  replaced (see the `PERFECTIE` blob note above).
 
 All books are Adi's copies; only vocab word lists extracted, no book sentences reproduced.
 
