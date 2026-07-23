@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dutch To Go &#8212; Vocab Trainer (A0 &rarr; B2)</title>
+<title>Dutch To Go &#8212; Vocab Trainer (A0 &rarr; C1)</title>
 <meta name="description" content="Learn the 5,000 most common Dutch words &#8212; flashcards, examples, offline.">
 <!-- App icons: favicon (browser tab), apple-touch-icon (iOS home screen),
      manifest icons (Android home screen). Real files in /public — the Worker
@@ -24,15 +24,15 @@
      platform needs one. -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Dutch To Go">
-<meta property="og:title" content="Dutch To Go &#8212; Vocab Trainer (A0 &rarr; B2)">
+<meta property="og:title" content="Dutch To Go &#8212; Vocab Trainer (A0 &rarr; C1)">
 <meta property="og:description" content="Learn the 5,000 most common Dutch words &#8212; flashcards, examples, offline.">
 <meta property="og:image" content="/og-image.png">
 <meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Dutch To Go — Dutch vocab trainer (A0 → B2)">
+<meta property="og:image:alt" content="Dutch To Go — Dutch vocab trainer (A0 → C1)">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Dutch To Go &#8212; Vocab Trainer (A0 &rarr; B2)">
+<meta name="twitter:title" content="Dutch To Go &#8212; Vocab Trainer (A0 &rarr; C1)">
 <meta name="twitter:description" content="Learn the 5,000 most common Dutch words &#8212; flashcards, examples, offline.">
 <meta name="twitter:image" content="/og-image.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -40,7 +40,7 @@
 <style>
   :root{
     --ink:#111111; --paper:#FFFFFF; --grey:#F2F2EF;
-    --red:#DD0100; --blue:#225095; --yellow:#FAC901;
+    --red:#DD0100; --blue:#225095; --yellow:#FAC901; --green:#0B7A3B;
     --line:var(--ink);              /* border colour (themeable, separate from text ink) */
     --rule:3px solid var(--line);
     --muted:#666; --muted2:#999; --faint:#ccc;   /* secondary / tertiary text + faint borders */
@@ -366,6 +366,7 @@
   .sb-actie{background:var(--red);}
   .sb-gang{background:var(--blue);}
   .sb-niveau{background:var(--yellow); color:#111;}
+  .sb-perfectie{background:var(--green);}
 
   /* ================= THEMES ================= */
   /* Cards/inputs pick up rounding, surface fill and elevation from tokens, so a
@@ -470,7 +471,7 @@
      ================================================================ */
   html[data-theme="midnight"]{
     --ink:#e8ebf7; --paper:#0d0e15; --grey:#1a1c2b;
-    --red:#ff6b81; --blue:#6c8cff; --yellow:#ffd166;
+    --red:#ff6b81; --blue:#6c8cff; --yellow:#ffd166; --green:#57d38a;
     --line:#2a2d42;
     --rule:1px solid var(--line);
     --muted:#a2a8c4; --muted2:#767c9c; --faint:#2a2d42;
@@ -545,7 +546,7 @@
      ================================================================ */
   html[data-theme="sepia"]{
     --ink:#3a2e22; --paper:#f3ead6; --grey:#e8dcc2;
-    --red:#9c3b23; --blue:#3f6f6f; --yellow:#b6851b;
+    --red:#9c3b23; --blue:#3f6f6f; --yellow:#b6851b; --green:#4f7a3a;
     --line:#cdbb92;
     --rule:1px solid var(--line);
     --muted:#7c6c52; --muted2:#9a8a6f; --faint:#ddceac;
@@ -1194,6 +1195,64 @@ const NIVEAU = [
 ];
 NIVEAU.forEach(b => BOOKS.push(b));
 
+/* Nederlands naar perfectie (Coutinho, B2 -> C1). Fourth Coutinho NT2 book after Gang/Actie/Niveau.
+   Same readable-blob pattern as NIVEAU: entries carry full enrichment inline (m/ex/syn/ant/f) and are
+   pushed into BOOKS before buildDeck runs, so all downstream code needs no changes. src:"perfectie".
+   Chapter 1 (Economie en cultuur) headwords, extracted from the publisher's public preview word list
+   (only the Dutch headwords/articles/sep. markers were taken; meanings + examples are hand-written).
+   Top-ups: append before the --PERFECTIE-APPEND-- anchor. */
+const PERFECTIE = [
+{"w":"beducht zijn voor","src":"perfectie","ch":1,"t":"expression","m":"to be apprehensive about, to be wary of","syn":["bang zijn voor","huiverig zijn voor"],"ex":[["Veel werknemers zijn beducht voor de gevolgen van de reorganisatie.","Many employees are apprehensive about the consequences of the reorganization."]],"rich":true},
+{"w":"fors","src":"perfectie","ch":1,"t":"adjective","m":"considerable, substantial, hefty; sturdy","f":[["Comparative","forser"],["Superlative","forst"]],"syn":["aanzienlijk","flink"],"ex":[["De prijzen zijn dit jaar fors gestegen.","Prices have risen sharply this year."]],"rich":true},
+{"w":"riant","src":"perfectie","ch":1,"t":"adjective","m":"spacious; generous, lavish (of a salary or house)","syn":["royaal","ruim"],"ex":[["Ze kreeg een riant salaris aangeboden bij haar nieuwe werkgever.","She was offered a generous salary at her new employer."]],"rich":true},
+{"w":"piekfijn","src":"perfectie","ch":1,"t":"adjective","m":"immaculate, spick and span; in perfect condition","syn":["onberispelijk","tiptop"],"ex":[["Voor het sollicitatiegesprek zag hij er piekfijn uit.","For the job interview he looked immaculate."]],"rich":true},
+{"w":"zich wanen","src":"perfectie","ch":1,"t":"verb","m":"to imagine oneself (to be something one is not)","ex":[["Op dat tropische strand waanden we ons in het paradijs.","On that tropical beach we imagined ourselves in paradise."]],"rich":true},
+{"w":"nu eenmaal","src":"perfectie","ch":1,"t":"expression","m":"simply, just (used to say something cannot be changed): that's just how it is","ex":[["Je kunt klagen over het weer, maar het is nu eenmaal winter.","You can complain about the weather, but it is simply winter."]],"rich":true},
+{"w":"bemiddelen","src":"perfectie","ch":1,"t":"verb","m":"to mediate; to act as an intermediary","f":[["Present","ik bemiddel, hij bemiddelt"],["Past","bemiddelde / bemiddelden"],["Perfect","heeft bemiddeld"]],"syn":["tussenkomen"],"ex":[["Een neutrale partij probeerde te bemiddelen in het conflict.","A neutral party tried to mediate in the conflict."]],"rich":true},
+{"w":"bemiddelaar","src":"perfectie","ch":1,"a":"de","t":"noun","m":"mediator, intermediary, broker","f":[["Plural","bemiddelaars"]],"ex":[["De bemiddelaar zorgde ervoor dat beide partijen tot een akkoord kwamen.","The mediator saw to it that both parties reached an agreement."]],"rich":true},
+{"w":"benaderen","src":"perfectie","ch":1,"t":"verb","m":"to approach, to contact; to approximate","f":[["Present","ik benader, hij benadert"],["Past","benaderde / benaderden"],["Perfect","heeft benaderd"]],"syn":["aanspreken"],"ex":[["Het bedrijf benaderde haar via LinkedIn voor de functie.","The company approached her via LinkedIn about the position."]],"rich":true},
+{"w":"uitkomen","src":"perfectie","ch":1,"t":"verb","m":"to come out, to be revealed; to come true; to be convenient","f":[["Present","ik kom uit, hij komt uit"],["Past","kwam uit / kwamen uit"],["Perfect","is uitgekomen"]],"ex":[["Vroeg of laat komt de waarheid toch uit.","Sooner or later the truth comes out anyway."],["Komt het uit als ik morgen even langskom?","Is it convenient if I drop by tomorrow?"]],"rich":true},
+{"w":"huiverig","src":"perfectie","ch":1,"t":"adjective","m":"wary, apprehensive, hesitant","syn":["beducht","terughoudend"],"ex":[["Veel mensen zijn huiverig voor grote veranderingen op hun werk.","Many people are wary of big changes at work."]],"rich":true},
+{"w":"wegkapen","src":"perfectie","ch":1,"t":"verb","m":"to snatch away, to poach (a job, customer or employee)","f":[["Present","ik kaap weg, hij kaapt weg"],["Past","kaapte weg / kaapten weg"],["Perfect","heeft weggekaapt"]],"ex":[["Een concurrent kaapte hun beste ontwerper weg met een hoger salaris.","A competitor poached their best designer with a higher salary."]],"rich":true},
+{"w":"vrezen","src":"perfectie","ch":1,"t":"verb","m":"to fear, to dread","f":[["Present","ik vrees, hij vreest"],["Past","vreesde / vreesden"],["Perfect","heeft gevreesd"]],"syn":["bang zijn voor"],"ex":[["Ik vrees dat we de deadline niet gaan halen.","I fear we won't make the deadline."]],"rich":true},
+{"w":"vrees","src":"perfectie","ch":1,"a":"de","t":"noun","m":"fear, dread","syn":["angst"],"ex":[["Uit vrees voor ontslag durfde niemand iets te zeggen.","Out of fear of dismissal nobody dared to say anything."]],"rich":true},
+{"w":"ontsporen","src":"perfectie","ch":1,"t":"verb","m":"to derail (literally); to go off the rails, get out of control (figuratively)","f":[["Present","ik ontspoor, hij ontspoort"],["Past","ontspoorde / ontspoorden"],["Perfect","is ontspoord"]],"ex":[["Zonder duidelijke afspraken kan zo'n discussie snel ontsporen.","Without clear agreements such a discussion can quickly get out of hand."]],"rich":true},
+{"w":"onderling","src":"perfectie","ch":1,"t":"adjective","m":"mutual; between or among themselves","ex":[["De collega's regelden het onderling, zonder de baas erbij te halen.","The colleagues sorted it out among themselves, without involving the boss."]],"rich":true},
+{"w":"immers","src":"perfectie","ch":1,"t":"adverb","m":"after all, as you know (introduces an obvious reason)","syn":["namelijk"],"ex":[["Zij kan dit project goed leiden; ze heeft immers jarenlange ervaring.","She can lead this project well; she has years of experience, after all."]],"rich":true},
+{"w":"rechtvaardiging","src":"perfectie","ch":1,"a":"de","t":"noun","m":"justification","f":[["Plural","rechtvaardigingen"]],"ex":[["Er is geen enkele rechtvaardiging voor zo'n groot loonverschil.","There is no justification whatsoever for such a big pay gap."]],"rich":true},
+{"w":"rechtvaardigen","src":"perfectie","ch":1,"t":"verb","m":"to justify","f":[["Present","ik rechtvaardig, hij rechtvaardigt"],["Past","rechtvaardigde / rechtvaardigden"],["Perfect","heeft gerechtvaardigd"]],"syn":["verantwoorden"],"ex":[["Hoe rechtvaardig je zo'n hoge bonus in een slecht jaar?","How do you justify such a high bonus in a bad year?"]],"rich":true},
+{"w":"krap","src":"perfectie","ch":1,"t":"adjective","m":"tight, scarce (of money, space or time); cramped","f":[["Comparative","krapper"],["Superlative","krapst"]],"syn":["nauw"],"ant":["ruim"],"ex":[["Deze maand zitten we wat krap bij kas.","This month we are a bit short of money."]],"rich":true},
+{"w":"krapte","src":"perfectie","ch":1,"a":"de","t":"noun","m":"shortage, scarcity, tightness (on a market)","ant":["overschot"],"ex":[["Door de krapte op de arbeidsmarkt zijn goede vakmensen moeilijk te vinden.","Because of the tightness in the labour market, good professionals are hard to find."]],"rich":true},
+{"w":"standhouden","src":"perfectie","ch":1,"t":"verb","m":"to hold up, to endure, to last","f":[["Present","ik houd stand, hij houdt stand"],["Past","hield stand / hielden stand"],["Perfect","heeft standgehouden"]],"syn":["volhouden"],"ex":[["Hun vriendschap heeft ondanks alle ruzies standgehouden.","Their friendship has endured despite all the arguments."]],"rich":true},
+{"w":"in stand houden","src":"perfectie","ch":1,"t":"expression","m":"to maintain, to keep going, to preserve","ex":[["Met vrijwilligers houden ze het buurthuis in stand.","With volunteers they keep the community centre going."]],"rich":true},
+{"w":"aanzienlijk","src":"perfectie","ch":1,"t":"adjective","m":"considerable, substantial; considerably, significantly","syn":["fors","flink"],"ex":[["Door thuis te werken bespaart hij aanzienlijk op reiskosten.","By working from home he saves considerably on travel costs."]],"rich":true},
+{"w":"zich blindstaren op","src":"perfectie","ch":1,"t":"verb","m":"to fixate on, to be so focused on one thing that you lose sight of the rest","ex":[["Staar je bij het kiezen van een baan niet blind op het salaris.","When choosing a job, don't fixate on the salary alone."]],"rich":true},
+{"w":"staren","src":"perfectie","ch":1,"t":"verb","m":"to stare, to gaze","f":[["Present","ik staar, hij staart"],["Past","staarde / staarden"],["Perfect","heeft gestaard"]],"ex":[["Hij staarde uit het raam en luisterde niet meer.","He stared out of the window and stopped listening."]],"rich":true},
+{"w":"bedrogen uitkomen","src":"perfectie","ch":1,"t":"expression","m":"to be disappointed, to end up deceived (things turn out worse than hoped)","ex":[["Wie denkt dat rijkdom geluk garandeert, komt vaak bedrogen uit.","Those who think wealth guarantees happiness are often disappointed."]],"rich":true},
+{"w":"bedriegen","src":"perfectie","ch":1,"t":"verb","m":"to deceive, to cheat, to betray","f":[["Present","ik bedrieg, hij bedriegt"],["Past","bedroog / bedrogen"],["Perfect","heeft bedrogen"]],"syn":["oplichten","misleiden"],"ex":[["De verkoper bedroog zijn klanten met valse beloftes.","The seller deceived his customers with false promises."]],"rich":true},
+{"w":"uitvoerig","src":"perfectie","ch":1,"t":"adjective","m":"extensive, detailed; at length","syn":["gedetailleerd","grondig"],"ant":["beknopt"],"ex":[["In het rapport worden de resultaten uitvoerig besproken.","In the report the results are discussed at length."]],"rich":true},
+{"w":"fraai","src":"perfectie","ch":1,"t":"adjective","m":"fine, elegant, handsome, beautiful","f":[["Comparative","fraaier"],["Superlative","fraaist"]],"syn":["mooi","sierlijk"],"ex":[["Het museum heeft een fraaie collectie moderne kunst.","The museum has a fine collection of modern art."]],"rich":true},
+{"w":"verfraaien","src":"perfectie","ch":1,"t":"verb","m":"to embellish, to beautify, to make more attractive","f":[["Present","ik verfraai, hij verfraait"],["Past","verfraaide / verfraaiden"],["Perfect","heeft verfraaid"]],"ex":[["Een paar planten kunnen het kantoor flink verfraaien.","A few plants can really brighten up the office."]],"rich":true},
+{"w":"bespeuren","src":"perfectie","ch":1,"t":"verb","m":"to detect, to perceive, to sense (something subtle)","f":[["Present","ik bespeur, hij bespeurt"],["Past","bespeurde / bespeurden"],["Perfect","heeft bespeurd"]],"syn":["waarnemen","opmerken"],"ex":[["Ik bespeurde enige twijfel in haar stem.","I detected some hesitation in her voice."]],"rich":true},
+{"w":"cohesie","src":"perfectie","ch":1,"a":"de","t":"noun","m":"cohesion (social); the sense of belonging together","syn":["samenhang","verbondenheid"],"ex":[["Teamuitjes zijn goed voor de onderlinge cohesie.","Team outings are good for the group's cohesion."]],"rich":true},
+{"w":"werven","src":"perfectie","ch":1,"t":"verb","m":"to recruit; to solicit (members, staff, customers)","f":[["Present","ik werf, hij werft"],["Past","wierf / wierven"],["Perfect","heeft geworven"]],"ex":[["De vereniging probeert via social media nieuwe leden te werven.","The association tries to recruit new members via social media."]],"rich":true},
+{"w":"wervend","src":"perfectie","ch":1,"t":"adjective","m":"persuasive, promotional (of a text or tone that attracts people)","ex":[["De vacaturetekst was zo wervend dat honderd mensen solliciteerden.","The job ad was so appealing that a hundred people applied."]],"rich":true},
+{"w":"tot scheve ogen leiden","src":"perfectie","ch":1,"t":"expression","m":"to cause resentment or jealousy (among others)","ex":[["Als een collega een bonus krijgt en de rest niet, leidt dat tot scheve ogen.","If one colleague gets a bonus and the rest don't, it causes resentment."]],"rich":true},
+{"w":"als klap op de vuurpijl","src":"perfectie","ch":1,"t":"expression","m":"to top it all off; as the icing on the cake (a striking final touch)","ex":[["Het was een geweldig feest, en als klap op de vuurpijl kwam er een bekende band spelen.","It was a great party, and to top it all off a famous band came to play."]],"rich":true},
+{"w":"water bij de wijn doen","src":"perfectie","ch":1,"t":"expression","m":"to compromise, to tone down one's demands","syn":["een compromis sluiten"],"ex":[["Om er samen uit te komen moesten beide partijen water bij de wijn doen.","To reach an agreement, both parties had to compromise."]],"rich":true},
+{"w":"de regie nemen","src":"perfectie","ch":1,"t":"expression","m":"to take control, to take charge (of a situation)","ex":[["Als je iets wilt veranderen, moet je zelf de regie nemen.","If you want to change something, you have to take charge yourself."]],"rich":true},
+{"w":"alles uit de kast halen","src":"perfectie","ch":1,"t":"expression","m":"to pull out all the stops, to do everything possible","ex":[["Voor de presentatie haalden ze alles uit de kast om de klant te overtuigen.","For the presentation they pulled out all the stops to convince the client."]],"rich":true},
+{"w":"gelijke monniken, gelijke kappen","src":"perfectie","ch":1,"t":"expression","m":"the same rules for everyone; equal treatment for all","ex":[["Iedereen krijgt evenveel vakantiedagen: gelijke monniken, gelijke kappen.","Everyone gets the same number of holidays: the same rules for all."]],"rich":true},
+{"w":"koste wat het kost","src":"perfectie","ch":1,"t":"expression","m":"at any cost, whatever it takes","ex":[["Ze wilde die wedstrijd winnen, koste wat het kost.","She wanted to win that match, whatever it took."]],"rich":true},
+{"w":"er zit niets anders op","src":"perfectie","ch":1,"t":"expression","m":"there is no other option; there's nothing for it but (to...)","ex":[["De trein was uitgevallen, dus er zat niets anders op dan te lopen.","The train was cancelled, so there was nothing for it but to walk."]],"rich":true},
+{"w":"maar liefst","src":"perfectie","ch":1,"t":"expression","m":"no fewer than, as much or as many as (emphasising a surprisingly large amount)","ex":[["Er kwamen maar liefst driehonderd mensen naar de opening.","No fewer than three hundred people came to the opening."]],"rich":true},
+{"w":"dat laat onverlet dat","src":"perfectie","ch":1,"t":"expression","m":"that does not alter the fact that; even so","ex":[["Hij heeft een fout gemaakt, maar dat laat onverlet dat hij hard werkt.","He made a mistake, but that doesn't alter the fact that he works hard."]],"rich":true},
+{"w":"toeters en bellen","src":"perfectie","ch":1,"t":"expression","m":"bells and whistles; fancy extra features","ex":[["Ik wil gewoon een simpele telefoon, zonder alle toeters en bellen.","I just want a simple phone, without all the bells and whistles."]],"rich":true},
+{"w":"iemand het voordeel van de twijfel geven","src":"perfectie","ch":1,"t":"expression","m":"to give someone the benefit of the doubt","ex":[["We wisten het niet zeker, dus gaven we haar het voordeel van de twijfel.","We weren't sure, so we gave her the benefit of the doubt."]],"rich":true}
+/* --PERFECTIE-APPEND-- */
+];
+PERFECTIE.forEach(b => BOOKS.push(b));
+
 /* ============ DECK ============ */
 /* Every entry has a stable id. Curated/enriched entries: "word|type". Stubs: "word".
    Progress and enrichment are stored against ids, so nothing collides or gets lost. */
@@ -1234,7 +1293,7 @@ let remindOn = false;
    `freeIds` holds the ids unlocked in free mode (computed once in buildDeck). */
 let isPro = false;
 let freeIds = new Set();
-const FREE_LIMITS = { general:500, gang:200, actie:0, niveau:0 };
+const FREE_LIMITS = { general:500, gang:200, actie:0, niveau:0, perfectie:0 };
 let theme = 'minimalistic';   // active UI theme id (persisted as dutch5k-theme)
 /* Theme catalogue for the Progress-tab picker. `id` matches the html[data-theme] value
    ('minimalistic' = the default, no attribute). `sw` = 3 swatch colours for the preview chip. */
@@ -1313,7 +1372,7 @@ fr:{
   'Your deck':'Votre paquet',
   'Build your Dutch vocabulary in a structured way. This one-stop app shows all the details of a word — meaning, example sentences, grammar forms and synonyms — so learners can pick it up in a practical way.':"Construisez votre vocabulaire néerlandais de façon structurée. Cette app tout-en-un montre tous les détails d'un mot — sens, phrases d'exemple, formes grammaticales et synonymes — pour apprendre de manière pratique.",
   '{n} popular everyday Dutch words.':'{n} mots néerlandais courants du quotidien.',
-  'The app has {n} Dutch words in total, gathered from four sources:':"L'app contient {n} mots néerlandais au total, réunis à partir de quatre sources :",
+  'The app has {n} Dutch words in total, gathered from five sources:':"L'app contient {n} mots néerlandais au total, réunis à partir de cinq sources :",
   'Backup':'Sauvegarde',
   'Your progress lives in this browser. Export a backup before switching phones, then import it there.':'Votre progression vit dans ce navigateur. Exportez une sauvegarde avant de changer de téléphone, puis importez-la là-bas.',
   'Export':'Exporter', 'Import':'Importer',
@@ -1380,7 +1439,7 @@ it:{
   'Your deck':'Il tuo mazzo',
   'Build your Dutch vocabulary in a structured way. This one-stop app shows all the details of a word — meaning, example sentences, grammar forms and synonyms — so learners can pick it up in a practical way.':"Costruisci il tuo vocabolario olandese in modo strutturato. Questa app tutto-in-uno mostra tutti i dettagli di una parola — significato, frasi di esempio, forme grammaticali e sinonimi — per imparare in modo pratico.",
   '{n} popular everyday Dutch words.':'{n} parole olandesi comuni di uso quotidiano.',
-  'The app has {n} Dutch words in total, gathered from four sources:':"L'app contiene {n} parole olandesi in totale, raccolte da quattro fonti:",
+  'The app has {n} Dutch words in total, gathered from five sources:':"L'app contiene {n} parole olandesi in totale, raccolte da cinque fonti:",
   'Backup':'Backup',
   'Your progress lives in this browser. Export a backup before switching phones, then import it there.':'I tuoi progressi vivono in questo browser. Esporta un backup prima di cambiare telefono, poi importalo lì.',
   'Export':'Esporta', 'Import':'Importa',
@@ -1447,7 +1506,7 @@ es:{
   'Your deck':'Tu mazo',
   'Build your Dutch vocabulary in a structured way. This one-stop app shows all the details of a word — meaning, example sentences, grammar forms and synonyms — so learners can pick it up in a practical way.':'Construye tu vocabulario neerlandés de forma estructurada. Esta app todo en uno muestra todos los detalles de una palabra — significado, frases de ejemplo, formas gramaticales y sinónimos — para aprender de manera práctica.',
   '{n} popular everyday Dutch words.':'{n} palabras neerlandesas comunes del día a día.',
-  'The app has {n} Dutch words in total, gathered from four sources:':'La app tiene {n} palabras neerlandesas en total, reunidas de cuatro fuentes:',
+  'The app has {n} Dutch words in total, gathered from five sources:':'La app tiene {n} palabras neerlandesas en total, reunidas de cinco fuentes:',
   'Backup':'Copia de seguridad',
   'Your progress lives in this browser. Export a backup before switching phones, then import it there.':'Tu progreso vive en este navegador. Exporta una copia antes de cambiar de teléfono y luego impórtala allí.',
   'Export':'Exportar', 'Import':'Importar',
@@ -1514,7 +1573,7 @@ de:{
   'Your deck':'Dein Stapel',
   'Build your Dutch vocabulary in a structured way. This one-stop app shows all the details of a word — meaning, example sentences, grammar forms and synonyms — so learners can pick it up in a practical way.':'Baue deinen niederländischen Wortschatz strukturiert auf. Diese All-in-one-App zeigt alle Details eines Wortes — Bedeutung, Beispielsätze, Grammatikformen und Synonyme — für praktisches Lernen.',
   '{n} popular everyday Dutch words.':'{n} gebräuchliche niederländische Alltagswörter.',
-  'The app has {n} Dutch words in total, gathered from four sources:':'Die App enthält insgesamt {n} niederländische Wörter aus vier Quellen:',
+  'The app has {n} Dutch words in total, gathered from five sources:':'Die App enthält insgesamt {n} niederländische Wörter aus fünf Quellen:',
   'Backup':'Sicherung',
   'Your progress lives in this browser. Export a backup before switching phones, then import it there.':'Dein Fortschritt lebt in diesem Browser. Exportiere eine Sicherung, bevor du das Handy wechselst, und importiere sie dort.',
   'Export':'Exportieren', 'Import':'Importieren',
@@ -1581,7 +1640,7 @@ pt:{
   'Your deck':'O teu baralho',
   'Build your Dutch vocabulary in a structured way. This one-stop app shows all the details of a word — meaning, example sentences, grammar forms and synonyms — so learners can pick it up in a practical way.':'Constrói o teu vocabulário neerlandês de forma estruturada. Esta app tudo-em-um mostra todos os detalhes de uma palavra — significado, frases de exemplo, formas gramaticais e sinónimos — para aprender de forma prática.',
   '{n} popular everyday Dutch words.':'{n} palavras neerlandesas comuns do dia a dia.',
-  'The app has {n} Dutch words in total, gathered from four sources:':'A app tem {n} palavras neerlandesas no total, reunidas de quatro fontes:',
+  'The app has {n} Dutch words in total, gathered from five sources:':'A app tem {n} palavras neerlandesas no total, reunidas de cinco fontes:',
   'Backup':'Cópia de segurança',
   'Your progress lives in this browser. Export a backup before switching phones, then import it there.':'O teu progresso vive neste navegador. Exporta uma cópia antes de mudar de telemóvel e importa-a lá.',
   'Export':'Exportar', 'Import':'Importar',
@@ -1648,7 +1707,7 @@ pl:{
   'Your deck':'Twoja talia',
   'Build your Dutch vocabulary in a structured way. This one-stop app shows all the details of a word — meaning, example sentences, grammar forms and synonyms — so learners can pick it up in a practical way.':'Buduj swoje niderlandzkie słownictwo w uporządkowany sposób. Ta wszechstronna aplikacja pokazuje wszystkie szczegóły słowa — znaczenie, zdania przykładowe, formy gramatyczne i synonimy — do praktycznej nauki.',
   '{n} popular everyday Dutch words.':'{n} popularnych codziennych słów niderlandzkich.',
-  'The app has {n} Dutch words in total, gathered from four sources:':'Aplikacja zawiera łącznie {n} niderlandzkich słów z czterech źródeł:',
+  'The app has {n} Dutch words in total, gathered from five sources:':'Aplikacja zawiera łącznie {n} niderlandzkich słów z pięciu źródeł:',
   'Backup':'Kopia zapasowa',
   'Your progress lives in this browser. Export a backup before switching phones, then import it there.':'Twoje postępy żyją w tej przeglądarce. Wyeksportuj kopię przed zmianą telefonu, a potem ją tam zaimportuj.',
   'Export':'Eksportuj', 'Import':'Importuj',
@@ -1715,7 +1774,7 @@ tr:{
   'Your deck':'Desten',
   'Build your Dutch vocabulary in a structured way. This one-stop app shows all the details of a word — meaning, example sentences, grammar forms and synonyms — so learners can pick it up in a practical way.':'Hollandaca kelime dağarcığını düzenli bir şekilde geliştir. Bu hepsi bir arada uygulama, bir kelimenin tüm ayrıntılarını — anlam, örnek cümleler, dil bilgisi biçimleri ve eş anlamlılar — pratik öğrenme için gösterir.',
   '{n} popular everyday Dutch words.':'{n} yaygın günlük Hollandaca kelime.',
-  'The app has {n} Dutch words in total, gathered from four sources:':'Uygulamada dört kaynaktan toplanan toplam {n} Hollandaca kelime var:',
+  'The app has {n} Dutch words in total, gathered from five sources:':'Uygulamada beş kaynaktan toplanan toplam {n} Hollandaca kelime var:',
   'Backup':'Yedekleme',
   'Your progress lives in this browser. Export a backup before switching phones, then import it there.':'İlerlemen bu tarayıcıda saklanır. Telefon değiştirmeden önce bir yedek dışa aktar, sonra orada içe aktar.',
   'Export':'Dışa aktar', 'Import':'İçe aktar',
@@ -1782,7 +1841,7 @@ uk:{
   'Your deck':'Ваша колода',
   'Build your Dutch vocabulary in a structured way. This one-stop app shows all the details of a word — meaning, example sentences, grammar forms and synonyms — so learners can pick it up in a practical way.':'Розбудовуйте свій нідерландський словниковий запас структуровано. Цей універсальний застосунок показує всі деталі слова — значення, приклади речень, граматичні форми й синоніми — для практичного навчання.',
   '{n} popular everyday Dutch words.':'{n} поширених повсякденних нідерландських слів.',
-  'The app has {n} Dutch words in total, gathered from four sources:':'У застосунку загалом {n} нідерландських слів із чотирьох джерел:',
+  'The app has {n} Dutch words in total, gathered from five sources:':'У застосунку загалом {n} нідерландських слів із п\'яти джерел:',
   'Backup':'Резервна копія',
   'Your progress lives in this browser. Export a backup before switching phones, then import it there.':'Ваш прогрес зберігається в цьому браузері. Експортуйте резервну копію перед зміною телефона, а потім імпортуйте її там.',
   'Export':'Експорт', 'Import':'Імпорт',
@@ -1849,7 +1908,7 @@ ru:{
   'Your deck':'Ваша колода',
   'Build your Dutch vocabulary in a structured way. This one-stop app shows all the details of a word — meaning, example sentences, grammar forms and synonyms — so learners can pick it up in a practical way.':'Стройте свой нидерландский словарный запас структурированно. Это универсальное приложение показывает все детали слова — значение, примеры предложений, грамматические формы и синонимы — для практичного обучения.',
   '{n} popular everyday Dutch words.':'{n} распространённых повседневных нидерландских слов.',
-  'The app has {n} Dutch words in total, gathered from four sources:':'В приложении всего {n} нидерландских слов из четырёх источников:',
+  'The app has {n} Dutch words in total, gathered from five sources:':'В приложении всего {n} нидерландских слов из пяти источников:',
   'Backup':'Резервная копия',
   'Your progress lives in this browser. Export a backup before switching phones, then import it there.':'Ваш прогресс хранится в этом браузере. Экспортируйте резервную копию перед сменой телефона, затем импортируйте её там.',
   'Export':'Экспорт', 'Import':'Импорт',
@@ -1916,7 +1975,7 @@ bg:{
   'Your deck':'Твоето тесте',
   'Build your Dutch vocabulary in a structured way. This one-stop app shows all the details of a word — meaning, example sentences, grammar forms and synonyms — so learners can pick it up in a practical way.':'Изграждай нидерландския си речник структурирано. Това приложение „всичко в едно“ показва всички детайли на една дума — значение, примерни изречения, граматични форми и синоними — за практично учене.',
   '{n} popular everyday Dutch words.':'{n} често срещани всекидневни нидерландски думи.',
-  'The app has {n} Dutch words in total, gathered from four sources:':'Приложението съдържа общо {n} нидерландски думи от четири източника:',
+  'The app has {n} Dutch words in total, gathered from five sources:':'Приложението съдържа общо {n} нидерландски думи от пет източника:',
   'Backup':'Резервно копие',
   'Your progress lives in this browser. Export a backup before switching phones, then import it there.':'Прогресът ти живее в този браузър. Експортирай резервно копие, преди да смениш телефона, и го импортирай там.',
   'Export':'Експорт', 'Import':'Импорт',
@@ -2036,6 +2095,7 @@ function srcFilterOpts(){
   if(bookChapters('gang').length) o.push(['gang','Nederlands in Gang']);
   if(bookChapters('actie').length) o.push(['actie','Nederlands in Actie']);
   if(bookChapters('niveau').length) o.push(['niveau','Nederlands op Niveau']);
+  if(bookChapters('perfectie').length) o.push(['perfectie','Nederlands naar Perfectie']);
   return o;
 }
 function srcFilterButtons(active, handler){
@@ -2044,7 +2104,7 @@ function srcFilterButtons(active, handler){
 function posOf(e){ return (e.t||'').toLowerCase(); }
 function bookTag(e){
   if(!e.books || !e.books.length) return '';
-  const names={actie:'Actie', gang:'Gang', niveau:'Niveau'};
+  const names={actie:'Actie', gang:'Gang', niveau:'Niveau', perfectie:'Perfectie'};
   return e.books.map(b=>`${names[b.src]||b.src} H${b.ch}`).join(' · ');
 }
 
@@ -7256,14 +7316,14 @@ function countsByPos(){
 // A book word is filed under its book (matches the source-filter taxonomy); non-book words = general.
 function primarySource(e){
   if(!e.books || !e.books.length) return 'general';
-  for(const s of ['gang','actie','niveau']) if((e.srcTags||[]).includes(s)) return s;
+  for(const s of ['gang','actie','niveau','perfectie']) if((e.srcTags||[]).includes(s)) return s;
   return 'general';
 }
 // Learned/total per source (general = no book; book sources via inSource). A word shared
 // between two books counts under each, matching how the source filter presents them.
-const SRC_ORDER = ['general','gang','actie','niveau'];
-const SRC_SHORT = {general:'General', gang:'Gang', actie:'Actie', niveau:'Niveau'};
-const SRC_COLORVAR = {general:'--muted', gang:'--blue', actie:'--red', niveau:'--yellow'};
+const SRC_ORDER = ['general','gang','actie','niveau','perfectie'];
+const SRC_SHORT = {general:'General', gang:'Gang', actie:'Actie', niveau:'Niveau', perfectie:'Perfectie'};
+const SRC_COLORVAR = {general:'--muted', gang:'--blue', actie:'--red', niveau:'--yellow', perfectie:'--green'};
 function countsBySource(){
   const out={};
   SRC_ORDER.forEach(s=>{ if(s==='general'||bookChapters(s).length) out[s]={total:0,learned:0}; });
@@ -7492,11 +7552,12 @@ function renderMenu(){
   const genCount = deck.filter(e=>(e.srcTags||[]).includes('general')).length;
   const aboutInner = `
       <p>${T('Build your Dutch vocabulary in a structured way. This one-stop app shows all the details of a word — meaning, example sentences, grammar forms and synonyms — so learners can pick it up in a practical way.')}</p>
-      <p style="margin-top:6px">${T('The app has {n} Dutch words in total, gathered from four sources:', {n:deck.length})}</p>
+      <p style="margin-top:6px">${T('The app has {n} Dutch words in total, gathered from five sources:', {n:deck.length})}</p>
       <p style="margin-top:6px">&#128218; <b>General Words</b>: ${T('{n} popular everyday Dutch words.', {n:genCount})}</p>
       ${bookChapters('gang').length?`<p style="margin-top:6px">&#128218; <b>Nederlands in Gang</b> (A0 &rarr; A2): ${T('{n} words', {n:deck.filter(e=>(e.srcTags||[]).includes('gang')).length})}.</p>`:''}
       ${bookChapters('actie').length?`<p style="margin-top:6px">&#128218; <b>Nederlands in Actie</b> (A2 &rarr; B1): ${T('{n} words', {n:deck.filter(e=>(e.srcTags||[]).includes('actie')).length})}.</p>`:''}
-      ${bookChapters('niveau').length?`<p style="margin-top:6px">&#128218; <b>Nederlands op Niveau</b> (B1 &rarr; B2): ${T('{n} words', {n:deck.filter(e=>(e.srcTags||[]).includes('niveau')).length})}.</p>`:''}`;
+      ${bookChapters('niveau').length?`<p style="margin-top:6px">&#128218; <b>Nederlands op Niveau</b> (B1 &rarr; B2): ${T('{n} words', {n:deck.filter(e=>(e.srcTags||[]).includes('niveau')).length})}.</p>`:''}
+      ${bookChapters('perfectie').length?`<p style="margin-top:6px">&#128218; <b>Nederlands naar Perfectie</b> (B2 &rarr; C1): ${T('{n} words', {n:deck.filter(e=>(e.srcTags||[]).includes('perfectie')).length})}.</p>`:''}`;
   const langInner = `
       <div class="themepick">
         ${LANGS.map(l=>`
@@ -8170,7 +8231,7 @@ function renderWordList(){
     const e = deck[i]; const s = progress[e.id]||'new';
     const meaning = (e.rich || e.hasMeaning) ? esc(ct(e.m)) : (e.books&&e.books.length ? T('tap to open') : `#${e.rank} &#183; ${T('tap to open')}`);
     const pos = posOf(e) ? `<span class="wpos">${esc(T(posOf(e)))}</span>` : '';
-    const badge = (e.srcTags||[]).filter(t=>t!=='general').map(t=>`<span class="srcbadge sb-${t}">${({actie:'A',gang:'G',niveau:'N'})[t]||'?'}</span>`).join('');
+    const badge = (e.srcTags||[]).filter(t=>t!=='general').map(t=>`<span class="srcbadge sb-${t}">${({actie:'A',gang:'G',niveau:'N',perfectie:'P'})[t]||'?'}</span>`).join('');
     if(isLocked(e)){
       // Free plan: row stays visible but blurred; tapping opens the Pro upsell.
       return `<div class="wrow locked-row" onclick="openPro(event)">
@@ -8686,7 +8747,7 @@ function render(){
 /* ============ OFFLINE (service worker) ============ */
 if('serviceWorker' in navigator){
   const swCode = `
-    const C = 'dutch5k-v85';
+    const C = 'dutch5k-v86';
     self.addEventListener('install', e => { self.skipWaiting(); });
     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
     self.addEventListener('fetch', e => {
