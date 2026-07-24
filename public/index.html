@@ -334,9 +334,12 @@
   .progbar-fill{height:100%; background:var(--blue); transition:width .3s;}
   .plan-form label{display:block; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; color:var(--muted); margin-bottom:6px;}
   .chiprow{display:flex; gap:6px; flex-wrap:wrap;}
-  .planchip{flex:1; min-width:48px; padding:12px 0; border:var(--rule); background:var(--paper); font-family:var(--font-head); font-weight:900; font-size:16px; cursor:pointer;}
+  .planchip{flex:1; min-width:48px; padding:12px 10px; border:var(--rule); background:var(--paper); font-family:var(--font-head); font-weight:900; font-size:15px; line-height:1.15; cursor:pointer; white-space:nowrap;}
   .planchip:hover{background:var(--yellow);}
   .planchip.active{background:var(--blue); color:#fff;}
+  /* Source-goal chips carry text labels (not just numbers): size to content, wrap, and breathe. */
+  .chiprow.srcchips{gap:8px;}
+  .planchip.srcchip{flex:0 1 auto; min-width:0; padding:12px 16px; font-size:14px; font-weight:800; letter-spacing:0.2px;}
   input[type=date],input[type=number]{width:100%; padding:11px 12px; border:var(--rule); font-family:var(--font-body); font-size:14px; outline:none;}
 
   .histgrid{display:grid; grid-template-columns:repeat(14,1fr); gap:4px;}
@@ -2436,8 +2439,8 @@ function goalTotal(){
 // Words learned that count toward the current goal: all learned in count mode, in-source learned in source mode.
 function goalLearned(c){ return goalMode==='source' ? goalSourceCounts().learned : (c?c.learned:0); }
 function goalStr(){ return goalTotal().toLocaleString(langLocale()); }
-// Full source name for the goal picker chips (reuses the source-filter labels).
-function goalSrcLabel(s){ const o = srcFilterOpts().find(x=>x[0]===s); return o ? o[1] : (SRC_SHORT[s]||s); }
+// Short source name for the goal picker chips (full "Nederlands in ..." labels don't fit a chip).
+function goalSrcLabel(s){ return SRC_SHORT[s] || s; }
 const POS_LABELS = {verb:'Verbs', noun:'Nouns', adjective:'Adjectives', adverb:'Adverbs', pronoun:'Pronouns', preposition:'Prepositions', conjunction:'Conjunctions', number:'Numbers', expression:'Expressions', article:'Articles'};
 
 /* Shared filter definitions so the Learn and Words tabs stay consistent (same options + order). */
@@ -8990,8 +8993,8 @@ function render(){
       const picked = goalSourceList().length;
       goalBody = `
         <label>${T('Learn every word from the sources you choose')}</label>
-        <div class="chiprow">
-          ${srcGoalOpts.map(s=>`<button class="planchip${goalSources.includes(s)?' active':''}" onclick="hap();toggleGoalSource('${s}')">${goalSrcLabel(s)}</button>`).join('')}
+        <div class="chiprow srcchips">
+          ${srcGoalOpts.map(s=>`<button class="planchip srcchip${goalSources.includes(s)?' active':''}" onclick="hap();toggleGoalSource('${s}')">${goalSrcLabel(s)}</button>`).join('')}
         </div>
         ${picked
           ? `<p class="note" style="margin-top:10px">${T('Goal: learn all {n} words in the selected {c} source(s).', {n:goalStr(), c:picked})}</p>`
@@ -9158,7 +9161,7 @@ function render(){
 /* ============ OFFLINE (service worker) ============ */
 if('serviceWorker' in navigator){
   const swCode = `
-    const C = 'dutch5k-v90';
+    const C = 'dutch5k-v91';
     self.addEventListener('install', e => { self.skipWaiting(); });
     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
     self.addEventListener('fetch', e => {
