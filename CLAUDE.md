@@ -216,7 +216,8 @@ on modern unfurlers); swap to an absolute URL if a platform needs one.
 `Store` adapter wraps `window.storage` (Claude artifacts) with `localStorage` fallback. Keys:
 `dutch5k-progress`, `-enriched`, `-srs` (v82 spaced-repetition schedule), `-plan`, `-streak`, `-remind`,
 `-remindtime` (v82), `-theme`, `-shuffle`, `-newonly` (v83 new-words-only toggle), `-mode` (v82 study mode), `-pro`,
-`-wordgoal` (v84 custom learning-goal target). No server;
+`-wordgoal` (v84 custom learning-goal target), `-goalmode`/`-goalsources` (v90 learning-goal type: count vs
+source-completion). No server;
 losing localStorage loses progress. (The Export/Import JSON backup box was **removed from the drawer in
 v68** — see the Settings drawer note; `exportData()`/`importData()` still exist in the JS but are no
 longer wired to any UI.)
@@ -333,6 +334,38 @@ due again. Section `/* ============ SPACED REPETITION ============ */` right abo
 >   not yet in the 10 packs). **Marketing copy left alone on purpose:** the `<meta>` descriptions / FREQ
 >   comment still say "5,000 most common words" — that's the real FREQ corpus size, not the goal. SW cache
 >   bumped **v83 → v84**.
+
+> **Learning goal — two goal types + i18n + chip polish (v90–v94, Adi: "give option to learn either a
+> number of words, or a word source — general/actie/ingang, can select multiple"):** the v84 box could
+> only target a *number* of words. It now offers **two mutually-exclusive goal types** via a mode toggle at
+> the top of the box: **By word count** (the v84 behaviour) or **By source** (finish one or more chosen
+> sources). State: **`goalMode`** (`'count'`|`'source'`, persisted `dutch5k-goalmode`) + **`goalSources`**
+> (array of source ids, persisted `dutch5k-goalsources`), loaded in `init()` right after `wordGoal`.
+> - **Coherent counts in both modes.** New helpers just above `POS_LABELS`: `goalSourceList()` (selected
+>   sources present in the deck), `goalSourceCounts()` (one `.some(inSource)` pass → distinct `{total,learned}`
+>   so a word shared between two chosen sources counts **once**), `goalTotal()` (source mode → source total,
+>   else `wordGoal||deck.length`), **`goalLearned(c)`** (source mode → in-source learned, else `c.learned`),
+>   and `goalSrcLabel(s)` = `SRC_SHORT[s]` (short chip label). The header count, `pct`, `remainingWords`, the
+>   daily-plan `goalN`, and the box's own learned/total readout all switched from `c.learned` → `goalLearned(c)`
+>   so source mode is byte-coherent (numerator **and** denominator scoped to the chosen sources). No source
+>   selected → `goalTotal()` gracefully falls back to `deck.length`. Actions `setGoalMode(m)` /
+>   `toggleGoalSource(s)` sit below `saveWordGoalFromInput()`.
+> - **Chip look (Adi iterated on this).** Word-count presets are now **`[500,1000,3000,5000]` + All**, rendered
+>   **compact + uppercase** via `compactNum()` (1000→`1K`, 2500→`2.5K`) so they fit **one row** — the chiprow
+>   gets `.onerow` (`flex-wrap:nowrap` + `text-transform:uppercase`, so `All`→`ALL`). The source-goal chips and
+>   the mode toggle use **`.srcchip`** (content-sized `flex:0 1 auto`, padding, wraps) because long text labels
+>   overflow the default `flex:1` number-chip. Base `.planchip` gained horizontal padding (`12px 10px`).
+> - **i18n (Adi: "not fixed english — translatable like the other charts").** The whole goal box (v84's
+>   English-only strings **and** the new v90 ones — 14 keys: `Learning goal`, `By word count`, `Words to learn`,
+>   `Or enter an exact number`, `Set goal`, `All`, `Learn all {n} words`, the intro, `Learn every word from the
+>   sources you choose`, `Goal: learn all {n} words in the selected {c} source(s).`, `Pick one or more sources
+>   above to set your goal.`, and the three set/clear toasts) is now translated in **all 10 non-English
+>   languages** via a **`UI_V93 = JSON.parse(\`…\`)`** block right after `UI_V83` (`Object.assign` merge, same
+>   pattern; key parity verified 14/lang). `By source` reused the existing v67 key. Source **names** stay
+>   untranslated (proper nouns: Gang/Actie/Niveau/Perfectie; General via `SRC_SHORT`). The **"By word type"
+>   chart was already fully translated** (`T(POS_LABELS[p])` + dict entries) — no change needed there.
+> - Rebuilt from `scratchpad/build_v93.js` (emits the block, round-trip `JSON.parse` checked). SW cache bumped
+>   across the iterations, ending **v89 → v94**.
 
 **Progress "By source" donut (v67, Adi request):** below the "By word type" breakdown, an interactive
 donut chart of words *learned per source* (General / Gang / Actie / Niveau). `countsBySource()` (right
