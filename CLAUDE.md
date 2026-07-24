@@ -218,7 +218,7 @@ on modern unfurlers); swap to an absolute URL if a platform needs one.
 `-remindtime` (v82), `-theme`, `-shuffle`, `-newonly` (v83 new-words-only toggle), `-mode` (v82 study mode), `-pro`,
 `-wordgoal` (v84 custom learning-goal target), `-goalmode`/`-goalsources` (v90 learning-goal type: count vs
 source-completion), `-accounts`/`-account` (v95 user-profile placeholder: local account directory + signed-in
-email). No server;
+email), `-device` (v96 stable per-browser id for single-session enforcement). No server;
 losing localStorage loses progress. (The Export/Import JSON backup box was **removed from the drawer in
 v68** — see the Settings drawer note; `exportData()`/`importData()` still exist in the JS but are no
 longer wired to any UI.)
@@ -412,6 +412,24 @@ due again. Section `/* ============ SPACED REPETITION ============ */` right abo
 >   near `.counter`; `.pf-*`/`.profile-*`/`.auth-*`/`.gsi-btn` right after the `.probox` rules (theme-token
 >   based). Verified in jsdom (three smoke scripts: profile flows, auth edge cases, and the standard pre-deploy
 >   sanity incl. `bereiken` Forms/Examples/Synonyms when Pro). SW cache bumped **v94 → v95**.
+>
+> **Single active session per email (v96, Adi: "make sure one person or email is logged in only once to any
+> device"):** each account may be signed in on only **one device at a time**. New module state **`deviceId`**
+> (stable per-browser id, persisted `dutch5k-device`, generated in `init()` right after loading `accounts`);
+> each account now carries a **`session = {device, at}`** (or `null` when signed out). Enforcement lives in
+> three spots: (1) **`_signInWith(acc)`** — first ends any *other* currently-signed-in account's session (one
+> active account per device), then, if `acc.session.device` differs from this device, treats it as a
+> **take-over** (reassigns the session here and toasts "Signed out of your other device"); always stamps
+> `acc.session = {device:deviceId, at:now}`. (2) **`init()`** — if the restored account's `session.device`
+> no longer matches this device (its session moved elsewhere), it's dropped → the taken-over device shows as
+> signed out on next load. (3) **`signOut()`** — clears `account.session` so the email is free to sign in
+> again. **Today this is fully functional within one browser** (the login form only shows when signed out, so
+> a device is inherently single-session) and the **account-side `session` marker is the exact hook a future
+> backend uses to enforce it across real devices** — same placeholder-now/real-later pattern as the rest of
+> the account layer (no cross-device sync yet, so the take-over only fires once the `accounts` blob is shared,
+> which is the backend's job). Newest login always wins (take-over, not hard-block). Verified in jsdom
+> (`smoke4`: two device ids sharing a synced accounts blob → login on B moves the session off A, A reloads
+> signed out, sign-out nulls the session). SW cache bumped **v95 → v96**.
 
 **Progress "By source" donut (v67, Adi request):** below the "By word type" breakdown, an interactive
 donut chart of words *learned per source* (General / Gang / Actie / Niveau). `countsBySource()` (right

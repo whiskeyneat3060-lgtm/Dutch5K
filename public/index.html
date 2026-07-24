@@ -1681,9 +1681,16 @@ let freeIds = new Set();
    login. Signed out = no Pro. Persisted: dutch5k-accounts (directory) + dutch5k-account
    (current email). Progress storage keys are unchanged — the account is the identity that
    future cloud sync will hang off, never a reason to move existing progress. */
-let accounts = {};        // email -> {id,name,email,provider,createdAt,pro}
+let accounts = {};        // email -> {id,name,email,provider,createdAt,pro,session}
 let account = null;       // currently signed-in account object, or null (guest)
 let authMode = null;      // profile-page inline auth form: null | 'google' | 'signup' | 'login'
+/* Single-session enforcement: each account may be "logged in" on only ONE device at a
+   time. `deviceId` is a stable per-browser id (persisted dutch5k-device); an account's
+   `session = {device, at}` records where it's currently signed in. Signing the same email
+   in somewhere new takes over (ends) the old session. Locally this guarantees one active
+   account per device today; the account-side session marker is what a future backend uses
+   to enforce it across real devices. */
+let deviceId = null;
 const FREE_LIMITS = { general:500, gang:200, actie:0, niveau:0, perfectie:0 };
 let theme = 'minimalistic';   // active UI theme id (persisted as dutch5k-theme)
 /* Theme catalogue for the Progress-tab picker. `id` matches the html[data-theme] value
@@ -7560,8 +7567,16 @@ async function init(){
   remindTime = (await Store.get('dutch5k-remindtime')) || '19:00';
   isPro = (await Store.get('dutch5k-pro')) || false;
   accounts = (await Store.get('dutch5k-accounts')) || {};
+  deviceId = (await Store.get('dutch5k-device')) || ('d_'+Math.random().toString(36).slice(2)+Date.now().toString(36));
+  await Store.set('dutch5k-device', deviceId);
   const curEmail = await Store.get('dutch5k-account');
   account = (curEmail && accounts[curEmail]) ? accounts[curEmail] : null;
+  // If this account's active session has since moved to another device, it's no longer
+  // signed in here — drop it (single active session per email).
+  if(account && account.session && account.session.device && account.session.device !== deviceId){
+    account = null;
+    await Store.set('dutch5k-account', null);
+  }
   if(account) isPro = !!account.pro;   // Pro follows the signed-in account (guests keep legacy dutch5k-pro)
   learnShuffle = (await Store.get('dutch5k-shuffle')) || false;
   newOnly = (await Store.get('dutch5k-newonly')) || false;
@@ -9263,6 +9278,12 @@ function _newAccount(name, email, provider){
   return { id:'u_'+Date.now().toString(36), name:name||email.split('@')[0], email, provider, createdAt:todayStr(), pro:false };
 }
 async function _signInWith(acc){
+  // One active account per device: end any other account's session first.
+  if(account && account.email !== acc.email){ account.session = null; accounts[account.email] = account; }
+  // Single session per email: if this account is already logged in on a different device,
+  // taking over here ends that session (the account can be signed in only once, anywhere).
+  const tookOver = !!(acc.session && acc.session.device && acc.session.device !== deviceId);
+  acc.session = { device: deviceId, at: Date.now() };
   account = acc;
   accounts[acc.email] = acc;
   isPro = !!acc.pro;                 // Pro entitlement comes from the account
@@ -9272,7 +9293,7 @@ async function _signInWith(acc){
   authMode = null;
   buildQueue();
   render();
-  toast(T('Signed in as {name}.', {name}));
+  toast(tookOver ? T('Signed in as {name}. Signed out of your other device.', {name}) : T('Signed in as {name}.', {name}));
 }
 // "Continue with Google" — demo flow (asks for the Google address; real OAuth to be wired later).
 async function doGoogleSignIn(){
@@ -9310,10 +9331,11 @@ async function doLogin(){
 function clearAuthErr(){ const el=document.getElementById('authEmail'); if(el) el.classList.remove('cf-err'); const h=document.getElementById('authHint'); if(h) h.textContent=''; }
 async function signOut(){
   hap();
+  if(account){ account.session = null; accounts[account.email] = account; }   // free the email to sign in elsewhere
   account = null;
   isPro = false;                     // Pro belongs to the account, not the device
   await Store.set('dutch5k-pro', false);
-  await Store.set('dutch5k-account', null);
+  await persistAccounts();
   authMode = null;
   buildQueue();
   render();
@@ -9432,7 +9454,7 @@ function renderProfile(main, c){
 /* ============ OFFLINE (service worker) ============ */
 if('serviceWorker' in navigator){
   const swCode = `
-    const C = 'dutch5k-v95';
+    const C = 'dutch5k-v96';
     self.addEventListener('install', e => { self.skipWaiting(); });
     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
     self.addEventListener('fetch', e => {
