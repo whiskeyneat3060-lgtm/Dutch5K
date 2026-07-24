@@ -334,12 +334,13 @@
   .progbar-fill{height:100%; background:var(--blue); transition:width .3s;}
   .plan-form label{display:block; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; color:var(--muted); margin-bottom:6px;}
   .chiprow{display:flex; gap:6px; flex-wrap:wrap;}
-  .planchip{flex:1; min-width:48px; padding:12px 10px; border:var(--rule); background:var(--paper); font-family:var(--font-head); font-weight:900; font-size:15px; line-height:1.15; cursor:pointer; white-space:nowrap;}
+  .planchip{flex:1; min-width:48px; padding:12px 10px; border:var(--rule); background:var(--paper); font-family:var(--font-head); font-weight:900; font-size:15px; line-height:1.15; cursor:pointer; text-align:center;}
   .planchip:hover{background:var(--yellow);}
   .planchip.active{background:var(--blue); color:#fff;}
-  /* Source-goal chips carry text labels (not just numbers): size to content, wrap, and breathe. */
+  /* Text-label chips (goal mode toggle + source picker) size to their content with padding and
+     wrap across rows, so words never overflow the chip the way flex:1 + long text does. */
   .chiprow.srcchips{gap:8px;}
-  .planchip.srcchip{flex:0 1 auto; min-width:0; padding:12px 16px; font-size:14px; font-weight:800; letter-spacing:0.2px;}
+  .planchip.srcchip{flex:0 1 auto; min-width:0; padding:12px 16px; font-size:14px; font-weight:800; letter-spacing:0.2px; white-space:nowrap;}
   input[type=date],input[type=number]{width:100%; padding:11px 12px; border:var(--rule); font-family:var(--font-body); font-size:14px; outline:none;}
 
   .histgrid{display:grid; grid-template-columns:repeat(14,1fr); gap:4px;}
@@ -8984,9 +8985,9 @@ function render(){
     const srcGoalOpts = SRC_ORDER.filter(s=>s==='general'||bookChapters(s).length);
     // The two goal-type tabs.
     const goalModeBar = `
-      <div class="chiprow" style="margin-bottom:14px">
-        <button class="planchip${goalMode==='count'?' active':''}" onclick="hap();setGoalMode('count')">${T('By word count')}</button>
-        <button class="planchip${goalMode==='source'?' active':''}" onclick="hap();setGoalMode('source')">${T('By source')}</button>
+      <div class="chiprow srcchips" style="margin-bottom:14px">
+        <button class="planchip srcchip${goalMode==='count'?' active':''}" onclick="hap();setGoalMode('count')">${T('By word count')}</button>
+        <button class="planchip srcchip${goalMode==='source'?' active':''}" onclick="hap();setGoalMode('source')">${T('By source')}</button>
       </div>`;
     let goalBody;
     if(goalMode==='source'){
@@ -9161,7 +9162,7 @@ function render(){
 /* ============ OFFLINE (service worker) ============ */
 if('serviceWorker' in navigator){
   const swCode = `
-    const C = 'dutch5k-v91';
+    const C = 'dutch5k-v92';
     self.addEventListener('install', e => { self.skipWaiting(); });
     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
     self.addEventListener('fetch', e => {
