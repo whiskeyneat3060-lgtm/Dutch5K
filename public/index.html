@@ -1620,6 +1620,8 @@ let wordViewStack = [];   // for synonym/antonym hyperlink navigation (back butt
 let enrichInFlight = false;
 let plan = null;          // {perDay, endDate, startDate} daily study plan
 let wordGoal = null;      // custom "words I want to learn" target (persisted dutch5k-wordgoal); null = whole deck
+let goalMode = 'count';   // learning-goal type: 'count' (a number of words) or 'source' (finish selected sources) (persisted dutch5k-goalmode)
+let goalSources = [];     // when goalMode==='source', the source ids the user wants to complete (persisted dutch5k-goalsources)
 let streak = null;        // {count, lastStudied, todayCount, history:{date:count}}
 let remindOn = false;
 /* ---- Pro / Free gating (v65) ----
@@ -2413,11 +2415,29 @@ async function setLang(id){
   if(menuOpen) renderMenu();   // the drawer holds the language picker — retranslate it in place
 }
 
-/* Learning-goal total. Default = the app's actual word count (deck.length); the user
-   can set a smaller custom target via the "Learning goal" box on the Progress tab.
-   Always capped at the real deck size, so the goal can never exceed the words that exist. */
-function goalTotal(){ const d = deck.length || 5000; return (wordGoal && wordGoal>0) ? Math.min(wordGoal, d) : d; }
+/* Learning goal (Progress tab). Two mutually-exclusive types:
+   - 'count'  : a number of words to learn (default = the app's actual word count, deck.length;
+                or a smaller custom target via wordGoal). Always capped at the real deck size.
+   - 'source' : finish one or more chosen sources (General / Gang / Actie / Niveau / Perfectie).
+                The target is the distinct word count of the selected sources; a word shared
+                between two chosen sources is counted once. */
+function goalSourceList(){ return (goalSources||[]).filter(s=>s==='general'||bookChapters(s).length); }
+// Distinct total + learned across the selected sources (one .some() pass = no double counting).
+function goalSourceCounts(){
+  let total=0, learned=0; const srcs=goalSourceList();
+  if(srcs.length) deck.forEach(e=>{ if(srcs.some(s=>inSource(e,s))){ total++; if(progress[e.id]==='learned') learned++; } });
+  return {total, learned};
+}
+function goalTotal(){
+  const d = deck.length || 5000;
+  if(goalMode==='source'){ const t = goalSourceCounts().total; return t || d; }
+  return (wordGoal && wordGoal>0) ? Math.min(wordGoal, d) : d;
+}
+// Words learned that count toward the current goal: all learned in count mode, in-source learned in source mode.
+function goalLearned(c){ return goalMode==='source' ? goalSourceCounts().learned : (c?c.learned:0); }
 function goalStr(){ return goalTotal().toLocaleString(langLocale()); }
+// Full source name for the goal picker chips (reuses the source-filter labels).
+function goalSrcLabel(s){ const o = srcFilterOpts().find(x=>x[0]===s); return o ? o[1] : (SRC_SHORT[s]||s); }
 const POS_LABELS = {verb:'Verbs', noun:'Nouns', adjective:'Adjectives', adverb:'Adverbs', pronoun:'Pronouns', preposition:'Prepositions', conjunction:'Conjunctions', number:'Numbers', expression:'Expressions', article:'Articles'};
 
 /* Shared filter definitions so the Learn and Words tabs stay consistent (same options + order). */
@@ -7464,6 +7484,8 @@ async function init(){
   apiKey = (await Store.get('dutch5k-apikey')) || '';
   plan = (await Store.get('dutch5k-plan')) || null;
   wordGoal = (await Store.get('dutch5k-wordgoal')) || null;
+  goalMode = (await Store.get('dutch5k-goalmode')) || 'count';
+  goalSources = (await Store.get('dutch5k-goalsources')) || [];
   streak = (await Store.get('dutch5k-streak')) || {count:0, lastStudied:null, history:{}};
   remindOn = (await Store.get('dutch5k-remind')) || false;
   remindTime = (await Store.get('dutch5k-remindtime')) || '19:00';
@@ -7842,6 +7864,20 @@ async function clearWordGoal(){
   toast(T('Goal reset to all {n} words.', {n:deck.length.toLocaleString(langLocale())}));
 }
 function saveWordGoalFromInput(){ const v=document.getElementById('goalInput'); if(v) setWordGoal(v.value); }
+// Switch the learning goal between a word-count target and a source-completion target.
+async function setGoalMode(m){
+  goalMode = (m==='source') ? 'source' : 'count';
+  await Store.set('dutch5k-goalmode', goalMode);
+  render();
+}
+// Toggle a source in/out of the source-completion goal (multiple allowed).
+async function toggleGoalSource(s){
+  const i = goalSources.indexOf(s);
+  if(i>=0) goalSources.splice(i,1); else goalSources.push(s);
+  await Store.set('dutch5k-goalsources', goalSources);
+  render();
+  toast(goalSourceList().length ? T('Goal: learn all {n} words in the selected {c} source(s).', {n:goalStr(), c:goalSourceList().length}) : T('Pick one or more sources above to set your goal.'));
+}
 
 /* ============ THEME ============ */
 /* Only swaps CSS custom-property values via html[data-theme]; content/DOM untouched. */
@@ -8803,7 +8839,7 @@ function renderLearn(main, c){
    repaint hack at all. */
 function render(){
   const c = counts();
-  document.getElementById('hdrCount').textContent = `${c.learned} / ${goalTotal()}`;
+  document.getElementById('hdrCount').textContent = `${goalLearned(c)} / ${goalTotal()}`;
   ['learn','words','progress'].forEach(t=>{
     document.getElementById('tab'+t[0].toUpperCase()+t.slice(1)).className = (tab===t)?'active':'';
   });
@@ -8885,14 +8921,14 @@ function render(){
   }
 
   if(tab==='progress'){
-    const pct = Math.min(100, (c.learned/goalTotal())*100).toFixed(1);
+    const pct = Math.min(100, (goalLearned(c)/goalTotal())*100).toFixed(1);
     const tc = todayCount();
     const st = currentStreak();
 
     // Daily plan box
     let planBox;
     if(plan){
-      const remainingWords = Math.max(0, goalTotal() - c.learned);
+      const remainingWords = Math.max(0, goalTotal() - goalLearned(c));
       let etaLine = '';
       if(plan.perDay>0){
         const days = Math.ceil(remainingWords / plan.perDay);
@@ -8904,7 +8940,7 @@ function render(){
         const need = Math.ceil(remainingWords / daysLeft);
         etaLine = T('To hit {goal} by {date}, learn about {n}/day ({d} days left).', {goal:goalStr(), date:new Date(plan.endDate).toLocaleDateString(langLocale(),{month:'short',day:'numeric'}), n:`<b>${need}</b>`, d:daysLeft});
       }
-      const done = tc; const goalN = plan.perDay || (plan.endDate ? Math.ceil(Math.max(0,goalTotal()-c.learned)/Math.max(1,daysBetween(todayStr(),plan.endDate))) : 10);
+      const done = tc; const goalN = plan.perDay || (plan.endDate ? Math.ceil(Math.max(0,goalTotal()-goalLearned(c))/Math.max(1,daysBetween(todayStr(),plan.endDate))) : 10);
       const barPct = Math.min(100, Math.round(done/goalN*100));
       planBox = `
       <div class="genbox plan-box">
@@ -8938,24 +8974,48 @@ function render(){
       </div>`;
     }
 
-    // Learning-goal box: how many words the user wants to learn (default = whole deck)
+    // Learning-goal box: either a target number of words, or a set of sources to finish.
     const dl = deck.length;
     const presets = [100,250,500,1000,2000,3000].filter(n=>n<dl);
+    const gl = goalLearned(c);
+    const srcGoalOpts = SRC_ORDER.filter(s=>s==='general'||bookChapters(s).length);
+    // The two goal-type tabs.
+    const goalModeBar = `
+      <div class="chiprow" style="margin-bottom:14px">
+        <button class="planchip${goalMode==='count'?' active':''}" onclick="hap();setGoalMode('count')">${T('By word count')}</button>
+        <button class="planchip${goalMode==='source'?' active':''}" onclick="hap();setGoalMode('source')">${T('By source')}</button>
+      </div>`;
+    let goalBody;
+    if(goalMode==='source'){
+      const picked = goalSourceList().length;
+      goalBody = `
+        <label>${T('Learn every word from the sources you choose')}</label>
+        <div class="chiprow">
+          ${srcGoalOpts.map(s=>`<button class="planchip${goalSources.includes(s)?' active':''}" onclick="hap();toggleGoalSource('${s}')">${goalSrcLabel(s)}</button>`).join('')}
+        </div>
+        ${picked
+          ? `<p class="note" style="margin-top:10px">${T('Goal: learn all {n} words in the selected {c} source(s).', {n:goalStr(), c:picked})}</p>`
+          : `<p class="note" style="margin-top:10px">${T('Pick one or more sources above to set your goal.')}</p>`}`;
+    } else {
+      goalBody = `
+        <label>${T('Words to learn')}</label>
+        <div class="chiprow">
+          ${presets.map(n=>`<button class="planchip${wordGoal===n?' active':''}" onclick="hap();setWordGoal(${n})">${n.toLocaleString(langLocale())}</button>`).join('')}
+          <button class="planchip${wordGoal?'':' active'}" onclick="hap();clearWordGoal()">${T('All')}</button>
+        </div>
+        <label style="margin-top:12px">${T('Or enter an exact number')}</label>
+        <input type="number" id="goalInput" min="1" max="${dl}" value="${goalTotal()}" inputmode="numeric" onkeydown="if(event.key==='Enter'){event.preventDefault();saveWordGoalFromInput();}">
+        <button class="genbtn" style="margin-top:10px" onclick="hap();saveWordGoalFromInput()">${T('Set goal')}</button>
+        ${wordGoal?`<button class="loadmore" style="margin-top:8px" onclick="hap();clearWordGoal()">${T('Learn all {n} words', {n:dl.toLocaleString(langLocale())})}</button>`:''}`;
+    }
     const goalBox = `
       <div class="genbox goal-box">
         <h3>&#127919; ${T('Learning goal')}</h3>
-        <p>${T('Set how many words you want to learn. Your progress percentage and daily plan are measured against this target.')}</p>
-        <div class="daily-num" style="margin-bottom:10px">${c.learned.toLocaleString(langLocale())} <span>/ ${goalStr()}</span></div>
+        <p>${T('Set a target — a number of words, or specific sources to finish. Your progress percentage and daily plan are measured against it.')}</p>
+        <div class="daily-num" style="margin-bottom:10px">${gl.toLocaleString(langLocale())} <span>/ ${goalStr()}</span></div>
+        ${goalModeBar}
         <div class="plan-form">
-          <label>${T('Words to learn')}</label>
-          <div class="chiprow">
-            ${presets.map(n=>`<button class="planchip${wordGoal===n?' active':''}" onclick="hap();setWordGoal(${n})">${n.toLocaleString(langLocale())}</button>`).join('')}
-            <button class="planchip${wordGoal?'':' active'}" onclick="hap();clearWordGoal()">${T('All')}</button>
-          </div>
-          <label style="margin-top:12px">${T('Or enter an exact number')}</label>
-          <input type="number" id="goalInput" min="1" max="${dl}" value="${goalTotal()}" inputmode="numeric" onkeydown="if(event.key==='Enter'){event.preventDefault();saveWordGoalFromInput();}">
-          <button class="genbtn" style="margin-top:10px" onclick="hap();saveWordGoalFromInput()">${T('Set goal')}</button>
-          ${wordGoal?`<button class="loadmore" style="margin-top:8px" onclick="hap();clearWordGoal()">${T('Learn all {n} words', {n:dl.toLocaleString(langLocale())})}</button>`:''}
+          ${goalBody}
         </div>
       </div>`;
 
@@ -9098,7 +9158,7 @@ function render(){
 /* ============ OFFLINE (service worker) ============ */
 if('serviceWorker' in navigator){
   const swCode = `
-    const C = 'dutch5k-v89';
+    const C = 'dutch5k-v90';
     self.addEventListener('install', e => { self.skipWaiting(); });
     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
     self.addEventListener('fetch', e => {
