@@ -8980,7 +8980,9 @@ function render(){
 
     // Learning-goal box: either a target number of words, or a set of sources to finish.
     const dl = deck.length;
-    const presets = [100,250,500,1000,2000,3000].filter(n=>n<dl);
+    const presets = [100,250,500,1000,2000,3000,5000].filter(n=>n<dl);
+    // Compact chip label so big targets fit the box: 1000 -> "1k", 2500 -> "2.5k".
+    const compactNum = n => n>=1000 ? (n%1000===0 ? (n/1000)+'k' : (n/1000).toFixed(1)+'k') : String(n);
     const gl = goalLearned(c);
     const srcGoalOpts = SRC_ORDER.filter(s=>s==='general'||bookChapters(s).length);
     // The two goal-type tabs.
@@ -9004,7 +9006,7 @@ function render(){
       goalBody = `
         <label>${T('Words to learn')}</label>
         <div class="chiprow">
-          ${presets.map(n=>`<button class="planchip${wordGoal===n?' active':''}" onclick="hap();setWordGoal(${n})">${n.toLocaleString(langLocale())}</button>`).join('')}
+          ${presets.map(n=>`<button class="planchip${wordGoal===n?' active':''}" onclick="hap();setWordGoal(${n})">${compactNum(n)}</button>`).join('')}
           <button class="planchip${wordGoal?'':' active'}" onclick="hap();clearWordGoal()">${T('All')}</button>
         </div>
         <label style="margin-top:12px">${T('Or enter an exact number')}</label>
@@ -9162,7 +9164,7 @@ function render(){
 /* ============ OFFLINE (service worker) ============ */
 if('serviceWorker' in navigator){
   const swCode = `
-    const C = 'dutch5k-v92';
+    const C = 'dutch5k-v93';
     self.addEventListener('install', e => { self.skipWaiting(); });
     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
     self.addEventListener('fetch', e => {
