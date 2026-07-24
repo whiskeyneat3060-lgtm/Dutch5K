@@ -217,7 +217,8 @@ on modern unfurlers); swap to an absolute URL if a platform needs one.
 `dutch5k-progress`, `-enriched`, `-srs` (v82 spaced-repetition schedule), `-plan`, `-streak`, `-remind`,
 `-remindtime` (v82), `-theme`, `-shuffle`, `-newonly` (v83 new-words-only toggle), `-mode` (v82 study mode), `-pro`,
 `-wordgoal` (v84 custom learning-goal target), `-goalmode`/`-goalsources` (v90 learning-goal type: count vs
-source-completion). No server;
+source-completion), `-accounts`/`-account` (v95 user-profile placeholder: local account directory + signed-in
+email). No server;
 losing localStorage loses progress. (The Export/Import JSON backup box was **removed from the drawer in
 v68** — see the Settings drawer note; `exportData()`/`importData()` still exist in the JS but are no
 longer wired to any UI.)
@@ -366,6 +367,51 @@ due again. Section `/* ============ SPACED REPETITION ============ */` right abo
 >   chart was already fully translated** (`T(POS_LABELS[p])` + dict entries) — no change needed there.
 > - Rebuilt from `scratchpad/build_v93.js` (emits the block, round-trip `JSON.parse` checked). SW cache bumped
 >   across the iterations, ending **v89 → v94**.
+
+> **User profile / accounts (v95, Adi: "give option to create user or login via gmail etc. so progress stays
+> in the account not on device; pro can be bought via user login/user profile; make user profile a separate
+> page; move the learning goal to user profile, remove from progress tab"):** the app grew a **Profile page**
+> and a **placeholder account layer**. Adi explicitly chose the **local placeholder** path (asked up front) —
+> real Google OAuth + a backend for cross-device sync are a separate, later effort; this app is still a static
+> single-file no-backend app, so accounts live in `localStorage`, structured so real auth/sync drops in later,
+> **exactly** the same "shipped as a working placeholder" pattern as the Pro entitlement.
+> - **State (module-level, near `isPro`):** `accounts` (`{email → {id,name,email,provider,createdAt,pro}}`, a
+>   local stand-in for the server, persisted `dutch5k-accounts`), `account` (the signed-in object or `null` =
+>   guest, current email persisted `dutch5k-account`), `authMode` (`null|'google'|'signup'|'login'` — which
+>   inline auth form the signed-out profile shows). Loaded in `init()` right after `isPro`; **if signed in,
+>   `isPro` is taken from `account.pro`** (guests keep the legacy `dutch5k-pro`).
+> - **Profile page = its own `#main` view, not a nav tab.** Reached via a round **avatar button in the header**
+>   (`#profileBtn` in a new `.hdr-right`, next to the word counter): person glyph for guests, initials once
+>   signed in (blue), yellow when Pro. `updateProfileBtn()` (called from `render()` + `applyNavLang()`) keeps
+>   it current. `render()` dispatches `tab==='profile'` → **`renderProfile(main, c)`** before the learn branch;
+>   the three nav buttons all show inactive on the profile page (their class loop only matches learn/words/
+>   progress), which is intended.
+> - **`renderProfile()`** builds three cards: (1) **account** — signed out shows a **"Continue with Google"**
+>   button (`.gsi-btn`, demo flow) + **Sign up with email** + **I already have an account**, each expanding an
+>   inline `.auth-form`; signed in shows avatar/name/email/provider/member-since, plan, words-learned, and a
+>   **Sign out** button. (2) **Pro card** — buy/manage Pro from the profile. (3) the **Learning-goal box**
+>   (moved here — see below).
+> - **Auth actions (placeholder, all local):** `setAuthMode(m)`, `doGoogleSignIn()`/`doSignup()`/`doLogin()`
+>   (all validate the email by **reusing `contactEmailError()`**, incl. the disposable-domain block), the
+>   shared `_signInWith(acc)` (sets `account`+`isPro`, persists via `persistAccounts()`, **captures `acc.name`
+>   before the awaits** so a later interaction nulling `account` can't crash the toast), `signOut()` (clears
+>   `account`, `isPro=false` — Pro belongs to the account, not the device), `clearAuthErr()`. Log-in with an
+>   unknown email shows a "No account found" hint and does **not** sign in.
+> - **Pro is now bought through the account.** `buyPro()` requires an account (guest → routed to the profile
+>   sign-up), sets `account.pro`+`isPro`, persists. `cancelPro()` reverses it. The drawer's **`proBox()` is
+>   unchanged**, but `unlockPro()`/`lockPro()` were rewired: a guest tapping the drawer upsell is sent to the
+>   profile sign-up (`closeMenu()`+`setAuthMode('signup')`); a signed-in user goes straight through `buyPro()`.
+>   The Learn/Words/Progress lock overlays + `openPro()` are untouched (guest still lands on the profile).
+> - **Learning goal moved off the Progress tab.** The whole goal-box builder was extracted from
+>   `renderProgress()` into a standalone **`goalBoxHtml(c)`** and now renders **only on the Profile page**;
+>   Progress now ends at the "By source" donut (its trailing `${goalBox}` removed). All goal logic/i18n is
+>   unchanged — just relocated. (The v90–v94 note above still describes the box internals; only its host page
+>   changed.)
+> - **i18n:** new profile/auth strings are **English-only** via `T()` (fall back like Pro/Contact — not yet in
+>   the 10 packs); the relocated goal box keeps its full v93 translations. CSS: `.hdr-right`/`.profile-btn`
+>   near `.counter`; `.pf-*`/`.profile-*`/`.auth-*`/`.gsi-btn` right after the `.probox` rules (theme-token
+>   based). Verified in jsdom (three smoke scripts: profile flows, auth edge cases, and the standard pre-deploy
+>   sanity incl. `bereiken` Forms/Examples/Synonyms when Pro). SW cache bumped **v94 → v95**.
 
 **Progress "By source" donut (v67, Adi request):** below the "By word type" breakdown, an interactive
 donut chart of words *learned per source* (General / Gang / Actie / Niveau). `countsBySource()` (right
