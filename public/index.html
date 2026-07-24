@@ -69,6 +69,12 @@
   .logo span{color:var(--red); font-style:italic; font-weight:700; letter-spacing:0;}
   .counter{font-family:var(--font-head); font-weight:700; font-size:13px; text-align:right; line-height:1.2;}
   .counter small{display:block; font-weight:400; font-size:10px; letter-spacing:1px; text-transform:uppercase; color:var(--muted);}
+  .hdr-right{display:flex; align-items:center; gap:12px;}
+  /* Header profile/avatar button — person glyph for guests, initials once signed in. */
+  .profile-btn{width:36px; height:36px; border-radius:50%; border:2px solid var(--line); background:var(--card-bg); color:var(--ink); font-family:var(--font-head); font-weight:800; font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; flex:0 0 auto;}
+  .profile-btn.signed-in{background:var(--blue); color:#fff; border-color:var(--blue);}
+  .profile-btn.is-pro{background:var(--yellow); color:#111; border-color:var(--ink);}
+  .profile-btn.on-tab{box-shadow:0 0 0 2px var(--accent, var(--red)) inset;}
 
   /* .topbar wraps header + nav and freezes the whole block at the viewport top while
      #main scrolls. It must have an opaque background (content passes underneath) and
@@ -153,6 +159,31 @@
   .pro-restore{margin-top:10px; padding:8px 12px; background:transparent; border:2px solid var(--line); font-size:12px; text-transform:uppercase; letter-spacing:1px; cursor:pointer;}
   .probox.flash{animation:proflash 1.4s ease;}
   @keyframes proflash{0%,100%{box-shadow:none;} 30%,60%{box-shadow:0 0 0 3px var(--red);}}
+  /* ---- Profile / account page (v95) ---- */
+  .pf-title{font-family:var(--font-head); font-weight:900; font-size:22px; margin:4px 0 0;}
+  .profile-head{display:flex; align-items:center; gap:14px;}
+  .pf-avatar{width:52px; height:52px; border-radius:50%; background:var(--blue); color:#fff; font-family:var(--font-head); font-weight:800; font-size:20px; display:flex; align-items:center; justify-content:center; flex:0 0 auto;}
+  .pf-avatar.is-pro{background:var(--yellow); color:#111; border:2px solid var(--ink);}
+  .pf-avatar.guest{background:var(--grey); color:var(--muted); margin:0 auto 6px; font-size:26px;}
+  .pf-id{min-width:0;}
+  .pf-name{font-family:var(--font-head); font-weight:800; font-size:18px; line-height:1.2;}
+  .pf-email{font-size:13px; color:var(--muted); word-break:break-all;}
+  .pf-meta{font-size:11px; letter-spacing:.5px; color:var(--muted2); margin-top:3px;}
+  .pf-row{display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--line); font-size:14px;}
+  .pf-row:last-of-type{border-bottom:none;}
+  .profile-signin{text-align:center;}
+  .auth-actions{display:flex; flex-direction:column; gap:10px; margin-top:14px;}
+  .gsi-btn{display:flex; align-items:center; justify-content:center; gap:10px; padding:12px; background:var(--card-bg); color:var(--ink); border:2px solid var(--line); font-family:var(--font-head); font-weight:700; font-size:14px; cursor:pointer;}
+  .gsi-btn .gsi-g{width:22px; height:22px; border-radius:50%; background:#fff; color:#4285F4; font-family:Arial,sans-serif; font-weight:800; display:inline-flex; align-items:center; justify-content:center; font-size:14px; border:1px solid var(--line);}
+  .gsi-btn.active,.auth-alt.active{border-color:var(--blue);}
+  .auth-alt{padding:11px; background:transparent; border:2px solid var(--line); color:var(--ink); font-weight:600; font-size:13px; cursor:pointer;}
+  .auth-alt.ghost{border-style:dashed; color:var(--muted);}
+  .auth-form{display:flex; flex-direction:column; gap:10px; text-align:left; padding:4px 0 2px;}
+  .auth-form .cf-input{width:100%; padding:11px 12px; border:2px solid var(--line); background:var(--card-bg); color:var(--ink); font-family:var(--font-body); font-size:15px;}
+  .auth-form .cf-input:focus{outline:none; box-shadow:inset 0 0 0 2px var(--accent, var(--blue));}
+  .auth-form .cf-input.cf-err{box-shadow:inset 0 0 0 2px var(--red);}
+  .auth-form .cf-hint{font-size:12px; color:var(--red); min-height:0;}
+  .auth-form .cf-hint:empty{display:none;}
   .word-en{font-size:20px; font-weight:600; color:var(--blue);}
   .rankline{font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--muted2); margin-top:2px;}
   .forms{margin-top:12px; font-size:13px; line-height:1.75;}
@@ -643,7 +674,10 @@
     <button class="menu-btn" id="menuBtn" aria-label="Menu" aria-expanded="false" aria-controls="drawer" onclick="toggleMenu()"><span></span><span></span><span></span></button>
     <div class="logo">DUTCH <span>to go</span></div>
   </div>
-  <div class="counter"><small>Words learned</small><span id="hdrCount">0</span></div>
+  <div class="hdr-right">
+    <div class="counter"><small>Words learned</small><span id="hdrCount">0</span></div>
+    <button class="profile-btn" id="profileBtn" aria-label="Profile" onclick="hap();setTab('profile')"><span id="profileBtnInner">&#128100;</span></button>
+  </div>
 </header>
 
 <nav>
@@ -1638,6 +1672,18 @@ let remindOn = false;
    `freeIds` holds the ids unlocked in free mode (computed once in buildDeck). */
 let isPro = false;
 let freeIds = new Set();
+/* ---- User account / profile (v95) ----
+   Placeholder auth: local only, no backend yet. Real Google OAuth + cloud progress
+   sync will be wired to a server later (same "shipped as a working placeholder" pattern
+   as the Pro entitlement). `accounts` is a local {email -> account} directory that stands
+   in for the server; `account` is the signed-in one (null = guest, device-only progress).
+   Pro entitlement lives ON the account, so it's bought from the profile and restored on
+   login. Signed out = no Pro. Persisted: dutch5k-accounts (directory) + dutch5k-account
+   (current email). Progress storage keys are unchanged — the account is the identity that
+   future cloud sync will hang off, never a reason to move existing progress. */
+let accounts = {};        // email -> {id,name,email,provider,createdAt,pro}
+let account = null;       // currently signed-in account object, or null (guest)
+let authMode = null;      // profile-page inline auth form: null | 'google' | 'signup' | 'login'
 const FREE_LIMITS = { general:500, gang:200, actie:0, niveau:0, perfectie:0 };
 let theme = 'minimalistic';   // active UI theme id (persisted as dutch5k-theme)
 /* Theme catalogue for the Progress-tab picker. `id` matches the html[data-theme] value
@@ -2422,6 +2468,7 @@ function applyNavLang(){
   const s=document.querySelector('header .counter small'); if(s) s.textContent = T('Words learned');
   const mb=document.getElementById('menuBtn'); if(mb) mb.setAttribute('aria-label', T('Menu'));
   const dc=document.getElementById('drawerClose'); if(dc) dc.setAttribute('aria-label', T('Close'));
+  updateProfileBtn();
 }
 async function setLang(id){
   hap();
@@ -7512,6 +7559,10 @@ async function init(){
   remindOn = (await Store.get('dutch5k-remind')) || false;
   remindTime = (await Store.get('dutch5k-remindtime')) || '19:00';
   isPro = (await Store.get('dutch5k-pro')) || false;
+  accounts = (await Store.get('dutch5k-accounts')) || {};
+  const curEmail = await Store.get('dutch5k-account');
+  account = (curEmail && accounts[curEmail]) ? accounts[curEmail] : null;
+  if(account) isPro = !!account.pro;   // Pro follows the signed-in account (guests keep legacy dutch5k-pro)
   learnShuffle = (await Store.get('dutch5k-shuffle')) || false;
   newOnly = (await Store.get('dutch5k-newonly')) || false;
   learnMode = (await Store.get('dutch5k-mode')) || 'cards';
@@ -8126,22 +8177,18 @@ function proBox(){
 async function unlockPro(){
   hap();
   if(typeof event!=='undefined' && event) event.stopPropagation();
-  isPro = true;
-  await Store.set('dutch5k-pro', true);
-  toast(T('Pro unlocked — full access!'));
-  buildQueue();
-  render();
-  if(menuOpen) renderMenu();
+  if(!account){   // Pro is bought through your account — send guests to the profile to sign in first
+    closeMenu();
+    toast(T('Create an account or sign in to go Pro.'));
+    setAuthMode('signup');
+    return;
+  }
+  await buyPro();
 }
 async function lockPro(){
   hap();
   if(typeof event!=='undefined' && event) event.stopPropagation();
-  isPro = false;
-  await Store.set('dutch5k-pro', false);
-  toast(T('Back on the Free plan.'));
-  buildQueue();
-  render();
-  if(menuOpen) renderMenu();
+  await cancelPro();
 }
 /* Open the drawer and flash the Pro box — the target of every lock overlay CTA. */
 function openPro(ev){
@@ -8865,7 +8912,10 @@ function render(){
   ['learn','words','progress'].forEach(t=>{
     document.getElementById('tab'+t[0].toUpperCase()+t.slice(1)).className = (tab===t)?'active':'';
   });
+  updateProfileBtn();
   const main = document.getElementById('main');
+
+  if(tab==='profile'){ renderProfile(main, c); return; }
 
   if(tab==='learn'){ renderLearn(main, c); return; }
 
@@ -8995,53 +9045,6 @@ function render(){
         </div>
       </div>`;
     }
-
-    // Learning-goal box: either a target number of words, or a set of sources to finish.
-    const dl = deck.length;
-    const presets = [500,1000,3000,5000].filter(n=>n<dl);
-    // Compact chip label so targets fit one row: 1000 -> "1K", 2500 -> "2.5K".
-    const compactNum = n => n>=1000 ? (n%1000===0 ? (n/1000)+'K' : (n/1000).toFixed(1)+'K') : String(n);
-    const gl = goalLearned(c);
-    const srcGoalOpts = SRC_ORDER.filter(s=>s==='general'||bookChapters(s).length);
-    // The two goal-type tabs.
-    const goalModeBar = `
-      <div class="chiprow srcchips" style="margin-bottom:14px">
-        <button class="planchip srcchip${goalMode==='count'?' active':''}" onclick="hap();setGoalMode('count')">${T('By word count')}</button>
-        <button class="planchip srcchip${goalMode==='source'?' active':''}" onclick="hap();setGoalMode('source')">${T('By source')}</button>
-      </div>`;
-    let goalBody;
-    if(goalMode==='source'){
-      const picked = goalSourceList().length;
-      goalBody = `
-        <label>${T('Learn every word from the sources you choose')}</label>
-        <div class="chiprow srcchips">
-          ${srcGoalOpts.map(s=>`<button class="planchip srcchip${goalSources.includes(s)?' active':''}" onclick="hap();toggleGoalSource('${s}')">${goalSrcLabel(s)}</button>`).join('')}
-        </div>
-        ${picked
-          ? `<p class="note" style="margin-top:10px">${T('Goal: learn all {n} words in the selected {c} source(s).', {n:goalStr(), c:picked})}</p>`
-          : `<p class="note" style="margin-top:10px">${T('Pick one or more sources above to set your goal.')}</p>`}`;
-    } else {
-      goalBody = `
-        <label>${T('Words to learn')}</label>
-        <div class="chiprow onerow">
-          ${presets.map(n=>`<button class="planchip${wordGoal===n?' active':''}" onclick="hap();setWordGoal(${n})">${compactNum(n)}</button>`).join('')}
-          <button class="planchip${wordGoal?'':' active'}" onclick="hap();clearWordGoal()">${T('All')}</button>
-        </div>
-        <label style="margin-top:12px">${T('Or enter an exact number')}</label>
-        <input type="number" id="goalInput" min="1" max="${dl}" value="${goalTotal()}" inputmode="numeric" onkeydown="if(event.key==='Enter'){event.preventDefault();saveWordGoalFromInput();}">
-        <button class="genbtn" style="margin-top:10px" onclick="hap();saveWordGoalFromInput()">${T('Set goal')}</button>
-        ${wordGoal?`<button class="loadmore" style="margin-top:8px" onclick="hap();clearWordGoal()">${T('Learn all {n} words', {n:dl.toLocaleString(langLocale())})}</button>`:''}`;
-    }
-    const goalBox = `
-      <div class="genbox goal-box">
-        <h3>&#127919; ${T('Learning goal')}</h3>
-        <p>${T('Set a target — a number of words, or specific sources to finish. Your progress percentage and daily plan are measured against it.')}</p>
-        <div class="daily-num" style="margin-bottom:10px">${gl.toLocaleString(langLocale())} <span>/ ${goalStr()}</span></div>
-        ${goalModeBar}
-        <div class="plan-form">
-          ${goalBody}
-        </div>
-      </div>`;
 
     // Streak history mini-calendar (last 14 days)
     const hist = (streak && streak.history) || {};
@@ -9173,16 +9176,263 @@ function render(){
         ${isPro?'':proOverlay()}
       </div>
 
-      ${sourceGraph}
-
-      ${goalBox}`;
+      ${sourceGraph}`;
   }
+}
+
+/* Learning-goal box (moved to the Profile page in v95). Either a target number of words,
+   or a set of sources to finish. Built as a standalone helper so both a future caller and
+   the profile page can render it; `c` = counts(). */
+function goalBoxHtml(c){
+  const dl = deck.length;
+  const presets = [500,1000,3000,5000].filter(n=>n<dl);
+  // Compact chip label so targets fit one row: 1000 -> "1K", 2500 -> "2.5K".
+  const compactNum = n => n>=1000 ? (n%1000===0 ? (n/1000)+'K' : (n/1000).toFixed(1)+'K') : String(n);
+  const gl = goalLearned(c);
+  const srcGoalOpts = SRC_ORDER.filter(s=>s==='general'||bookChapters(s).length);
+  // The two goal-type tabs.
+  const goalModeBar = `
+    <div class="chiprow srcchips" style="margin-bottom:14px">
+      <button class="planchip srcchip${goalMode==='count'?' active':''}" onclick="hap();setGoalMode('count')">${T('By word count')}</button>
+      <button class="planchip srcchip${goalMode==='source'?' active':''}" onclick="hap();setGoalMode('source')">${T('By source')}</button>
+    </div>`;
+  let goalBody;
+  if(goalMode==='source'){
+    const picked = goalSourceList().length;
+    goalBody = `
+      <label>${T('Learn every word from the sources you choose')}</label>
+      <div class="chiprow srcchips">
+        ${srcGoalOpts.map(s=>`<button class="planchip srcchip${goalSources.includes(s)?' active':''}" onclick="hap();toggleGoalSource('${s}')">${goalSrcLabel(s)}</button>`).join('')}
+      </div>
+      ${picked
+        ? `<p class="note" style="margin-top:10px">${T('Goal: learn all {n} words in the selected {c} source(s).', {n:goalStr(), c:picked})}</p>`
+        : `<p class="note" style="margin-top:10px">${T('Pick one or more sources above to set your goal.')}</p>`}`;
+  } else {
+    goalBody = `
+      <label>${T('Words to learn')}</label>
+      <div class="chiprow onerow">
+        ${presets.map(n=>`<button class="planchip${wordGoal===n?' active':''}" onclick="hap();setWordGoal(${n})">${compactNum(n)}</button>`).join('')}
+        <button class="planchip${wordGoal?'':' active'}" onclick="hap();clearWordGoal()">${T('All')}</button>
+      </div>
+      <label style="margin-top:12px">${T('Or enter an exact number')}</label>
+      <input type="number" id="goalInput" min="1" max="${dl}" value="${goalTotal()}" inputmode="numeric" onkeydown="if(event.key==='Enter'){event.preventDefault();saveWordGoalFromInput();}">
+      <button class="genbtn" style="margin-top:10px" onclick="hap();saveWordGoalFromInput()">${T('Set goal')}</button>
+      ${wordGoal?`<button class="loadmore" style="margin-top:8px" onclick="hap();clearWordGoal()">${T('Learn all {n} words', {n:dl.toLocaleString(langLocale())})}</button>`:''}`;
+  }
+  return `
+    <div class="genbox goal-box">
+      <h3>&#127919; ${T('Learning goal')}</h3>
+      <p>${T('Set a target — a number of words, or specific sources to finish. Your progress percentage and daily plan are measured against it.')}</p>
+      <div class="daily-num" style="margin-bottom:10px">${gl.toLocaleString(langLocale())} <span>/ ${goalStr()}</span></div>
+      ${goalModeBar}
+      <div class="plan-form">
+        ${goalBody}
+      </div>
+    </div>`;
+}
+
+/* ============ USER PROFILE / ACCOUNT (v95) ============ */
+/* Header avatar: initials when signed in, a person glyph when a guest. */
+function updateProfileBtn(){
+  const btn = document.getElementById('profileBtn');
+  const inner = document.getElementById('profileBtnInner');
+  if(!btn||!inner) return;
+  if(account){
+    const n = (account.name||account.email||'?').trim();
+    const initials = n.split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase() || n[0].toUpperCase();
+    inner.textContent = initials;
+    btn.classList.add('signed-in');
+    btn.classList.toggle('is-pro', !!account.pro);
+  } else {
+    inner.innerHTML = '&#128100;';
+    btn.classList.remove('signed-in','is-pro');
+  }
+  btn.classList.toggle('on-tab', tab==='profile');
+  btn.setAttribute('aria-label', T('Profile'));
+}
+
+/* Which inline auth form is showing on the signed-out profile page. */
+function setAuthMode(m){ authMode = m; if(tab!=='profile'){ tab='profile'; } render(); }
+
+/* --- Placeholder auth actions (local only; no real Google OAuth / server yet) --- */
+async function persistAccounts(){
+  await Store.set('dutch5k-accounts', accounts);
+  await Store.set('dutch5k-account', account ? account.email : null);
+}
+function _newAccount(name, email, provider){
+  return { id:'u_'+Date.now().toString(36), name:name||email.split('@')[0], email, provider, createdAt:todayStr(), pro:false };
+}
+async function _signInWith(acc){
+  account = acc;
+  accounts[acc.email] = acc;
+  isPro = !!acc.pro;                 // Pro entitlement comes from the account
+  const name = acc.name;            // capture before awaits (account may change on later interaction)
+  await Store.set('dutch5k-pro', isPro);
+  await persistAccounts();
+  authMode = null;
+  buildQueue();
+  render();
+  toast(T('Signed in as {name}.', {name}));
+}
+// "Continue with Google" — demo flow (asks for the Google address; real OAuth to be wired later).
+async function doGoogleSignIn(){
+  hap();
+  const el = document.getElementById('authEmail'); if(!el) return;
+  const email = (el.value||'').trim().toLowerCase();
+  const err = contactEmailError(email);
+  if(err){ el.classList.add('cf-err'); const h=document.getElementById('authHint'); if(h) h.textContent=err; return; }
+  const acc = accounts[email] || _newAccount('', email, 'google');
+  acc.provider = 'google';
+  await _signInWith(acc);
+}
+async function doSignup(){
+  hap();
+  const nameEl = document.getElementById('authName');
+  const el = document.getElementById('authEmail'); if(!el) return;
+  const name = nameEl ? (nameEl.value||'').trim() : '';
+  const email = (el.value||'').trim().toLowerCase();
+  const err = contactEmailError(email);
+  if(err){ el.classList.add('cf-err'); const h=document.getElementById('authHint'); if(h) h.textContent=err; return; }
+  const acc = accounts[email] || _newAccount(name, email, 'email');
+  if(name) acc.name = name;
+  await _signInWith(acc);
+}
+async function doLogin(){
+  hap();
+  const el = document.getElementById('authEmail'); if(!el) return;
+  const email = (el.value||'').trim().toLowerCase();
+  const err = contactEmailError(email);
+  if(err){ el.classList.add('cf-err'); const h=document.getElementById('authHint'); if(h) h.textContent=err; return; }
+  const acc = accounts[email];
+  if(!acc){ el.classList.add('cf-err'); const h=document.getElementById('authHint'); if(h) h.textContent=T('No account found for that email — sign up instead.'); return; }
+  await _signInWith(acc);
+}
+function clearAuthErr(){ const el=document.getElementById('authEmail'); if(el) el.classList.remove('cf-err'); const h=document.getElementById('authHint'); if(h) h.textContent=''; }
+async function signOut(){
+  hap();
+  account = null;
+  isPro = false;                     // Pro belongs to the account, not the device
+  await Store.set('dutch5k-pro', false);
+  await Store.set('dutch5k-account', null);
+  authMode = null;
+  buildQueue();
+  render();
+  toast(T('Signed out. Your progress stays on this device.'));
+}
+// Buy Pro from the profile. Requires an account (that's the point — Pro is tied to the account).
+async function buyPro(){
+  hap();
+  if(!account){ setAuthMode('signup'); toast(T('Create an account or sign in to go Pro.')); return; }
+  account.pro = true;
+  accounts[account.email] = account;
+  isPro = true;
+  await Store.set('dutch5k-pro', true);
+  await persistAccounts();
+  buildQueue();
+  render();
+  if(menuOpen) renderMenu();
+  toast(T('Pro unlocked — full access!'));
+}
+async function cancelPro(){
+  hap();
+  if(account){ account.pro=false; accounts[account.email]=account; await persistAccounts(); }
+  isPro = false;
+  await Store.set('dutch5k-pro', false);
+  buildQueue();
+  render();
+  if(menuOpen) renderMenu();
+  toast(T('Back on the Free plan.'));
+}
+
+function renderProfile(main, c){
+  const providerLabel = account ? (account.provider==='google' ? 'Google' : T('Email')) : '';
+  let accountCard;
+  if(account){
+    const initials = (account.name||account.email||'?').split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase();
+    accountCard = `
+      <div class="genbox profile-head">
+        <div class="pf-avatar${account.pro?' is-pro':''}">${esc(initials||'?')}</div>
+        <div class="pf-id">
+          <div class="pf-name">${esc(account.name||account.email.split('@')[0])}</div>
+          <div class="pf-email">${esc(account.email)}</div>
+          <div class="pf-meta">${T('Signed in with {p}', {p:providerLabel})} &middot; ${T('Member since {d}', {d:new Date(account.createdAt).toLocaleDateString(langLocale(),{year:'numeric',month:'short'})})}</div>
+        </div>
+      </div>
+      <div class="genbox">
+        <div class="pf-row"><span>${T('Plan')}</span><b class="${account.pro?'c-blue':''}">${account.pro?'&#128081; '+T('Pro'):T('Free')}</b></div>
+        <div class="pf-row"><span>${T('Words learned')}</span><b>${c.learned}</b></div>
+        <div class="note" style="margin-top:6px">${T('Your progress is saved to your account. Cloud sync across devices is coming soon; for now it is stored on this device.')}</div>
+        <button class="loadmore" style="margin-top:12px" onclick="signOut()">${T('Sign out')}</button>
+      </div>`;
+  } else {
+    const gForm = authMode==='google' ? `
+      <div class="auth-form">
+        <input type="email" id="authEmail" class="cf-input" placeholder="${T('Your Google email')}" inputmode="email" autocomplete="email" oninput="clearAuthErr()" onkeydown="if(event.key==='Enter'){event.preventDefault();doGoogleSignIn();}">
+        <div id="authHint" class="cf-hint cf-err-msg"></div>
+        <button class="genbtn" onclick="doGoogleSignIn()">${T('Continue')} &#8594;</button>
+        <div class="note">${T('Demo Google sign-in — real Google login is coming soon.')}</div>
+      </div>` : '';
+    const suForm = authMode==='signup' ? `
+      <div class="auth-form">
+        <input type="text" id="authName" class="cf-input" placeholder="${T('Your name')}" autocomplete="name">
+        <input type="email" id="authEmail" class="cf-input" placeholder="${T('Email address')}" inputmode="email" autocomplete="email" oninput="clearAuthErr()" onkeydown="if(event.key==='Enter'){event.preventDefault();doSignup();}">
+        <div id="authHint" class="cf-hint cf-err-msg"></div>
+        <button class="genbtn" onclick="doSignup()">${T('Create account')}</button>
+      </div>` : '';
+    const liForm = authMode==='login' ? `
+      <div class="auth-form">
+        <input type="email" id="authEmail" class="cf-input" placeholder="${T('Email address')}" inputmode="email" autocomplete="email" oninput="clearAuthErr()" onkeydown="if(event.key==='Enter'){event.preventDefault();doLogin();}">
+        <div id="authHint" class="cf-hint cf-err-msg"></div>
+        <button class="genbtn" onclick="doLogin()">${T('Log in')}</button>
+      </div>` : '';
+    accountCard = `
+      <div class="genbox profile-signin">
+        <div class="pf-avatar guest">&#128100;</div>
+        <h3 style="text-align:center">${T('Save your progress')}</h3>
+        <p style="text-align:center">${T('Create an account or log in so your progress and Pro plan live in your account — not just on this device.')}</p>
+        <div class="auth-actions">
+          <button class="gsi-btn${authMode==='google'?' active':''}" onclick="setAuthMode('google')"><span class="gsi-g">G</span>${T('Continue with Google')}</button>
+          ${gForm}
+          <button class="auth-alt${authMode==='signup'?' active':''}" onclick="setAuthMode('signup')">${T('Sign up with email')}</button>
+          ${suForm}
+          <button class="auth-alt ghost${authMode==='login'?' active':''}" onclick="setAuthMode('login')">${T('I already have an account')}</button>
+          ${liForm}
+        </div>
+      </div>`;
+  }
+
+  // Pro card (buy / manage Pro from the profile).
+  let proCard;
+  if(account && account.pro){
+    proCard = `
+      <div class="genbox probox pro-on">
+        <div class="pro-h"><span class="pro-crown">&#128081;</span><b>${T('Pro to go')}</b><span class="pro-chk">&#10003; ${T('Active')}</span></div>
+        <p>${T('You have full access to every word, list and stat.')}</p>
+        <button class="pro-restore" onclick="cancelPro()">${T('Switch back to Free (test)')}</button>
+      </div>`;
+  } else {
+    proCard = `
+      <div class="genbox probox">
+        <div class="pro-h"><span class="pro-crown">&#128081;</span><b>${T('Pro to go')}</b></div>
+        <p>${T('Go Pro for full access to every General, Gang, Actie, Niveau and Perfectie word, the complete word list and all progress stats.')}</p>
+        <button class="pro-cta wide" onclick="buyPro()">${account?T('Get Pro'):T('Sign in to get Pro')} &#8594;</button>
+        ${account?'':`<div class="note" style="text-align:center;margin-top:8px">${T('Pro is tied to your account, so it follows you when sync arrives.')}</div>`}
+      </div>`;
+  }
+
+  main.innerHTML = `
+    <div class="profile-page">
+      <h2 class="pf-title">${T('Profile')}</h2>
+      ${accountCard}
+      ${proCard}
+      ${goalBoxHtml(c)}
+    </div>`;
 }
 
 /* ============ OFFLINE (service worker) ============ */
 if('serviceWorker' in navigator){
   const swCode = `
-    const C = 'dutch5k-v94';
+    const C = 'dutch5k-v95';
     self.addEventListener('install', e => { self.skipWaiting(); });
     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
     self.addEventListener('fetch', e => {
