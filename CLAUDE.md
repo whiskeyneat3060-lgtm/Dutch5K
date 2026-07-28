@@ -817,6 +817,51 @@ match (`shuffleBar + srcBar + posBar` in the two `main.innerHTML` spots; the shu
 > already do partial updates (className swap + `renderWordList()`) and never rebuild the bars. SW cache bumped
 > v84→v85.
 
+> **Filters → compact multi-select dropdowns (v97 single-select selects → v98 custom multi-select, v99 i18n;
+> Adi: "change filter option view… single line… each option as a dropdown so filters don't take so much space";
+> then "select multiple options; make shuffle+new-word a 4th dropdown; study mode also a dropdown and the first
+> one; default 'All' is confusing — give logical names"):** the horizontally-scrolling filter/mode **button
+> bars are gone**, replaced by a single row of dropdowns (`.filterbar`). **v97** was a first pass using native
+> `<select>` (single-select); **v98 replaced them with a custom multi-select widget** and is the current design.
+> - **Filter state is now ARRAYS** (empty = "all"): `statusSel` (was the string `filter`), `posFilter`,
+>   `srcFilter`, `learnPos`, `learnSrc` — **not persisted**, reset per session. The three filter sites became
+>   membership tests: buildQueue (`learnPos.length && !learnPos.includes(posOf(e))`, `learnSrc.some(inSource)`),
+>   renderWordList (same for `statusSel`/`posFilter`/`srcFilter`), and the Progress click-throughs set arrays
+>   (`posFilter=['verb']`, `srcFilter=['gang'];posFilter=[]`). **No id/persistence migration** (these never
+>   persisted).
+> - **Custom `<details>` dropdown**, one registry drives all of them: `dropDef(key)` returns
+>   `{multi, sel, name, opts, reset?, pick}` for keys `lmode`/`lsrc`/`lpos`/`lopts` (Learn) and
+>   `wstatus`/`wsrc`/`wpos` (Words); `buildDrop(key)` renders it, `refreshDrop(key)` regenerates **one** dropdown
+>   in place preserving its `open` state, `dropSummary()` builds the label. A pick handler mutates the array and
+>   calls `applyDrop(key)` → `refreshDrop` + re-run the affected view **without rebuilding the bar**, so ticking
+>   several options keeps the menu open and updates the list/queue live. `pickLearnPos/pickWordsSrc/pickStatus/
+>   dropReset` (multi), `pickMode` (single — closes + `setMode`), `pickLearnOpt` (toggles `learnShuffle`/`newOnly`).
+>   Outside-click / Escape close via `dropOutsideClose` (option clicks `stopPropagation`, so they don't close).
+> - **Learn split into `#learnBars` + `#learnBody`** (`renderLearn` builds both, `renderLearnBody` rebuilds only
+>   the card) so a filter change never rebuilds the bar / closes an open dropdown. **`renderKeepBars` (v85) was
+>   removed** — the mode bar is a dropdown now, so there's no horizontal scroll to preserve; `setMode` calls
+>   plain `render()`. The old `setFilter/setPosFilter/setSrcFilter/setLearnPos/setLearnSrc` setters +
+>   `posFilterButtons/srcFilterButtons` helpers were **deleted** (the shared-helper note above is superseded;
+>   `POS_FILTER`/`srcFilterOpts` stay). `toggleShuffle/toggleNewOnly` are now dead (logic inlined in
+>   `pickLearnOpt`) but left in place.
+> - **Request #3 — study mode is the FIRST dropdown** on Learn (single-select). **#2 — Shuffle + New words only**
+>   are one **Options** dropdown (4th). Learn row = `mode · source · type · options`; Words row =
+>   `status · source · type`.
+> - **Request #4 — logical default labels instead of "All":** an empty multi-filter shows the filter's
+>   plain-language **name** (`Word type`/`Source`/`Status`/`Options`; study mode shows the current mode); 1 pick
+>   = that option's label; 2+ = `Name · N`. Each multi dropdown has an "All …" reset row at the top.
+> - **CSS** `.filterbar`/`.msdrop`/`.msdrop-sum`/`.msdrop-menu`/`.msdrop-opt`/`.chk` after the `.learn-pos` rule
+>   (theme-aware; Midnight/Sepia active-border + hover overrides added next to the old `.posfilters button.active`
+>   theme rules). `flex:1 1 auto` sizes dropdowns to content so short labels yield room to longer ones (single
+>   line, ellipsis if cramped); the **last** dropdown's menu is right-anchored so it can't spill off-screen. The
+>   v97 `.filtersel` rules + `.modebar`/`.shuffle-btn` CSS are now dead but harmless.
+> - **i18n (v99):** a `UI_V98` merge block (after `UI_V93`, same `Object.assign` pattern) translates the 9 labels
+>   `Study mode`/`Word type`/`Source`/`Options`/`Status`/`Shuffle`/`new`/`learning`/`learned` into all 10
+>   non-English languages. `new`/`learning`/`learned` were a **pre-existing English fallback** (status filter +
+>   card `T(status).toUpperCase()` tags) — now localized everywhere. Mode names (Cards/Reverse/…) were already in
+>   `UI_V82`; POS option labels in the base `UI`; `All types`/`All sources`/`All` already translated; source
+>   names stay untranslated (proper nouns). SW cache **v96 → v97 → v98 → v99**.
+
 **Search result ordering (v76, Adi request):** the Words search matches the query as a substring of the
 Dutch word **or** the (English/translated) meaning, but results were left in corpus-frequency order — so an
 exact hit (searching "tell" → the word `tell`) sat far below words that merely contain it (`teller`,
