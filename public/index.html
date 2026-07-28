@@ -435,7 +435,7 @@
   .srcname{flex:0 0 64px; font-size:13px; font-weight:600;}
   .srcrow .posbar{flex:1;}
   .booktag{color:var(--red); font-weight:600; letter-spacing:0.5px;}
-  .srcbadge{display:inline-block; font-family:var(--font-head); font-weight:900; font-size:9px; width:15px; height:15px; line-height:15px; text-align:center; margin-left:4px; vertical-align:middle; color:#fff;}
+  .srcbadge{display:inline-block; font-family:var(--font-head); font-weight:900; font-size:9px; min-width:15px; height:15px; line-height:15px; padding:0 3px; box-sizing:border-box; text-align:center; margin-left:4px; vertical-align:middle; color:#fff;}
   .sb-actie{background:var(--red);}
   .sb-gang{background:var(--blue);}
   .sb-niveau{background:var(--yellow); color:#111;}
@@ -2564,19 +2564,19 @@ function goalTotal(){
 // Words learned that count toward the current goal: all learned in count mode, in-source learned in source mode.
 function goalLearned(c){ return goalMode==='source' ? goalSourceCounts().learned : (c?c.learned:0); }
 function goalStr(){ return goalTotal().toLocaleString(langLocale()); }
-// Short source name for the goal picker chips (full "Nederlands in ..." labels don't fit a chip).
+// Short source label for the goal picker chips (CEFR level bands for the book sources).
 function goalSrcLabel(s){ return SRC_SHORT[s] || s; }
 const POS_LABELS = {verb:'Verbs', noun:'Nouns', adjective:'Adjectives', adverb:'Adverbs', pronoun:'Pronouns', preposition:'Prepositions', conjunction:'Conjunctions', number:'Numbers', expression:'Expressions', article:'Articles'};
 
 /* Shared filter definitions so the Learn and Words tabs stay consistent (same options + order). */
 const POS_FILTER = ['all','verb','noun','adjective','adverb','pronoun','preposition','conjunction','number','expression'];
-// Source options in canonical order: All, General, Gang, Actie (book sources shown only if present in the deck).
+// Source options in canonical order: All, General, then CEFR level bands (shown only if present in the deck).
 function srcFilterOpts(){
   const o = [['all',T('All sources')],['general',T('General 5K')]];
-  if(bookChapters('gang').length) o.push(['gang','Nederlands in Gang']);
-  if(bookChapters('actie').length) o.push(['actie','Nederlands in Actie']);
-  if(bookChapters('niveau').length) o.push(['niveau','Nederlands op Niveau']);
-  if(bookChapters('perfectie').length) o.push(['perfectie','Nederlands naar Perfectie']);
+  if(bookChapters('gang').length) o.push(['gang','A0 → A2']);
+  if(bookChapters('actie').length) o.push(['actie','A2 → B1']);
+  if(bookChapters('niveau').length) o.push(['niveau','B1 → B2']);
+  if(bookChapters('perfectie').length) o.push(['perfectie','B2 → C1']);
   return o;
 }
 /* ================= Compact multi-select dropdown filters (v98) =================
@@ -2672,8 +2672,7 @@ function dropOutsideClose(e){
 function posOf(e){ return (e.t||'').toLowerCase(); }
 function bookTag(e){
   if(!e.books || !e.books.length) return '';
-  const names={actie:'Actie', gang:'Gang', niveau:'Niveau', perfectie:'Perfectie'};
-  return e.books.map(b=>`${names[b.src]||b.src} H${b.ch}`).join(' · ');
+  return e.books.map(b=>`${SRC_SHORT[b.src]||b.src} H${b.ch}`).join(' · ');
 }
 
 function entryId(e){ return e.t ? (e.w.toLowerCase() + '|' + e.t) : e.w.toLowerCase(); }
@@ -7904,7 +7903,7 @@ function primarySource(e){
 // Learned/total per source (general = no book; book sources via inSource). A word shared
 // between two books counts under each, matching how the source filter presents them.
 const SRC_ORDER = ['general','gang','actie','niveau','perfectie'];
-const SRC_SHORT = {general:'General', gang:'Gang', actie:'Actie', niveau:'Niveau', perfectie:'Perfectie'};
+const SRC_SHORT = {general:'General', gang:'A0–A2', actie:'A2–B1', niveau:'B1–B2', perfectie:'B2–C1'};
 const SRC_COLORVAR = {general:'--muted', gang:'--blue', actie:'--red', niveau:'--yellow', perfectie:'--green'};
 function countsBySource(){
   const out={};
@@ -8132,10 +8131,10 @@ function renderMenu(){
       <p>${T('Build your Dutch vocabulary in a structured way. This one-stop app shows all the details of a word — meaning, example sentences, grammar forms and synonyms — so learners can pick it up in a practical way.')}</p>
       <p style="margin-top:6px">${T('The app has {n} Dutch words in total, gathered from five sources:', {n:deck.length})}</p>
       <p style="margin-top:6px">&#128218; <b>General Words</b>: ${T('{n} popular everyday Dutch words.', {n:genCount})}</p>
-      ${bookChapters('gang').length?`<p style="margin-top:6px">&#128218; <b>Nederlands in Gang</b> (A0 &rarr; A2): ${T('{n} words', {n:deck.filter(e=>(e.srcTags||[]).includes('gang')).length})}.</p>`:''}
-      ${bookChapters('actie').length?`<p style="margin-top:6px">&#128218; <b>Nederlands in Actie</b> (A2 &rarr; B1): ${T('{n} words', {n:deck.filter(e=>(e.srcTags||[]).includes('actie')).length})}.</p>`:''}
-      ${bookChapters('niveau').length?`<p style="margin-top:6px">&#128218; <b>Nederlands op Niveau</b> (B1 &rarr; B2): ${T('{n} words', {n:deck.filter(e=>(e.srcTags||[]).includes('niveau')).length})}.</p>`:''}
-      ${bookChapters('perfectie').length?`<p style="margin-top:6px">&#128218; <b>Nederlands naar Perfectie</b> (B2 &rarr; C1): ${T('{n} words', {n:deck.filter(e=>(e.srcTags||[]).includes('perfectie')).length})}.</p>`:''}`;
+      ${bookChapters('gang').length?`<p style="margin-top:6px">&#128218; <b>A0 &rarr; A2</b>: ${T('{n} words', {n:deck.filter(e=>(e.srcTags||[]).includes('gang')).length})}.</p>`:''}
+      ${bookChapters('actie').length?`<p style="margin-top:6px">&#128218; <b>A2 &rarr; B1</b>: ${T('{n} words', {n:deck.filter(e=>(e.srcTags||[]).includes('actie')).length})}.</p>`:''}
+      ${bookChapters('niveau').length?`<p style="margin-top:6px">&#128218; <b>B1 &rarr; B2</b>: ${T('{n} words', {n:deck.filter(e=>(e.srcTags||[]).includes('niveau')).length})}.</p>`:''}
+      ${bookChapters('perfectie').length?`<p style="margin-top:6px">&#128218; <b>B2 &rarr; C1</b>: ${T('{n} words', {n:deck.filter(e=>(e.srcTags||[]).includes('perfectie')).length})}.</p>`:''}`;
   const langInner = `
       <div class="themepick">
         ${LANGS.map(l=>`
@@ -8808,7 +8807,7 @@ function renderWordList(){
     const e = deck[i]; const s = progress[e.id]||'new';
     const meaning = (e.rich || e.hasMeaning) ? esc(ct(e.m)) : (e.books&&e.books.length ? T('tap to open') : `#${e.rank} &#183; ${T('tap to open')}`);
     const pos = posOf(e) ? `<span class="wpos">${esc(T(posOf(e)))}</span>` : '';
-    const badge = (e.srcTags||[]).filter(t=>t!=='general').map(t=>`<span class="srcbadge sb-${t}">${({actie:'A',gang:'G',niveau:'N',perfectie:'P'})[t]||'?'}</span>`).join('');
+    const badge = (e.srcTags||[]).filter(t=>t!=='general').map(t=>`<span class="srcbadge sb-${t}">${({gang:'A2',actie:'B1',niveau:'B2',perfectie:'C1'})[t]||'?'}</span>`).join('');
     if(isLocked(e)){
       // Free plan: row stays visible but blurred; tapping opens the Pro upsell.
       return `<div class="wrow locked-row" onclick="openPro(event)">
@@ -9567,7 +9566,7 @@ function renderProfile(main, c){
 /* ============ OFFLINE (service worker) ============ */
 if('serviceWorker' in navigator){
   const swCode = `
-    const C = 'dutch5k-v99';
+    const C = 'dutch5k-v100';
     self.addEventListener('install', e => { self.skipWaiting(); });
     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
     self.addEventListener('fetch', e => {
