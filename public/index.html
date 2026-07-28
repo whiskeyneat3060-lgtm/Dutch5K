@@ -293,6 +293,19 @@
   }
   .posfilters button.active{background:var(--ink); color:#fff;}
   .learn-pos{margin-top:0;}
+  /* ---- Compact single-line dropdown filters (v97) ---- */
+  .filterbar{display:flex; gap:8px; margin-bottom:12px; align-items:stretch;}
+  .filtersel{
+    flex:1 1 0; min-width:0; padding:8px 28px 8px 10px; border:2px solid var(--line);
+    background:var(--paper); color:var(--ink); font-family:var(--font-body); font-size:12px;
+    font-weight:600; cursor:pointer; border-radius:var(--radius); line-height:1.2;
+    -webkit-appearance:none; -moz-appearance:none; appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:right 9px center; background-size:12px;
+    text-overflow:ellipsis; white-space:nowrap;
+  }
+  .filtersel:focus{outline:none; border-color:var(--blue);}
+  .filtersel.on{border-color:var(--blue);}
   .shuffle-bar{margin-bottom:10px;}
   .shuffle-btn{letter-spacing:0.5px;}
   .shuffle-btn.active{background:var(--blue); color:#fff; border-color:var(--blue);}
@@ -563,6 +576,7 @@
   html[data-theme="midnight"] .word-nl{ font-weight:800; }
   html[data-theme="midnight"] .filters button.active,
   html[data-theme="midnight"] .posfilters button.active{ background:var(--blue); color:#fff; border-color:var(--blue); }
+  html[data-theme="midnight"] .filtersel.on{ border-color:var(--blue); }
   /* dark text on the light/coloured blocks so labels stay legible */
   html[data-theme="midnight"] .chip.ant,
   html[data-theme="midnight"] .actions button.btn-learning,
@@ -642,6 +656,7 @@
   html[data-theme="sepia"] .wdetail{ background:var(--grey); }
   html[data-theme="sepia"] .filters button.active,
   html[data-theme="sepia"] .posfilters button.active{ background:var(--accent); color:var(--paper); border-color:var(--accent); }
+  html[data-theme="sepia"] .filtersel.on{ border-color:var(--accent); }
   html[data-theme="sepia"] .actions button.btn-know{ color:#fff; }
   /* drawer: title-page header is a centred column, so pin the hamburger to the corner */
   html[data-theme="sepia"] header{ position:relative; }
@@ -2532,6 +2547,27 @@ function srcFilterOpts(){
 }
 function srcFilterButtons(active, handler){
   return srcFilterOpts().map(([s,label])=>`<button data-s="${s}" class="${active===s?'active':''}" onclick="hap();${handler}('${s}')">${label}</button>`).join('');
+}
+/* Compact single-line filters (v97): the POS / source / status pickers are rendered
+   as <select> dropdowns instead of horizontally-scrolling button bars, so they sit on
+   one clean row and take almost no vertical space. Each select carries the `on` class
+   when a non-default value is chosen (accent border = "this filter is narrowing"). The
+   existing string handlers work unchanged via onchange="handler(this.value)"; the
+   partial-update className swaps inside them simply no-op (no matching buttons) and the
+   list still re-renders. */
+function filterSelect(handler, opts, active, dflt, label){
+  const on = active!==dflt ? ' on' : '';
+  const body = opts.map(([v,txt])=>`<option value="${v}"${active===v?' selected':''}>${txt}</option>`).join('');
+  return `<select class="filtersel${on}" onchange="hap();${handler}(this.value)" aria-label="${label}">${body}</select>`;
+}
+function posFilterSelect(active, handler){
+  return filterSelect(handler, POS_FILTER.map(p=>[p, p==='all'?T('All types'):T(POS_LABELS[p]||p)]), active, 'all', T('All types'));
+}
+function srcFilterSelect(active, handler){
+  return filterSelect(handler, srcFilterOpts(), active, 'all', T('All sources'));
+}
+function statusFilterSelect(active){
+  return filterSelect('setFilter', ['all','new','learning','learned'].map(f=>[f,T(f)]), active, 'all', T('all'));
 }
 function posOf(e){ return (e.t||'').toLowerCase(); }
 function bookTag(e){
@@ -8738,14 +8774,16 @@ function learnBars(){
   const modeBar = `<div class="posfilters posscroll modebar">` +
     LEARN_MODES.map(m=>`<button class="modebtn${learnMode===m.id?' active':''}" onclick="setMode('${m.id}')" title="${T(learnModeLabel(m))}">${m.icon} <span>${T(learnModeLabel(m))}</span></button>`).join('') +
     `</div>`;
-  const posBar = `<div class="posfilters posscroll learn-pos">${posFilterButtons(learnPos,'setLearnPos')}</div>`;
-  const srcBar = srcFilterOpts().length>2 ? `<div class="srcfilters posfilters posscroll learn-pos">${srcFilterButtons(learnSrc,'setLearnSrc')}</div>` : '';
+  const filterBar = `<div class="filterbar">`+
+    (srcFilterOpts().length>2 ? srcFilterSelect(learnSrc,'setLearnSrc') : '')+
+    posFilterSelect(learnPos,'setLearnPos')+
+    `</div>`;
   const shuffleBar = `<div class="posfilters learn-pos shuffle-bar">`+
     `<button class="shuffle-btn${learnShuffle?' active':''}" aria-pressed="${learnShuffle}" onclick="toggleShuffle()">&#128256; ${learnShuffle?T('Shuffle On'):T('Shuffle Off')}</button>`+
     `<button class="shuffle-btn${newOnly?' active':''}" aria-pressed="${newOnly}" onclick="toggleNewOnly()" title="${T('Study only new words — skip reviews')}">&#128308; ${T('New words only')}</button>`+
     `</div>`;
   const drillBanner = leechOnly ? `<div class="drill-banner">&#128293; ${T('Drilling hardest words')}<button onclick="exitDrill()" aria-label="${T('Exit drill')}">&#10005;</button></div>` : '';
-  return modeBar + drillBanner + shuffleBar + srcBar + posBar;
+  return modeBar + drillBanner + shuffleBar + filterBar;
 }
 /* Reusable card fragments. */
 function wordBlock(e, idx, rankTxt){
@@ -8988,17 +9026,15 @@ function render(){
       return;
     }
     // List view — rendered once; search updates only the list, never the input
-    const posButtons = posFilterButtons(posFilter,'setPosFilter');
-    // Source filter — only show book sources that actually exist in the deck
-    const srcOpts = srcFilterOpts();
-    const srcButtons = srcFilterButtons(srcFilter,'setSrcFilter');
+    // Compact single-line dropdown filters (v97): status + source + POS on one row.
+    const hasSrc = srcFilterOpts().length>2;
     main.innerHTML = `
       <input type="search" id="wordSearch" placeholder="${T('Search Dutch or English…')}" autocomplete="off" value="${esc(search)}">
-      <div class="filters">
-        ${['all','new','learning','learned'].map(f=>`<button data-f="${f}" class="${filter===f?'active':''}" onclick="hap();setFilter('${f}')">${T(f)}</button>`).join('')}
+      <div class="filterbar">
+        ${statusFilterSelect(filter)}
+        ${hasSrc?srcFilterSelect(srcFilter,'setSrcFilter'):''}
+        ${posFilterSelect(posFilter,'setPosFilter')}
       </div>
-      ${srcOpts.length>2?`<div class="srcfilters posfilters posscroll">${srcButtons}</div>`:''}
-      <div class="posfilters posscroll">${posButtons}</div>
       <div class="wlist" id="wlist"></div>
       <div id="wmore"></div>`;
     const inp = document.getElementById('wordSearch');
@@ -9454,7 +9490,7 @@ function renderProfile(main, c){
 /* ============ OFFLINE (service worker) ============ */
 if('serviceWorker' in navigator){
   const swCode = `
-    const C = 'dutch5k-v96';
+    const C = 'dutch5k-v97';
     self.addEventListener('install', e => { self.skipWaiting(); });
     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
     self.addEventListener('fetch', e => {
