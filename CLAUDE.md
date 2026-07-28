@@ -36,6 +36,25 @@ Owner Adi: B1 Dutch learner in Almere, toward conversational fluency.
 > literals, and the About-box book-title lines) — those describe pre-v100 display strings; the ids/logic they
 > mention still hold. SW cache bumped **v99 → v100**.
 
+> **About-box "levels not sources" wording + single-line General + Pro-box de-book-naming (v101–v102,
+> Adi):** three copy tweaks continuing the v100 CEFR-band rename, plus one CSS fix.
+> - **About box (`aboutInner` in `renderMenu`):** the sources line changed from *"The app has {n} Dutch words
+>   in total, gathered from five sources:"* → **"The app has {n} common Dutch words, grouped by level:"** (says
+>   *level* not *source*, common-words framing). Both changed keys were **retranslated in all 10 non-English UI
+>   dicts** (they were already translated). The **General** line was shortened: bold label `General Words` →
+>   **`General`** and the key `'{n} popular everyday Dutch words.'` → **`'{n} popular words.'`** (also
+>   retranslated in all 10) so it fits one line. The four book lines (`A0–A2` … `B2–C1` via `SRC_SHORT`) are
+>   unchanged.
+> - **Pro to go box:** both upsell strings listed the old book names — `proBox()` (drawer) had *"every General,
+>   Gang, Actie and Niveau word"* and the profile Pro card (`renderProfile`) had *"every General, Gang, Actie,
+>   Niveau and Perfectie word"*. Both replaced with **"every word across all levels"**. These Pro strings are
+>   **English-only** (fall back via `T()`), so no dict edits.
+> - **Filter bar one-line fix (v101):** on narrow phones the 4th Learn dropdown (Options / Shuffle + New words
+>   only) wrapped to a second row. Fixed by changing **`.filterbar` `flex-wrap:wrap` → `nowrap`** — the
+>   `.msdrop`s already have `flex:1 1 auto; min-width:0` + label ellipsis, so they now shrink to share one row
+>   instead of wrapping. (Applies to both Learn's 4 dropdowns and Words' 3.)
+> - SW cache bumped **v100 → v101 → v102**.
+
 > **Convention (Adi):** this `CLAUDE.md` is the project's only memory (sessions get cleared), so it
 > should track features, gotchas, and cache bumps — but **never edit it automatically.** After each
 > feature, **ask Adi** whether to update this file. Likewise **never push to `main` automatically**
