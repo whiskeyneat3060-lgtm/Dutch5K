@@ -293,19 +293,36 @@
   }
   .posfilters button.active{background:var(--ink); color:#fff;}
   .learn-pos{margin-top:0;}
-  /* ---- Compact single-line dropdown filters (v97) ---- */
-  .filterbar{display:flex; gap:8px; margin-bottom:12px; align-items:stretch;}
-  .filtersel{
-    flex:1 1 0; min-width:0; padding:8px 28px 8px 10px; border:2px solid var(--line);
-    background:var(--paper); color:var(--ink); font-family:var(--font-body); font-size:12px;
-    font-weight:600; cursor:pointer; border-radius:var(--radius); line-height:1.2;
-    -webkit-appearance:none; -moz-appearance:none; appearance:none;
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-    background-repeat:no-repeat; background-position:right 9px center; background-size:12px;
-    text-overflow:ellipsis; white-space:nowrap;
+  /* ---- Compact single-line multi-select dropdown filters (v98) ---- */
+  .filterbar{display:flex; gap:8px; margin-bottom:12px; align-items:stretch; flex-wrap:wrap;}
+  .msdrop{position:relative; flex:1 1 auto; min-width:0;}
+  .msdrop>summary{
+    list-style:none; cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:4px;
+    padding:8px 9px; border:2px solid var(--line); background:var(--paper); color:var(--ink);
+    font-family:var(--font-body); font-size:12px; font-weight:600; border-radius:var(--radius);
+    white-space:nowrap; overflow:hidden; line-height:1.2;
   }
-  .filtersel:focus{outline:none; border-color:var(--blue);}
-  .filtersel.on{border-color:var(--blue);}
+  .msdrop>summary::-webkit-details-marker{display:none;}
+  .msdrop>summary .lbl{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .msdrop>summary .msdrop-arw{flex:0 0 auto; font-size:9px; color:var(--muted); transition:transform .15s;}
+  .msdrop[open]>summary .msdrop-arw{transform:rotate(180deg);}
+  .msdrop.on>summary, .msdrop[open]>summary{border-color:var(--blue);}
+  .msdrop-menu{
+    position:absolute; z-index:45; top:calc(100% + 4px); left:0; min-width:100%; max-width:260px;
+    background:var(--card-bg,var(--paper)); border:2px solid var(--line); border-radius:var(--radius);
+    box-shadow:var(--shadow); max-height:300px; overflow-y:auto; padding:4px;
+  }
+  .msdrop-opt{
+    display:flex; align-items:center; gap:6px; width:100%; text-align:left; padding:8px 8px;
+    border:none; background:none; color:var(--ink); font-family:var(--font-body); font-size:13px;
+    cursor:pointer; border-radius:6px; white-space:nowrap;
+  }
+  .msdrop-opt:hover{background:var(--line);}
+  .msdrop-opt.sel{font-weight:700;}
+  .msdrop-opt .chk{flex:0 0 auto; width:15px; text-align:center; color:var(--blue); font-weight:700;}
+  .msdrop-opt .otxt{overflow:hidden; text-overflow:ellipsis;}
+  /* Rightmost dropdown: open its menu right-aligned so it can't spill off-screen. */
+  .filterbar .msdrop:last-child .msdrop-menu{left:auto; right:0;}
   .shuffle-bar{margin-bottom:10px;}
   .shuffle-btn{letter-spacing:0.5px;}
   .shuffle-btn.active{background:var(--blue); color:#fff; border-color:var(--blue);}
@@ -577,6 +594,8 @@
   html[data-theme="midnight"] .filters button.active,
   html[data-theme="midnight"] .posfilters button.active{ background:var(--blue); color:#fff; border-color:var(--blue); }
   html[data-theme="midnight"] .filtersel.on{ border-color:var(--blue); }
+  html[data-theme="midnight"] .msdrop.on>summary, html[data-theme="midnight"] .msdrop[open]>summary{ border-color:var(--blue); }
+  html[data-theme="midnight"] .msdrop-opt:hover{ background:rgba(255,255,255,.08); }
   /* dark text on the light/coloured blocks so labels stay legible */
   html[data-theme="midnight"] .chip.ant,
   html[data-theme="midnight"] .actions button.btn-learning,
@@ -657,6 +676,8 @@
   html[data-theme="sepia"] .filters button.active,
   html[data-theme="sepia"] .posfilters button.active{ background:var(--accent); color:var(--paper); border-color:var(--accent); }
   html[data-theme="sepia"] .filtersel.on{ border-color:var(--accent); }
+  html[data-theme="sepia"] .msdrop.on>summary, html[data-theme="sepia"] .msdrop[open]>summary{ border-color:var(--accent); }
+  html[data-theme="sepia"] .msdrop-opt .chk{ color:var(--accent); }
   html[data-theme="sepia"] .actions button.btn-know{ color:#fff; }
   /* drawer: title-page header is a centred column, so pin the hamburger to the corner */
   html[data-theme="sepia"] header{ position:relative; }
@@ -1666,8 +1687,9 @@ let flipAnimateIn = false; let flipping = false; // page-flip animation state
 let learnMode = 'cards';   // Learn study mode: cards | reverse | type | listen | cloze | dehet (persisted dutch5k-mode)
 let objResult = null;      // objective-mode (type/cloze/dehet) result: {correct, grade:'good'|'again', answer, given}
 let leechOnly = false;     // when true, the Learn queue drills only your hardest (repeatedly-missed) words
-let filter = 'all'; let posFilter = 'all'; let srcFilter = 'all'; let search = ''; let expanded = null; let listLimit = 100;
-let learnPos = 'all'; let learnSrc = 'all';     // filters for the Learn queue
+// Filters are multi-select arrays (v98); an empty array means "all" (no narrowing).
+let statusSel = []; let posFilter = []; let srcFilter = []; let search = ''; let expanded = null; let listLimit = 100;
+let learnPos = []; let learnSrc = [];     // filters for the Learn queue (arrays; empty = all)
 let learnShuffle = false;   // Learn queue: strategic shuffle of new words (persisted dutch5k-shuffle). off = frequency order
 let newOnly = false;        // Learn queue: when true, show only brand-new words — hold back all due reviews (persisted dutch5k-newonly)
 let remindTime = '19:00';   // time of day for the daily-study reminder (persisted dutch5k-remindtime)
@@ -2533,9 +2555,6 @@ const POS_LABELS = {verb:'Verbs', noun:'Nouns', adjective:'Adjectives', adverb:'
 
 /* Shared filter definitions so the Learn and Words tabs stay consistent (same options + order). */
 const POS_FILTER = ['all','verb','noun','adjective','adverb','pronoun','preposition','conjunction','number','expression'];
-function posFilterButtons(active, handler){
-  return POS_FILTER.map(p=>`<button data-p="${p}" class="${active===p?'active':''}" onclick="hap();${handler}('${p}')">${p==='all'?T('All types'):T(POS_LABELS[p]||p)}</button>`).join('');
-}
 // Source options in canonical order: All, General, Gang, Actie (book sources shown only if present in the deck).
 function srcFilterOpts(){
   const o = [['all',T('All sources')],['general',T('General 5K')]];
@@ -2545,29 +2564,95 @@ function srcFilterOpts(){
   if(bookChapters('perfectie').length) o.push(['perfectie','Nederlands naar Perfectie']);
   return o;
 }
-function srcFilterButtons(active, handler){
-  return srcFilterOpts().map(([s,label])=>`<button data-s="${s}" class="${active===s?'active':''}" onclick="hap();${handler}('${s}')">${label}</button>`).join('');
+/* ================= Compact multi-select dropdown filters (v98) =================
+   Filters are now custom <details> dropdowns on a single row, and each one lets you
+   pick MULTIPLE values (POS / source / status). Study mode + Options (Shuffle / New
+   words only) are dropdowns too. The multi-select selections are ARRAYS (empty = all),
+   so the summary shows the filter's plain-language name by default ("Word type",
+   "Source", "Status") instead of a bare "All". A registry (dropDef) drives one builder
+   (buildDrop) + one in-place refresher (refreshDrop) for every dropdown, so ticking
+   several options keeps the menu open while the list/queue updates live. */
+function posDropOpts(){ return POS_FILTER.slice(1).map(p=>[p, T(POS_LABELS[p]||p)]); }
+function learnOptsSel(){ return [...(learnShuffle?['shuffle']:[]), ...(newOnly?['newonly']:[])]; }
+function dropDef(key){
+  switch(key){
+    case 'lmode':  return {multi:false, sel:learnMode, name:T('Study mode'),
+                           opts:LEARN_MODES.map(m=>[m.id, (m.icon?m.icon+' ':'')+T(learnModeLabel(m))]), pick:'pickMode'};
+    case 'lpos':   return {multi:true, sel:learnPos, name:T('Word type'), opts:posDropOpts(), reset:T('All types'), pick:'pickLearnPos'};
+    case 'lsrc':   return {multi:true, sel:learnSrc, name:T('Source'), opts:srcFilterOpts().slice(1), reset:T('All sources'), pick:'pickLearnSrc'};
+    case 'lopts':  return {multi:true, sel:learnOptsSel(), name:T('Options'),
+                           opts:[['shuffle','&#128256; '+T('Shuffle')],['newonly','&#128308; '+T('New words only')]], pick:'pickLearnOpt'};
+    case 'wstatus':return {multi:true, sel:statusSel, name:T('Status'),
+                           opts:[['new',T('new')],['learning',T('learning')],['learned',T('learned')]], reset:T('All'), pick:'pickStatus'};
+    case 'wpos':   return {multi:true, sel:posFilter, name:T('Word type'), opts:posDropOpts(), reset:T('All types'), pick:'pickWordsPos'};
+    case 'wsrc':   return {multi:true, sel:srcFilter, name:T('Source'), opts:srcFilterOpts().slice(1), reset:T('All sources'), pick:'pickWordsSrc'};
+  }
 }
-/* Compact single-line filters (v97): the POS / source / status pickers are rendered
-   as <select> dropdowns instead of horizontally-scrolling button bars, so they sit on
-   one clean row and take almost no vertical space. Each select carries the `on` class
-   when a non-default value is chosen (accent border = "this filter is narrowing"). The
-   existing string handlers work unchanged via onchange="handler(this.value)"; the
-   partial-update className swaps inside them simply no-op (no matching buttons) and the
-   list still re-renders. */
-function filterSelect(handler, opts, active, dflt, label){
-  const on = active!==dflt ? ' on' : '';
-  const body = opts.map(([v,txt])=>`<option value="${v}"${active===v?' selected':''}>${txt}</option>`).join('');
-  return `<select class="filtersel${on}" onchange="hap();${handler}(this.value)" aria-label="${label}">${body}</select>`;
+// Summary text: default = the filter's plain-language name; 1 pick = that label; 2+ = "Name · N".
+function dropSummary(def){
+  if(!def.multi){ const o=def.opts.find(x=>x[0]===def.sel); return o?o[1]:def.name; }
+  const n=def.sel.length;
+  if(n===0) return def.name;
+  if(n===1){ const o=def.opts.find(x=>x[0]===def.sel[0]); return o?o[1]:def.name; }
+  return def.name + ' &#183; ' + n;
 }
-function posFilterSelect(active, handler){
-  return filterSelect(handler, POS_FILTER.map(p=>[p, p==='all'?T('All types'):T(POS_LABELS[p]||p)]), active, 'all', T('All types'));
+function buildDrop(key){
+  const def=dropDef(key);
+  const on = def.multi ? def.sel.length>0 : false;
+  const rows=[];
+  if(def.multi && def.reset){
+    const none = def.sel.length===0;
+    rows.push(`<button type="button" class="msdrop-opt${none?' sel':''}" onclick="dropReset('${key}',event)"><span class="chk">${none?'&#10003;':''}</span><span class="otxt">${def.reset}</span></button>`);
+  }
+  def.opts.forEach(([v,lbl])=>{
+    const sel = def.multi ? def.sel.includes(v) : def.sel===v;
+    rows.push(`<button type="button" class="msdrop-opt${sel?' sel':''}" onclick="${def.pick}('${v}',event)"><span class="chk">${sel?'&#10003;':''}</span><span class="otxt">${lbl}</span></button>`);
+  });
+  return `<details class="msdrop${on?' on':''}" id="drop-${key}">`+
+    `<summary class="msdrop-sum"><span class="lbl">${dropSummary(def)}</span><span class="msdrop-arw">&#9662;</span></summary>`+
+    `<div class="msdrop-menu">${rows.join('')}</div></details>`;
 }
-function srcFilterSelect(active, handler){
-  return filterSelect(handler, srcFilterOpts(), active, 'all', T('All sources'));
+// Regenerate a single dropdown in place (updates summary + checkmarks) while preserving its open state.
+function refreshDrop(key){
+  const el=document.getElementById('drop-'+key); if(!el) return;
+  const open=el.open; el.outerHTML=buildDrop(key);
+  if(open){ const nw=document.getElementById('drop-'+key); if(nw) nw.open=true; }
 }
-function statusFilterSelect(active){
-  return filterSelect('setFilter', ['all','new','learning','learned'].map(f=>[f,T(f)]), active, 'all', T('all'));
+function _toggleArr(arr,v){ const i=arr.indexOf(v); if(i>=0) arr.splice(i,1); else arr.push(v); }
+// A filter changed: refresh its dropdown, then re-run the affected view WITHOUT rebuilding
+// the whole bar (so other dropdowns / this one's open state survive a multi-pick).
+function applyDrop(key){
+  refreshDrop(key);
+  if(key[0]==='l'){ skipped=new Set(); buildQueue(); renderLearnBody(); }
+  else { listLimit=100; if(tab==='words' && document.getElementById('wlist')) renderWordList(); else render(); }
+}
+function pickLearnPos(v,ev){ ev&&ev.stopPropagation(); hap(); _toggleArr(learnPos,v); applyDrop('lpos'); }
+function pickLearnSrc(v,ev){ ev&&ev.stopPropagation(); hap(); _toggleArr(learnSrc,v); applyDrop('lsrc'); }
+function pickWordsPos(v,ev){ ev&&ev.stopPropagation(); hap(); _toggleArr(posFilter,v); applyDrop('wpos'); }
+function pickWordsSrc(v,ev){ ev&&ev.stopPropagation(); hap(); _toggleArr(srcFilter,v); applyDrop('wsrc'); }
+function pickStatus(v,ev){ ev&&ev.stopPropagation(); hap(); _toggleArr(statusSel,v); applyDrop('wstatus'); }
+function dropReset(key,ev){
+  ev&&ev.stopPropagation(); hap();
+  ({lpos:()=>learnPos.length=0, lsrc:()=>learnSrc.length=0, wstatus:()=>statusSel.length=0, wpos:()=>posFilter.length=0, wsrc:()=>srcFilter.length=0}[key])();
+  applyDrop(key);
+}
+// Study mode is single-select: close the dropdown and let setMode rebuild Learn.
+function pickMode(m,ev){ ev&&ev.stopPropagation(); const el=document.getElementById('drop-lmode'); if(el) el.open=false; setMode(m); }
+// Options dropdown toggles the two Learn queue switches (Shuffle / New words only).
+async function pickLearnOpt(o,ev){
+  ev&&ev.stopPropagation(); hap();
+  if(o==='shuffle'){
+    learnShuffle=!learnShuffle; await Store.set('dutch5k-shuffle', learnShuffle);
+    toast(learnShuffle ? '&#128256; ' + T('Shuffle on · strategic mix of new words') : T('Shuffle off · frequency order'));
+  } else {
+    newOnly=!newOnly; if(newOnly) leechOnly=false; await Store.set('dutch5k-newonly', newOnly);
+    toast(newOnly ? '&#128308; ' + T('New words only · reviews paused') : T('Reviews resumed'));
+  }
+  skipped=new Set(); buildQueue(); refreshDrop('lopts'); renderLearnBody();
+}
+// Close any open dropdown when clicking outside it (option clicks stopPropagation, so they don't close).
+function dropOutsideClose(e){
+  document.querySelectorAll('details.msdrop[open]').forEach(d=>{ if(!d.contains(e.target)) d.open=false; });
 }
 function posOf(e){ return (e.t||'').toLowerCase(); }
 function bookTag(e){
@@ -7711,8 +7796,8 @@ function buildQueue(){
   let fresh=[];
   const lset = leechOnly ? leechSet() : null;
   deck.forEach((e,i)=>{
-    if(learnPos!=='all' && posOf(e)!==learnPos) return;
-    if(learnSrc!=='all' && !inSource(e, learnSrc)) return;
+    if(learnPos.length && !learnPos.includes(posOf(e))) return;
+    if(learnSrc.length && !learnSrc.some(s=>inSource(e, s))) return;
     if(!modeEligible(e)) return;                       // mode needs specific data (meaning / example / article)
     if(lset && !lset.has(e.id)) return;                // hardest-words drill: only leeches
     const s = progress[e.id];
@@ -7853,40 +7938,9 @@ function flip(){
   }
 }
 function setTab(t){ hap(); tab=t; expanded=null; wordView=null; wordViewStack=[]; listLimit=100; render(); }
-function setFilter(f){
-  filter=f; listLimit=100;
-  if(tab==='words' && document.getElementById('wlist')){
-    document.querySelectorAll('.filters button').forEach(b=>{ b.className = (b.dataset.f===f)?'active':''; });
-    renderWordList();
-  } else render();
-}
-function setPosFilter(p){
-  posFilter=p; listLimit=100;
-  if(tab==='words' && document.getElementById('wlist')){
-    document.querySelectorAll('.posfilters button[data-p]').forEach(b=>{ b.className = (b.dataset.p===p)?'active':''; });
-    renderWordList();
-  } else render();
-}
-/* Re-render Learn while KEEPING the horizontal scroll position of the mode/filter
-   bars. render() rebuilds all of #main, so a freshly-built bar starts scrolled to
-   the left — meaning if you scroll to a filter/mode near the end and tap it, the
-   bar snaps back to the start and the next pick is out of reach. Capture each
-   scrollable bar's scrollLeft by a stable selector, render, then restore. */
-function renderKeepBars(){
-  const sels = ['.modebar', '.srcfilters.learn-pos', '.posscroll.learn-pos:not(.srcfilters)'];
-  const saved = sels.map(s=>{ const el=document.querySelector(s); return el?el.scrollLeft:null; });
-  render();
-  sels.forEach((s,i)=>{ if(saved[i]!=null){ const el=document.querySelector(s); if(el) el.scrollLeft=saved[i]; } });
-}
-function setLearnPos(p){ learnPos=p; skipped=new Set(); buildQueue(); renderKeepBars(); }
-function setSrcFilter(s){
-  srcFilter=s; listLimit=100;
-  if(tab==='words' && document.getElementById('wlist')){
-    document.querySelectorAll('.srcfilters button').forEach(b=>{ b.className = (b.dataset.s===s)?'active':''; });
-    renderWordList();
-  } else render();
-}
-function setLearnSrc(s){ learnSrc=s; skipped=new Set(); buildQueue(); renderKeepBars(); }
+/* Filter setters were replaced by the v98 multi-select dropdown handlers
+   (pickLearnPos / pickWordsSrc / pickStatus / dropReset, defined with the dropdown
+   builders above). Those mutate the selection arrays and re-run only the affected view. */
 /* Study-mode switch. Each mode reshapes the queue (some need a meaning / example /
    article), so rebuild it and clear any in-progress answer. */
 const LEARN_MODES = [
@@ -7904,7 +7958,7 @@ async function setMode(m){
   await Store.set('dutch5k-mode', m);
   skipped = new Set(); objResult = null; flipped = false;
   buildQueue();
-  renderKeepBars();
+  render();
   try{ const inp=document.getElementById('typeInput'); if(inp) inp.focus(); }catch(e){}
 }
 /* Progress-tab entry points into the Learn queue. */
@@ -8279,6 +8333,9 @@ function closeMenu(){
   document.getElementById('menuBtn').setAttribute('aria-expanded','false');
 }
 document.addEventListener('keydown', e=>{ if(e.key==='Escape' && menuOpen) closeMenu(); });
+// v98: close any open filter dropdown on outside-click or Escape.
+document.addEventListener('click', dropOutsideClose);
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') document.querySelectorAll('details.msdrop[open]').forEach(d=>d.open=false); });
 
 /* Local reminder via Notification API (best-effort; browsers throttle background timers) */
 async function enableReminders(){
@@ -8716,9 +8773,9 @@ function renderWordList(){
   for(let i=0;i<deck.length;i++){
     const e = deck[i];
     const s = progress[e.id] || 'new';
-    if(filter!=='all' && s!==filter) continue;
-    if(posFilter!=='all' && posOf(e)!==posFilter) continue;
-    if(srcFilter!=='all' && !inSource(e, srcFilter)) continue;
+    if(statusSel.length && !statusSel.includes(s)) continue;
+    if(posFilter.length && !posFilter.includes(posOf(e))) continue;
+    if(srcFilter.length && !srcFilter.some(x=>inSource(e, x))) continue;
     if(q && !(e.w.toLowerCase().includes(q) || (e.m||'').toLowerCase().includes(q) || (CT && ct(e.m||'').toLowerCase().includes(q)))) continue;
     list.push(i);
   }
@@ -8769,21 +8826,17 @@ async function setWordStatus(idx, status){
 
 /* ============ LEARN TAB (study modes) ============ */
 function learnModeLabel(m){ return m.id==='dehet' ? 'de / het' : m.label; }
-/* Filter/mode bars shown above the study card. */
+/* Filter/mode bar shown above the study card — a single row of dropdowns (v98):
+   study mode (first), source, word type, then Options (Shuffle / New words only). */
 function learnBars(){
-  const modeBar = `<div class="posfilters posscroll modebar">` +
-    LEARN_MODES.map(m=>`<button class="modebtn${learnMode===m.id?' active':''}" onclick="setMode('${m.id}')" title="${T(learnModeLabel(m))}">${m.icon} <span>${T(learnModeLabel(m))}</span></button>`).join('') +
-    `</div>`;
   const filterBar = `<div class="filterbar">`+
-    (srcFilterOpts().length>2 ? srcFilterSelect(learnSrc,'setLearnSrc') : '')+
-    posFilterSelect(learnPos,'setLearnPos')+
-    `</div>`;
-  const shuffleBar = `<div class="posfilters learn-pos shuffle-bar">`+
-    `<button class="shuffle-btn${learnShuffle?' active':''}" aria-pressed="${learnShuffle}" onclick="toggleShuffle()">&#128256; ${learnShuffle?T('Shuffle On'):T('Shuffle Off')}</button>`+
-    `<button class="shuffle-btn${newOnly?' active':''}" aria-pressed="${newOnly}" onclick="toggleNewOnly()" title="${T('Study only new words — skip reviews')}">&#128308; ${T('New words only')}</button>`+
+    buildDrop('lmode')+
+    (srcFilterOpts().length>2 ? buildDrop('lsrc') : '')+
+    buildDrop('lpos')+
+    buildDrop('lopts')+
     `</div>`;
   const drillBanner = leechOnly ? `<div class="drill-banner">&#128293; ${T('Drilling hardest words')}<button onclick="exitDrill()" aria-label="${T('Exit drill')}">&#10005;</button></div>` : '';
-  return modeBar + drillBanner + shuffleBar + filterBar;
+  return filterBar + drillBanner;
 }
 /* Reusable card fragments. */
 function wordBlock(e, idx, rankTxt){
@@ -8907,20 +8960,29 @@ function deHetCardHtml(e, status, rankTxt){
       <div class="card-body">${body}</div>
     </div>${actions}`;
 }
+/* Learn = a persistent filter bar (#learnBars, holds the dropdowns) + a card body
+   (#learnBody). A filter change rebuilds only the body, so an open dropdown / a
+   multi-pick in progress survives (renderLearnBody, called from applyDrop). */
 function renderLearn(main, c){
-  const bars = learnBars();
+  main.innerHTML = `<div id="learnBars">${learnBars()}</div><div id="learnBody"></div>`;
+  renderLearnBody(c);
+}
+function renderLearnBody(c){
+  c = c || counts();
+  const body = document.getElementById('learnBody');
+  if(!body) return;
   if(!queue.length){
     const msg = leechOnly ? T('No tricky words yet — keep going!')
       : newOnly ? T('No new words left — turn off “New words only” to review.')
       : T('No words available for this mode with these filters.');
-    main.innerHTML = bars + `<div class="empty">${msg}<br>${T('Try “All”.')}</div>`;
+    body.innerHTML = `<div class="empty">${msg}<br>${T('Try “All”.')}</div>`;
     return;
   }
   const e = deck[queue[qPos]];
   const status = progress[e.id] || 'new';
   const rankTxt = e.rank ? T('#{n} most frequent', {n:e.rank}) : (e.books&&e.books.length ? bookTag(e) : T('curated extra'));
   if(isLocked(e)){
-    main.innerHTML = bars + `
+    body.innerHTML = `
       ${mondrianStrip(c)}
       <div class="card pro-lock">
         <div class="card-tag"><span>${esc(T(e.t||'word'))}${e.a?` &#183; ${esc(e.a)}`:''}</span><span>${T(status).toUpperCase()}</span></div>
@@ -8942,7 +9004,7 @@ function renderLearn(main, c){
   const dailyLine = plan ? `<div class="deckinfo">${T('Today: {n} learned · streak {s}', {n:`<b>${todayCount()}</b>${plan.perDay?` / ${plan.perDay}`:''}`, s:`<b>${currentStreak()}</b>`})} &#128293;</div>` : '';
   const dc = dueCount();
   const dueLine = dc ? `<div class="deckinfo">&#8635; ${T('{n} due for review', {n:dc})}</div>` : '';
-  main.innerHTML = bars + `${mondrianStrip(c)}` + cardHtml +
+  body.innerHTML = `${mondrianStrip(c)}` + cardHtml +
     `<div class="deckinfo">${T('Card {a} of {b} in this round · {c} words in deck', {a:qPos+1, b:queue.length, c:c.total})}</div>` +
     dailyLine + dueLine;
   // Focus + Enter-to-check for the typing modes (before an answer is submitted).
@@ -9025,15 +9087,15 @@ function render(){
         </div>`;
       return;
     }
-    // List view — rendered once; search updates only the list, never the input
-    // Compact single-line dropdown filters (v97): status + source + POS on one row.
+    // List view — rendered once; search updates only the list, never the input.
+    // Compact single-line multi-select dropdown filters (v98): status + source + word type.
     const hasSrc = srcFilterOpts().length>2;
     main.innerHTML = `
       <input type="search" id="wordSearch" placeholder="${T('Search Dutch or English…')}" autocomplete="off" value="${esc(search)}">
       <div class="filterbar">
-        ${statusFilterSelect(filter)}
-        ${hasSrc?srcFilterSelect(srcFilter,'setSrcFilter'):''}
-        ${posFilterSelect(posFilter,'setPosFilter')}
+        ${buildDrop('wstatus')}
+        ${hasSrc?buildDrop('wsrc'):''}
+        ${buildDrop('wpos')}
       </div>
       <div class="wlist" id="wlist"></div>
       <div id="wmore"></div>`;
@@ -9118,7 +9180,7 @@ function render(){
         const w = d.bySrc[s]/d.total*100;
         return `<span class="posbar-fill" style="width:${w}%;background:var(${SRC_COLORVAR[s]})" title="${SRC_SHORT[s]}: ${d.bySrc[s]}"></span>`;
       }).join('');
-      return `<div class="posrow" onclick="hap();posFilter='${p}';setTab('words')">
+      return `<div class="posrow" onclick="hap();posFilter=['${p}'];setTab('words')">
         <span class="posname">${T(POS_LABELS[p]||p)}</span>
         <span class="posbar">${segs}</span>
         <span class="poscount">${d.learned}/${d.total}</span></div>`;
@@ -9138,7 +9200,7 @@ function render(){
       return `<circle class="donut-seg" cx="${CX}" cy="${CY}" r="${R}" fill="none"
         stroke="var(${SRC_COLORVAR[s]})" stroke-width="${SW}"
         stroke-dasharray="${dash}" stroke-dashoffset="${off}" stroke-linecap="butt"
-        onclick="hap();srcFilter='${s}';posFilter='all';setTab('words')"
+        onclick="hap();srcFilter=['${s}'];posFilter=[];setTab('words')"
         ><title>${SRC_SHORT[s]}: ${cbs[s].learned} (${share}%)</title></circle>`;
     }).join('');
     const donutInner = srcTotalLearned
@@ -9150,7 +9212,7 @@ function render(){
       <text class="donut-lbl" x="${CX}" y="${CY+16}" text-anchor="middle">${T('Learned')}</text></svg>`;
     const srcLegend = srcKeys.map(s=>{
       const d=cbs[s]; const pc=d.total?Math.round(d.learned/d.total*100):0;
-      return `<div class="srcrow" onclick="hap();srcFilter='${s}';posFilter='all';setTab('words')">
+      return `<div class="srcrow" onclick="hap();srcFilter=['${s}'];posFilter=[];setTab('words')">
         <span class="srcdot" style="background:var(${SRC_COLORVAR[s]})"></span>
         <span class="srcname">${SRC_SHORT[s]}</span>
         <span class="posbar"><span class="posbar-fill" style="width:${pc}%;background:var(${SRC_COLORVAR[s]})"></span></span>
@@ -9490,7 +9552,7 @@ function renderProfile(main, c){
 /* ============ OFFLINE (service worker) ============ */
 if('serviceWorker' in navigator){
   const swCode = `
-    const C = 'dutch5k-v97';
+    const C = 'dutch5k-v98';
     self.addEventListener('install', e => { self.skipWaiting(); });
     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
     self.addEventListener('fetch', e => {
