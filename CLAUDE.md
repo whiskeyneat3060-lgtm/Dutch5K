@@ -15,6 +15,27 @@ Owner Adi: B1 Dutch learner in Almere, toward conversational fluency.
 > style: `DUTCH <span>to go</span>` — caps + lowercase italic `to go` via `.logo span` (red;
 > Sepia's accent override still applies). The old `DUTCH·TO·GO` dot form is gone.
 
+> **Book source names removed for copyright — CEFR level bands instead (v100, Adi: "drop the words
+> nederlands ingang, actie, perfectie from everywhere, I don't want copyright issue; instead for sources
+> keep only general; instead of ingang make it A0 to A2, instead of actie keep it A2 to B1, etc."):** every
+> **user-visible** mention of the four Coutinho textbook titles (*Nederlands in Gang / in Actie / op Niveau /
+> naar Perfectie*) is gone, replaced by the book's **CEFR level band**. The mapping is
+> `gang→A0–A2, actie→A2–B1, niveau→B1–B2, perfectie→B2–C1` (General stays "General"). **Internal source ids
+> (`gang`/`actie`/`niveau`/`perfectie`), storage keys, data blobs, CSS class names (`.sb-actie` etc.), and
+> code comments are all unchanged on purpose** — only display strings changed, so no migration/progress
+> impact. Edited spots: **`SRC_SHORT`** = `{general:'General', gang:'A0–A2', actie:'A2–B1', niveau:'B1–B2',
+> perfectie:'B2–C1'}` (drives donut legend, per-source posbar titles, goal chips via `goalSrcLabel`);
+> **`srcFilterOpts()`** dropdown labels (`'A0 → A2'` etc., arrow form); **`bookTag()`** now uses `SRC_SHORT`
+> so chapter tags read "A0–A2 H3" (was "Gang H3"); the **About box** source lines show the bold CEFR range
+> instead of the bold book title; the **Words-row badge** letters changed from book initials `G/A/N/P` to
+> the compact upper-level tokens `{gang:'A2',actie:'B1',niveau:'B2',perfectie:'C1'}` and `.srcbadge` was
+> widened (`min-width:15px; padding:0 3px; box-sizing:border-box`) to fit two chars. No i18n changes (book
+> titles were untranslated proper nouns; the About "five sources" line and its translations are unchanged —
+> still five). **This supersedes the older docs below that name the books in UI contexts** (source-filter
+> "General 5K / Gang / Actie / Niveau", the `A/G/N` badge-letter note, the `SRC_SHORT` General/Gang/…
+> literals, and the About-box book-title lines) — those describe pre-v100 display strings; the ids/logic they
+> mention still hold. SW cache bumped **v99 → v100**.
+
 > **Convention (Adi):** this `CLAUDE.md` is the project's only memory (sessions get cleared), so it
 > should track features, gotchas, and cache bumps — but **never edit it automatically.** After each
 > feature, **ask Adi** whether to update this file. Likewise **never push to `main` automatically**
