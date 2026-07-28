@@ -2482,6 +2482,21 @@ const UI_V93 = JSON.parse(`{
 }`);
 Object.keys(UI_V93).forEach(l=>{ if(UI[l]) Object.assign(UI[l], UI_V93[l]); });
 
+/* v98 — multi-select dropdown filter labels (translated in all 10 non-English languages). */
+const UI_V98 = JSON.parse(`{
+"fr":{"Study mode":"Mode d’étude","Word type":"Type de mot","Source":"Source","Options":"Options","Status":"Statut","Shuffle":"Aléatoire","new":"nouveau","learning":"en cours","learned":"appris"},
+"it":{"Study mode":"Modalità di studio","Word type":"Tipo di parola","Source":"Fonte","Options":"Opzioni","Status":"Stato","Shuffle":"Casuale","new":"nuovo","learning":"in corso","learned":"appreso"},
+"es":{"Study mode":"Modo de estudio","Word type":"Tipo de palabra","Source":"Fuente","Options":"Opciones","Status":"Estado","Shuffle":"Aleatorio","new":"nuevo","learning":"aprendiendo","learned":"aprendido"},
+"de":{"Study mode":"Lernmodus","Word type":"Wortart","Source":"Quelle","Options":"Optionen","Status":"Status","Shuffle":"Zufällig","new":"neu","learning":"am Lernen","learned":"gelernt"},
+"pt":{"Study mode":"Modo de estudo","Word type":"Tipo de palavra","Source":"Fonte","Options":"Opções","Status":"Estado","Shuffle":"Aleatório","new":"novo","learning":"a aprender","learned":"aprendido"},
+"pl":{"Study mode":"Tryb nauki","Word type":"Typ słowa","Source":"Źródło","Options":"Opcje","Status":"Status","Shuffle":"Losowo","new":"nowe","learning":"w trakcie","learned":"nauczone"},
+"tr":{"Study mode":"Çalışma modu","Word type":"Sözcük türü","Source":"Kaynak","Options":"Seçenekler","Status":"Durum","Shuffle":"Karışık","new":"yeni","learning":"öğreniliyor","learned":"öğrenildi"},
+"uk":{"Study mode":"Режим навчання","Word type":"Тип слова","Source":"Джерело","Options":"Параметри","Status":"Статус","Shuffle":"Перемішати","new":"нове","learning":"вивчається","learned":"вивчено"},
+"ru":{"Study mode":"Режим изучения","Word type":"Тип слова","Source":"Источник","Options":"Параметры","Status":"Статус","Shuffle":"Перемешать","new":"новое","learning":"изучается","learned":"изучено"},
+"bg":{"Study mode":"Режим на учене","Word type":"Вид дума","Source":"Източник","Options":"Опции","Status":"Статус","Shuffle":"Разбъркване","new":"ново","learning":"в процес","learned":"научено"}
+}`);
+Object.keys(UI_V98).forEach(l=>{ if(UI[l]) Object.assign(UI[l], UI_V98[l]); });
+
 
 /* UI string translation. Key = the exact English string; {x} placeholders are
    substituted AFTER lookup so translations can reorder them. Falls back to English. */
@@ -9552,7 +9567,7 @@ function renderProfile(main, c){
 /* ============ OFFLINE (service worker) ============ */
 if('serviceWorker' in navigator){
   const swCode = `
-    const C = 'dutch5k-v98';
+    const C = 'dutch5k-v99';
     self.addEventListener('install', e => { self.skipWaiting(); });
     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
     self.addEventListener('fetch', e => {
