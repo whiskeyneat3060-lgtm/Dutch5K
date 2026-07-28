@@ -55,6 +55,17 @@ Owner Adi: B1 Dutch learner in Almere, toward conversational fluency.
 >   instead of wrapping. (Applies to both Learn's 4 dropdowns and Words' 3.)
 > - SW cache bumped **v100 → v101 → v102**.
 
+> **Filter dropdowns equal-width (v103, Adi: "same size filters for all 4… text visible same across all
+> devices… consistent"):** the `.msdrop` filter dropdowns used **`flex:1 1 auto`**, whose `auto` basis sizes
+> each dropdown to its own label text — so the 4 Learn (and 3 Words) dropdowns rendered at **different widths**,
+> and how the row split shifted with viewport width, cramping/ellipsizing text inconsistently across screens.
+> Two CSS changes make them consistent: **`.msdrop{flex:1 1 0}`** (equal flex basis → every dropdown takes an
+> equal share of the row, same size on every device, scale together) and **`.msdrop>summary .lbl{flex:1 1 0;
+> min-width:0}`** (label shrinks + ellipsizes cleanly inside its equal-width box instead of overflowing and
+> shoving the arrow). Font was already a fixed `12px` (device-consistent) — only the unequal box widths were
+> the problem. CSS-only; applies to both the Learn and Words `.filterbar` rows (shared `.msdrop` class). SW
+> cache bumped **v102 → v103**.
+
 > **Convention (Adi):** this `CLAUDE.md` is the project's only memory (sessions get cleared), so it
 > should track features, gotchas, and cache bumps — but **never edit it automatically.** After each
 > feature, **ask Adi** whether to update this file. Likewise **never push to `main` automatically**
