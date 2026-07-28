@@ -66,6 +66,17 @@ Owner Adi: B1 Dutch learner in Almere, toward conversational fluency.
 > the problem. CSS-only; applies to both the Learn and Words `.filterbar` rows (shared `.msdrop` class). SW
 > cache bumped **v102 → v103**.
 
+> **Sepia filter dropdown transparent-text fix (v104, Adi: "the filters on sepia theme are so transparent
+> that the text is not readable anymore once the dropdown is open"):** the open `.msdrop-menu` was painted
+> with **`background:var(--card-bg,var(--paper))`**, but the Sepia theme sets **`--card-bg:transparent`** —
+> and a CSS var fallback only applies when the variable is *undefined*, not when it's explicitly
+> `transparent`, so the fallback to `--paper` never kicked in and the floating menu showed the page behind
+> it (option text unreadable). Fixed with one Sepia-scoped override next to the other `html[data-theme=
+> "sepia"] .msdrop*` rules: **`html[data-theme="sepia"] .msdrop-menu{ background:var(--paper); }`** (opaque
+> cream paper fill). The closed summary bar was already fine (it uses `--paper` directly). **Midnight
+> untouched** — its `--card-bg:#161829` is opaque, so its menus keep the slightly-lighter card surface.
+> CSS-only. SW cache bumped **v103 → v104**.
+
 > **Convention (Adi):** this `CLAUDE.md` is the project's only memory (sessions get cleared), so it
 > should track features, gotchas, and cache bumps — but **never edit it automatically.** After each
 > feature, **ask Adi** whether to update this file. Likewise **never push to `main` automatically**
