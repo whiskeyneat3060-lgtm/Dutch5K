@@ -295,7 +295,7 @@
   .learn-pos{margin-top:0;}
   /* ---- Compact single-line multi-select dropdown filters (v98) ---- */
   .filterbar{display:flex; gap:8px; margin-bottom:12px; align-items:stretch; flex-wrap:nowrap;}
-  .msdrop{position:relative; flex:1 1 auto; min-width:0;}
+  .msdrop{position:relative; flex:1 1 0; min-width:0;}
   .msdrop>summary{
     list-style:none; cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:4px;
     padding:8px 9px; border:2px solid var(--line); background:var(--paper); color:var(--ink);
@@ -303,7 +303,7 @@
     white-space:nowrap; overflow:hidden; line-height:1.2;
   }
   .msdrop>summary::-webkit-details-marker{display:none;}
-  .msdrop>summary .lbl{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .msdrop>summary .lbl{flex:1 1 0; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   .msdrop>summary .msdrop-arw{flex:0 0 auto; font-size:9px; color:var(--muted); transition:transform .15s;}
   .msdrop[open]>summary .msdrop-arw{transform:rotate(180deg);}
   .msdrop.on>summary, .msdrop[open]>summary{border-color:var(--blue);}
@@ -9566,7 +9566,7 @@ function renderProfile(main, c){
 /* ============ OFFLINE (service worker) ============ */
 if('serviceWorker' in navigator){
   const swCode = `
-    const C = 'dutch5k-v102';
+    const C = 'dutch5k-v103';
     self.addEventListener('install', e => { self.skipWaiting(); });
     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
     self.addEventListener('fetch', e => {
