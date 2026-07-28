@@ -8289,7 +8289,7 @@ function proBox(){
   return `
     <div class="genbox probox" onclick="unlockPro()" role="button" tabindex="0">
       <div class="pro-h"><span class="pro-crown">&#128081;</span><b>${T('Pro to go')}</b></div>
-      <p>${T('The free version unlocks a limited set of words. Go Pro for full access to every General, Gang, Actie and Niveau word, the complete word list and all progress stats.')}</p>
+      <p>${T('The free version unlocks a limited set of words. Go Pro for full access to every word across all levels, the complete word list and all progress stats.')}</p>
       <button class="pro-cta wide" onclick="event&&event.stopPropagation();unlockPro()">${T('Unlock Pro to go')}</button>
     </div>`;
 }
@@ -9548,7 +9548,7 @@ function renderProfile(main, c){
     proCard = `
       <div class="genbox probox">
         <div class="pro-h"><span class="pro-crown">&#128081;</span><b>${T('Pro to go')}</b></div>
-        <p>${T('Go Pro for full access to every General, Gang, Actie, Niveau and Perfectie word, the complete word list and all progress stats.')}</p>
+        <p>${T('Go Pro for full access to every word across all levels, the complete word list and all progress stats.')}</p>
         <button class="pro-cta wide" onclick="buyPro()">${account?T('Get Pro'):T('Sign in to get Pro')} &#8594;</button>
         ${account?'':`<div class="note" style="text-align:center;margin-top:8px">${T('Pro is tied to your account, so it follows you when sync arrives.')}</div>`}
       </div>`;
@@ -9566,7 +9566,7 @@ function renderProfile(main, c){
 /* ============ OFFLINE (service worker) ============ */
 if('serviceWorker' in navigator){
   const swCode = `
-    const C = 'dutch5k-v101';
+    const C = 'dutch5k-v102';
     self.addEventListener('install', e => { self.skipWaiting(); });
     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
     self.addEventListener('fetch', e => {
