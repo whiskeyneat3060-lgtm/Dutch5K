@@ -678,6 +678,9 @@
   html[data-theme="sepia"] .filtersel.on{ border-color:var(--accent); }
   html[data-theme="sepia"] .msdrop.on>summary, html[data-theme="sepia"] .msdrop[open]>summary{ border-color:var(--accent); }
   html[data-theme="sepia"] .msdrop-opt .chk{ color:var(--accent); }
+  /* Sepia sets --card-bg:transparent, so the floating filter menu would show the page
+     behind it (text unreadable). Give the open menu an opaque paper fill. */
+  html[data-theme="sepia"] .msdrop-menu{ background:var(--paper); }
   html[data-theme="sepia"] .actions button.btn-know{ color:#fff; }
   /* drawer: title-page header is a centred column, so pin the hamburger to the corner */
   html[data-theme="sepia"] header{ position:relative; }
@@ -9566,7 +9569,7 @@ function renderProfile(main, c){
 /* ============ OFFLINE (service worker) ============ */
 if('serviceWorker' in navigator){
   const swCode = `
-    const C = 'dutch5k-v103';
+    const C = 'dutch5k-v104';
     self.addEventListener('install', e => { self.skipWaiting(); });
     self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
     self.addEventListener('fetch', e => {
