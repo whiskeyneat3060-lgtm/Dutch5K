@@ -66,6 +66,33 @@ Owner Adi: B1 Dutch learner in Almere, toward conversational fluency.
 > the problem. CSS-only; applies to both the Learn and Words `.filterbar` rows (shared `.msdrop` class). SW
 > cache bumped **v102 → v103**.
 
+> **Reminder fix — real service worker instead of a blob URL (v105, Adi: "the reminder function doesn't
+> work"):** the daily-study reminder never fired, and offline caching was silently broken too — both because
+> **the service worker never registered.** The SW code was built as a string and registered from a
+> **`blob:` URL** (`navigator.serviceWorker.register(URL.createObjectURL(blob))`). Browsers **reject SW
+> registration from `blob:` URLs** (only real same-origin `http/https` scripts are allowed — dedicated
+> `Worker`s can be blob-based, service workers cannot), and the error was swallowed by `.catch(()=>{})`, so it
+> failed with no trace. Two knock-on effects: (1) no offline cache; (2) **`_fireReminder()` could never show a
+> notification** — it gated on `navigator.serviceWorker.ready`, which is **always a truthy Promise but only
+> *resolves* when a SW is active**, so with no SW it never resolved → `showNotification` never ran, and the
+> intended `else { new Notification() }` page fallback was **unreachable dead code** (the `if` was always true).
+> - **Fix:** shipped a **real `public/sw.js`** file (same fetch/cache logic as the old inline blob) and register
+>   it via **`navigator.serviceWorker.register('/sw.js')`**. `public/sw.js` is served fine under the SPA
+>   `not_found_handling` because it's a **real file** (only *referenced-but-missing* files fall back to
+>   index.html). **The SW cache version now lives in `sw.js`** (`const C='dutch5k-vNN'`), not inline in
+>   index.html — **bump it there each deploy.** Added a `notificationclick` handler in the SW so tapping the
+>   reminder focuses/opens the app.
+> - **`_fireReminder()` rewritten:** uses the now-real SW's `reg.showNotification` (works on **Android**, where
+>   the page `Notification` constructor is disallowed and a SW is mandatory) with a **timeout-guarded
+>   (2s) page-`Notification` fallback** so a notification always fires even if the SW is slow/absent, and can
+>   never hang forever on an unresolved `.ready`.
+> - **Unchanged limitation (by design):** still a static PWA with no push server, so reminders only fire **while
+>   the tab/app is open** — the fix makes it actually fire in that window (it never did before). Reminders also
+>   **can't be tested from a `file://` offline copy** — service workers don't run on `file://` at all; only the
+>   deployed https site. Verified: inline scripts + `sw.js` parse clean; jsdom smoke renders all 3 tabs and
+>   confirms the reminder fns + `/sw.js` registration. SW cache bumped **v104 → v105** (note: v104 was an
+>   undocumented prior bump; v103 was the last one recorded here).
+
 > **Convention (Adi):** this `CLAUDE.md` is the project's only memory (sessions get cleared), so it
 > should track features, gotchas, and cache bumps — but **never edit it automatically.** After each
 > feature, **ask Adi** whether to update this file. Likewise **never push to `main` automatically**
