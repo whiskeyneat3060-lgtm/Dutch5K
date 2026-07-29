@@ -8376,11 +8376,22 @@ function _fireReminder(){
   if(!('Notification' in window) || Notification.permission!=='granted') return;
   if(todayCount()>0) return;   // already studied today — nothing to nudge
   const body = T("Time for today's words! Keep your streak going.");
-  try{
-    if(navigator.serviceWorker && navigator.serviceWorker.ready){
-      navigator.serviceWorker.ready.then(reg=>{ try{ reg.showNotification('Dutch To Go', {body, tag:'dutch5k-daily'}); }catch(e){ try{ new Notification('Dutch To Go',{body}); }catch(_){} } });
-    } else { new Notification('Dutch To Go', {body}); }
-  }catch(e){}
+  // Page-level fallback. Note: on Android the Notification constructor is disallowed
+  // (it throws — SW is required there), so this is a best-effort desktop fallback only.
+  const pageFallback = ()=>{ try{ new Notification('Dutch To Go', {body, tag:'dutch5k-daily'}); }catch(_){} };
+  // Prefer the service worker's showNotification (works on mobile + desktop). Guard with a
+  // timeout so a missing/stuck SW registration can never leave the reminder hanging forever
+  // — navigator.serviceWorker.ready is ALWAYS a Promise and only *resolves* with an active SW.
+  if('serviceWorker' in navigator){
+    let done = false;
+    const finish = fn => { if(done) return; done = true; try{ fn(); }catch(_){} };
+    const timer = setTimeout(()=> finish(pageFallback), 2000);
+    navigator.serviceWorker.ready
+      .then(reg=> finish(()=>{ clearTimeout(timer); reg.showNotification('Dutch To Go', {body, tag:'dutch5k-daily'}); }))
+      .catch(()=> finish(()=>{ clearTimeout(timer); pageFallback(); }));
+  } else {
+    pageFallback();
+  }
 }
 /* Best-effort daily reminder for a static PWA (no push server): while the app/tab is open,
    set a timer for the next occurrence of the chosen time and fire a notification then. Also
@@ -9567,31 +9578,13 @@ function renderProfile(main, c){
 }
 
 /* ============ OFFLINE (service worker) ============ */
+/* Registered from a real same-origin file (public/sw.js). A service worker CANNOT be
+   registered from a blob: URL — browsers reject it — so the old blob approach silently
+   failed, leaving the app with no SW at all (no offline cache, and reminders could never
+   fire because navigator.serviceWorker.ready never resolved). Bump the cache version in
+   public/sw.js on every deploy. */
 if('serviceWorker' in navigator){
-  const swCode = `
-    const C = 'dutch5k-v104';
-    self.addEventListener('install', e => { self.skipWaiting(); });
-    self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
-    self.addEventListener('fetch', e => {
-      const url = e.request.url;
-      // never cache the Anthropic API
-      if(url.includes('api.anthropic.com')) return;
-      e.respondWith(
-        caches.open(C).then(cache =>
-          cache.match(e.request).then(hit => {
-            const net = fetch(e.request).then(resp => {
-              if(resp && resp.status===200 && (e.request.method==='GET')){ cache.put(e.request, resp.clone()); }
-              return resp;
-            }).catch(()=> hit);
-            return hit || net;
-          })
-        )
-      );
-    });`;
-  try{
-    const blob = new Blob([swCode], {type:'application/javascript'});
-    navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
-  }catch(e){}
+  try{ navigator.serviceWorker.register('/sw.js').catch(()=>{}); }catch(e){}
 }
 
 init();
