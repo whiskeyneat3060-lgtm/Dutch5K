@@ -383,6 +383,8 @@
   .remind-time{display:flex; align-items:center; gap:10px; margin-top:10px;}
   .remind-time label{font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:1px; color:var(--muted);}
   .remind-time input[type=time]{width:auto; margin:0; padding:7px 10px;}
+  .plan-remind{margin-top:16px; padding-top:14px; border-top:1px solid var(--line);}
+  .plan-remind .loadmore{margin-top:0;}
 
   /* ---- daily plan / streak ---- */
   .plan-box{border-width:3px;}
@@ -9138,54 +9140,16 @@ function render(){
     const tc = todayCount();
     const st = currentStreak();
 
-    // Daily plan box
-    let planBox;
-    if(plan){
-      const remainingWords = Math.max(0, goalTotal() - goalLearned(c));
-      let etaLine = '';
-      if(plan.perDay>0){
-        const days = Math.ceil(remainingWords / plan.perDay);
-        const eta = new Date(Date.now() + days*86400000);
-        etaLine = T("At {n}/day you'll reach {goal} in about {d} days (~{date}).", {goal:goalStr(), n:plan.perDay, d:`<b>${days}</b>`, date:eta.toLocaleDateString(langLocale(),{month:'short',day:'numeric',year:'numeric'})});
-      }
-      if(plan.endDate){
-        const daysLeft = Math.max(1, daysBetween(todayStr(), plan.endDate));
-        const need = Math.ceil(remainingWords / daysLeft);
-        etaLine = T('To hit {goal} by {date}, learn about {n}/day ({d} days left).', {goal:goalStr(), date:new Date(plan.endDate).toLocaleDateString(langLocale(),{month:'short',day:'numeric'}), n:`<b>${need}</b>`, d:daysLeft});
-      }
-      const done = tc; const goalN = plan.perDay || (plan.endDate ? Math.ceil(Math.max(0,goalTotal()-goalLearned(c))/Math.max(1,daysBetween(todayStr(),plan.endDate))) : 10);
-      const barPct = Math.min(100, Math.round(done/goalN*100));
-      planBox = `
-      <div class="genbox plan-box">
-        <h3>${T("Today's plan")}</h3>
-        <div class="daily-head"><div><div class="daily-num">${done} <span>/ ${goalN}</span></div><div class="lbl">${T('words today')}</div></div>
-          <div class="streak-badge">&#128293; ${st}<small>${T('day streak')}</small></div></div>
-        <div class="progbar"><div class="progbar-fill" style="width:${barPct}%"></div></div>
-        <p style="margin-top:12px">${etaLine}</p>
-        ${done>=goalN?`<div class="keyok" style="margin-top:8px">&#10003; ${T('Daily goal complete — nice work!')}</div>`:`<button class="genbtn" style="margin-top:10px" onclick="hap();setTab('learn')">${T('Study now')} &#8594;</button>`}
-        <div class="rowbtns" style="margin-top:10px">
-          <button onclick="hap();editPlan()">${T('Edit plan')}</button>
-          <button onclick="hap();clearPlan()">${T('Remove')}</button>
-        </div>
-        ${('Notification' in window) ? `<button class="loadmore" style="margin-top:10px" onclick="enableReminders()">${remindOn?'&#10003; '+T('Daily reminders on'):'&#128276; '+T('Turn on daily reminders')}</button>
-        ${remindOn?`<div class="remind-time"><label>${T('Reminder time')}</label><input type="time" value="${remindTime}" onchange="setRemindTime(this.value)"></div><div class="note">${T('Reminders fire while the app is open in your browser; keep the tab around to be nudged.')}</div>`:''}` : ''}
-      </div>`;
-    } else {
-      planBox = `
-      <div class="genbox plan-box">
-        <h3>${T('Set a daily goal')}</h3>
-        <p>${T('Pick how many words to learn per day (or a target date), and the app tracks your streak and shows exactly how many to do each day.')}</p>
-        <div class="plan-form">
-          <label>${T('Words per day')}</label>
-          <div class="chiprow">
-            ${[5,10,15,20,30].map(n=>`<button class="planchip" onclick="hap();savePlan(${n},null)">${n}</button>`).join('')}
-          </div>
-          <label style="margin-top:12px">${T('Or reach {goal} by a date', {goal:goalStr()})}</label>
-          <input type="date" id="planDate" min="${todayStr()}">
-          <button class="genbtn" style="margin-top:10px" onclick="hap();const d=document.getElementById('planDate').value; if(d) savePlan(0,d); else toast(T('Pick a date or tap a number above'));">${T('Set target date')}</button>
+    // Streak + today card — real progress only. The daily-plan setup + reminder now live on
+    // the Profile page (studyPlanHtml); Progress just shows what's actually happening.
+    const streakCard = `
+      <div class="genbox">
+        <h3>&#128293; ${T('Streak')}</h3>
+        <div class="daily-head">
+          <div><div class="daily-num">${tc}</div><div class="lbl">${T('words today')}</div></div>
+          <div class="streak-badge">&#128293; ${st}<small>${T('day streak')}</small></div>
         </div>
       </div>`;
-    }
 
     // Streak history mini-calendar (last 14 days)
     const hist = (streak && streak.history) || {};
@@ -9298,9 +9262,9 @@ function render(){
         <div class="stat"><div class="num c-red">${pct}%</div><div class="lbl">${T('Of {goal} goal', {goal:goalStr()})}</div></div>
       </div>
 
-      ${reviewBox}
+      ${streakCard}
 
-      ${planBox}
+      ${reviewBox}
 
       ${hardestBox}
 
@@ -9369,6 +9333,69 @@ function goalBoxHtml(c){
       <div class="plan-form">
         ${goalBody}
       </div>
+    </div>`;
+}
+
+/* Study plan (moved to the Profile page): the daily pace toward the learning goal + the daily
+   reminder. The reminder toggle is always shown here (so the time option is easy to find), and
+   the <input type=time> is interpreted in the device's own timezone — scheduleReminder() builds
+   the next fire time with the local Date constructor, so the picked HH:MM is device-local. */
+function studyPlanHtml(c){
+  const tc = todayCount();
+  let planInner;
+  if(plan){
+    const remainingWords = Math.max(0, goalTotal() - goalLearned(c));
+    let etaLine = '';
+    if(plan.perDay>0){
+      const days = Math.ceil(remainingWords / plan.perDay);
+      const eta = new Date(Date.now() + days*86400000);
+      etaLine = T("At {n}/day you'll reach {goal} in about {d} days (~{date}).", {goal:goalStr(), n:plan.perDay, d:`<b>${days}</b>`, date:eta.toLocaleDateString(langLocale(),{month:'short',day:'numeric',year:'numeric'})});
+    }
+    if(plan.endDate){
+      const daysLeft = Math.max(1, daysBetween(todayStr(), plan.endDate));
+      const need = Math.ceil(remainingWords / daysLeft);
+      etaLine = T('To hit {goal} by {date}, learn about {n}/day ({d} days left).', {goal:goalStr(), date:new Date(plan.endDate).toLocaleDateString(langLocale(),{month:'short',day:'numeric'}), n:`<b>${need}</b>`, d:daysLeft});
+    }
+    const done = tc; const goalN = plan.perDay || (plan.endDate ? Math.ceil(Math.max(0,goalTotal()-goalLearned(c))/Math.max(1,daysBetween(todayStr(),plan.endDate))) : 10);
+    const barPct = Math.min(100, Math.round(done/goalN*100));
+    planInner = `
+      <div class="daily-head"><div><div class="daily-num">${done} <span>/ ${goalN}</span></div><div class="lbl">${T('words today')}</div></div></div>
+      <div class="progbar"><div class="progbar-fill" style="width:${barPct}%"></div></div>
+      <p style="margin-top:12px">${etaLine}</p>
+      ${done>=goalN?`<div class="keyok" style="margin-top:8px">&#10003; ${T('Daily goal complete — nice work!')}</div>`:`<button class="genbtn" style="margin-top:10px" onclick="hap();setTab('learn')">${T('Study now')} &#8594;</button>`}
+      <div class="rowbtns" style="margin-top:10px">
+        <button onclick="hap();editPlan()">${T('Edit plan')}</button>
+        <button onclick="hap();clearPlan()">${T('Remove')}</button>
+      </div>`;
+  } else {
+    planInner = `
+      <p>${T('Pick how many words to learn per day (or a target date), and the app tracks your streak and shows exactly how many to do each day.')}</p>
+      <div class="plan-form">
+        <label>${T('Words per day')}</label>
+        <div class="chiprow">
+          ${[5,10,15,20,30].map(n=>`<button class="planchip" onclick="hap();savePlan(${n},null)">${n}</button>`).join('')}
+        </div>
+        <label style="margin-top:12px">${T('Or reach {goal} by a date', {goal:goalStr()})}</label>
+        <input type="date" id="planDate" min="${todayStr()}">
+        <button class="genbtn" style="margin-top:10px" onclick="hap();const d=document.getElementById('planDate').value; if(d) savePlan(0,d); else toast(T('Pick a date or tap a number above'));">${T('Set target date')}</button>
+      </div>`;
+  }
+  // Daily reminder — always available here; the time picker uses the device's local timezone.
+  let remindInner = '';
+  if('Notification' in window){
+    let tz=''; try{ tz = Intl.DateTimeFormat().resolvedOptions().timeZone||''; }catch(_){}
+    remindInner = `
+      <div class="plan-remind">
+        <button class="loadmore" onclick="enableReminders()">${remindOn?'&#10003; '+T('Daily reminders on'):'&#128276; '+T('Turn on daily reminders')}</button>
+        ${remindOn?`<div class="remind-time"><label>${T('Reminder time')}</label><input type="time" value="${remindTime}" onchange="setRemindTime(this.value)"></div>
+        <div class="note">${tz?T('Times are in your device timezone ({tz}).',{tz:tz})+' ':''}${T('Reminders fire while the app is open in your browser; keep the tab around to be nudged.')}</div>`:''}
+      </div>`;
+  }
+  return `
+    <div class="genbox plan-box">
+      <h3>&#128197; ${T('Study plan')}</h3>
+      ${planInner}
+      ${remindInner}
     </div>`;
 }
 
@@ -9574,6 +9601,7 @@ function renderProfile(main, c){
       ${accountCard}
       ${proCard}
       ${goalBoxHtml(c)}
+      ${studyPlanHtml(c)}
     </div>`;
 }
 
