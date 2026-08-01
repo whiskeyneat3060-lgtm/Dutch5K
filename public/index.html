@@ -2502,6 +2502,21 @@ const UI_V98 = JSON.parse(`{
 }`);
 Object.keys(UI_V98).forEach(l=>{ if(UI[l]) Object.assign(UI[l], UI_V98[l]); });
 
+/* v106: Study plan card moved to Profile + Streak card on Progress. */
+const UI_V106 = JSON.parse(`{
+"fr":{"Study plan":"Plan d’étude","Streak":"Série","Times are in your device timezone ({tz}).":"Les heures sont dans le fuseau horaire de votre appareil ({tz})."},
+"it":{"Study plan":"Piano di studio","Streak":"Serie","Times are in your device timezone ({tz}).":"Gli orari sono nel fuso orario del tuo dispositivo ({tz})."},
+"es":{"Study plan":"Plan de estudio","Streak":"Racha","Times are in your device timezone ({tz}).":"Las horas están en la zona horaria de tu dispositivo ({tz})."},
+"de":{"Study plan":"Lernplan","Streak":"Serie","Times are in your device timezone ({tz}).":"Die Zeiten gelten in der Zeitzone deines Geräts ({tz})."},
+"pt":{"Study plan":"Plano de estudo","Streak":"Sequência","Times are in your device timezone ({tz}).":"Os horários estão no fuso horário do seu dispositivo ({tz})."},
+"pl":{"Study plan":"Plan nauki","Streak":"Seria","Times are in your device timezone ({tz}).":"Godziny są w strefie czasowej Twojego urządzenia ({tz})."},
+"tr":{"Study plan":"Çalışma planı","Streak":"Seri","Times are in your device timezone ({tz}).":"Saatler cihazınızın saat diliminde ({tz})."},
+"uk":{"Study plan":"План навчання","Streak":"Серія","Times are in your device timezone ({tz}).":"Час указано в часовому поясі вашого пристрою ({tz})."},
+"ru":{"Study plan":"План занятий","Streak":"Серия","Times are in your device timezone ({tz}).":"Время указано в часовом поясе вашего устройства ({tz})."},
+"bg":{"Study plan":"Учебен план","Streak":"Серия","Times are in your device timezone ({tz}).":"Часовете са в часовата зона на вашето устройство ({tz})."}
+}`);
+Object.keys(UI_V106).forEach(l=>{ if(UI[l]) Object.assign(UI[l], UI_V106[l]); });
+
 
 /* UI string translation. Key = the exact English string; {x} placeholders are
    substituted AFTER lookup so translations can reorder them. Falls back to English. */

@@ -93,6 +93,35 @@ Owner Adi: B1 Dutch learner in Almere, toward conversational fluency.
 >   confirms the reminder fns + `/sw.js` registration. SW cache bumped **v104 → v105** (note: v104 was an
 >   undocumented prior bump; v103 was the last one recorded here).
 
+> **Study plan moved to Profile + Progress shows real progress only (v106, Adi: "there's no time option to
+> set reminders, bring it back and set time as per device timezone; move the reminder option to profile page
+> as a study plan; in progress only show the real progress happening with streak etc."):** the reminder
+> time picker was buried — it lived inside the Progress "Today's plan" box and only appeared *after* both a
+> daily goal was set **and** reminders were enabled, so it read as "gone". The daily-plan config + reminder
+> are now a **Study plan card on the Profile page**, and Progress shows only real progress.
+> - **New `studyPlanHtml(c)`** (right after `goalBoxHtml`, before the USER PROFILE section) holds the exact
+>   old plan-box logic (set words/day or target date → tracks today's count vs `goalN` + ETA line, Edit/Remove)
+>   **plus** the reminder block, which is now **always shown** here (the toggle is no longer gated behind
+>   having a plan). Rendered on the Profile page after `goalBoxHtml(c)` (order: account → Pro → Learning goal
+>   → Study plan). The reminder time `<input type=time>` + timezone note only appear once `remindOn`.
+> - **Device timezone:** `scheduleReminder()` already builds the next fire time with the local `Date`
+>   constructor (`new Date(y,m,d,hh,mm)`), so the picked HH:MM was always device-local — no logic change. Made
+>   it **explicit**: when reminders are on, the note prepends "Times are in your device timezone ({tz})." with
+>   `tz = Intl.DateTimeFormat().resolvedOptions().timeZone`.
+> - **Progress tab** dropped the whole plan/reminder box (the old `planBox` var + its `${planBox}` slot are
+>   gone) and gained a compact **Streak card** (`streakCard`: today's word count + 🔥 day streak) in its place,
+>   right above the Review box. Everything else on Progress (stats tiles, Review, Hardest words, 14-day history,
+>   By-word-type, By-source) is unchanged. `tc`/`st` (todayCount/currentStreak, already computed at the top of
+>   the progress branch) now feed the Streak card.
+> - **CSS:** one new rule pair after `.remind-time` — `.plan-remind{margin-top:16px;padding-top:14px;
+>   border-top:1px solid var(--line)}` + `.plan-remind .loadmore{margin-top:0}` — visually separates the
+>   reminder from the plan inside the card.
+> - **i18n:** three new keys (`Study plan`, `Streak`, `Times are in your device timezone ({tz}).`) translated
+>   in **all 10 non-English languages** via a `UI_V106 = JSON.parse(\`…\`)` block right after `UI_V98`
+>   (`Object.assign` merge, same pattern; `{tz}` placeholder preserved per language). The reminder strings
+>   themselves were already translated. Verified in jsdom (Progress = streak card, no plan/reminder; Profile =
+>   Study plan + reminder toggle + time input + tz note; 10×3 key parity). SW cache bumped **v105 → v106**.
+
 > **Convention (Adi):** this `CLAUDE.md` is the project's only memory (sessions get cleared), so it
 > should track features, gotchas, and cache bumps — but **never edit it automatically.** After each
 > feature, **ask Adi** whether to update this file. Likewise **never push to `main` automatically**
