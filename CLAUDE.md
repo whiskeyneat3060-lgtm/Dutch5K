@@ -133,6 +133,37 @@ Owner Adi: B1 Dutch learner in Almere, toward conversational fluency.
 > falls back to the key). No storage/logic changes elsewhere — `scheduleReminder()` already no-ops when the
 > flag is off. SW cache bumped **v106 → v107**.
 
+> **"Essential Dutch words" source (v108, Adi: "a separate section called Essential Dutch words, build all
+> the words from this dictionary pdf"):** Adi uploaded a scanned *Teach Yourself Essential Dutch dictionary*
+> (Quist & Strik) to Drive and asked for a new section built from it. **The PDF was NOT usable and was not
+> imported** — three blockers: (1) `download_file_content` caps at 10 MB and the ~7 MB split files timed out
+> the Drive MCP session (base64 payload); (2) `read_file_content` hard-caps its extraction at ~letter H;
+> (3) the OCR is badly garbled (*aanvoer*→"aanvaer", *offensief*→"offensiVe", the two page columns interleave
+> line-by-line) — importing it would inject misspelled Dutch, which for a language app is worse than nothing.
+> It's also a commercial all-rights-reserved dictionary, so copying its word→meaning content wholesale is a
+> copyright risk (Adi agreed a single word's short gloss is a fact/not protected, but the whole compilation is).
+> **Adi will upload a CLEAN text export of the dictionary later** — when that arrives, take only the Dutch word
+> list and pair it with original meanings/examples (same provenance rule as the books).
+> - **What shipped instead:** "Essential" is a curated beginner core built from the app's OWN clean corpus —
+>   the **top `ESSENTIAL_N=1000` most-frequent NON-book words that already have a meaning** (`hasMeaning`).
+>   Verified: all 1000 already carry a hand-written example too (GENEX), so "build examples" was already done.
+> - **Architecture — new source `essential`, carved OUT of General so they're disjoint** (no double-counting):
+>   in the srcTags pass at the end of `buildDeck`, the chosen 1000 entries get **`srcTags=['essential']`** (NOT
+>   `['general']`). `inSource()` is now **fully tag-based** (dropped the old `general = !books` special-case —
+>   general words are explicitly tagged `'general'`). Wired through `primarySource` (no-book → essential if
+>   tagged else general), `computeFree` (added an `essential:[]` bucket; simplified to push by srcTags),
+>   `countsBySource` (+ `hasEssential()` guard), `SRC_ORDER` (**essential first**), `SRC_SHORT`
+>   (`essential:'Essential'`), `SRC_COLORVAR` (`essential:'--purple'`), `srcFilterOpts` (Essential option shown
+>   when present), the Words-row badge map (`essential:'★'` → `.sb-essential{background:var(--purple)}`), the
+>   About box (⭐ Essential line), and the learning-goal source options.
+> - **New `--purple` theme token** added to all 3 theme blocks (Minimalistic `#6A2C91`, Midnight `#b18cff`,
+>   Sepia `#6d4a86`). **`FREE_LIMITS.essential=150`** (top 150 essential words free; total free words = 850 =
+>   150+500 general+200 gang).
+> - **i18n:** `UI_V108` block (after `UI_V106`) translates `'Essential'` + `'{n} core everyday words.'` in all
+>   10 non-English langs (`'{n} words'` reused for book lines is already translated). SW cache **v107 → v108**.
+> - **To resize the core:** change `ESSENTIAL_N`. To re-source from the real dictionary later, replace the
+>   frequency-slice selection with a curated word-id list, keeping the `srcTags=['essential']` tagging pass.
+
 > **Convention (Adi):** this `CLAUDE.md` is the project's only memory (sessions get cleared), so it
 > should track features, gotchas, and cache bumps — but **never edit it automatically.** After each
 > feature, **ask Adi** whether to update this file. Likewise **never push to `main` automatically**
