@@ -1,4 +1,4 @@
-const C = 'dutch5k-v107';
+const C = 'dutch5k-v108';
 self.addEventListener('install', e => { self.skipWaiting(); });
 self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
 self.addEventListener('fetch', e => {

@@ -40,7 +40,7 @@
 <style>
   :root{
     --ink:#111111; --paper:#FFFFFF; --grey:#F2F2EF;
-    --red:#DD0100; --blue:#225095; --yellow:#FAC901; --green:#0B7A3B;
+    --red:#DD0100; --blue:#225095; --yellow:#FAC901; --green:#0B7A3B; --purple:#6A2C91;
     --line:var(--ink);              /* border colour (themeable, separate from text ink) */
     --rule:3px solid var(--line);
     --muted:#666; --muted2:#999; --faint:#ccc;   /* secondary / tertiary text + faint borders */
@@ -442,6 +442,7 @@
   .sb-gang{background:var(--blue);}
   .sb-niveau{background:var(--yellow); color:#111;}
   .sb-perfectie{background:var(--green);}
+  .sb-essential{background:var(--purple);}
 
   /* ================= THEMES ================= */
   /* Cards/inputs pick up rounding, surface fill and elevation from tokens, so a
@@ -546,7 +547,7 @@
      ================================================================ */
   html[data-theme="midnight"]{
     --ink:#e8ebf7; --paper:#0d0e15; --grey:#1a1c2b;
-    --red:#ff6b81; --blue:#6c8cff; --yellow:#ffd166; --green:#57d38a;
+    --red:#ff6b81; --blue:#6c8cff; --yellow:#ffd166; --green:#57d38a; --purple:#b18cff;
     --line:#2a2d42;
     --rule:1px solid var(--line);
     --muted:#a2a8c4; --muted2:#767c9c; --faint:#2a2d42;
@@ -624,7 +625,7 @@
      ================================================================ */
   html[data-theme="sepia"]{
     --ink:#3a2e22; --paper:#f3ead6; --grey:#e8dcc2;
-    --red:#9c3b23; --blue:#3f6f6f; --yellow:#b6851b; --green:#4f7a3a;
+    --red:#9c3b23; --blue:#3f6f6f; --yellow:#b6851b; --green:#4f7a3a; --purple:#6d4a86;
     --line:#cdbb92;
     --rule:1px solid var(--line);
     --muted:#7c6c52; --muted2:#9a8a6f; --faint:#ddceac;
@@ -1733,7 +1734,7 @@ let authMode = null;      // profile-page inline auth form: null | 'google' | 's
    account per device today; the account-side session marker is what a future backend uses
    to enforce it across real devices. */
 let deviceId = null;
-const FREE_LIMITS = { general:500, gang:200, actie:0, niveau:0, perfectie:0 };
+const FREE_LIMITS = { essential:150, general:500, gang:200, actie:0, niveau:0, perfectie:0 };
 let theme = 'minimalistic';   // active UI theme id (persisted as dutch5k-theme)
 /* Theme catalogue for the Progress-tab picker. `id` matches the html[data-theme] value
    ('minimalistic' = the default, no attribute). `sw` = 3 swatch colours for the preview chip. */
@@ -2517,6 +2518,21 @@ const UI_V106 = JSON.parse(`{
 }`);
 Object.keys(UI_V106).forEach(l=>{ if(UI[l]) Object.assign(UI[l], UI_V106[l]); });
 
+// v108: "Essential Dutch words" source label + About-box description.
+const UI_V108 = JSON.parse(`{
+"fr":{"Essential":"Essentiel","{n} core everyday words.":"{n} mots essentiels du quotidien."},
+"it":{"Essential":"Essenziale","{n} core everyday words.":"{n} parole essenziali di uso quotidiano."},
+"es":{"Essential":"Esencial","{n} core everyday words.":"{n} palabras esenciales del día a día."},
+"de":{"Essential":"Grundwortschatz","{n} core everyday words.":"{n} grundlegende Alltagswörter."},
+"pt":{"Essential":"Essencial","{n} core everyday words.":"{n} palavras essenciais do dia a dia."},
+"pl":{"Essential":"Podstawowe","{n} core everyday words.":"{n} podstawowych, codziennych słów."},
+"tr":{"Essential":"Temel","{n} core everyday words.":"{n} temel günlük kelime."},
+"uk":{"Essential":"Основні","{n} core everyday words.":"{n} основних щоденних слів."},
+"ru":{"Essential":"Основные","{n} core everyday words.":"{n} основных повседневных слов."},
+"bg":{"Essential":"Основни","{n} core everyday words.":"{n} основни ежедневни думи."}
+}`);
+Object.keys(UI_V108).forEach(l=>{ if(UI[l]) Object.assign(UI[l], UI_V108[l]); });
+
 
 /* UI string translation. Key = the exact English string; {x} placeholders are
    substituted AFTER lookup so translations can reorder them. Falls back to English. */
@@ -2592,7 +2608,9 @@ const POS_LABELS = {verb:'Verbs', noun:'Nouns', adjective:'Adjectives', adverb:'
 const POS_FILTER = ['all','verb','noun','adjective','adverb','pronoun','preposition','conjunction','number','expression'];
 // Source options in canonical order: All, General, then CEFR level bands (shown only if present in the deck).
 function srcFilterOpts(){
-  const o = [['all',T('All sources')],['general',T('General 5K')]];
+  const o = [['all',T('All sources')]];
+  if(deck.some(e=>(e.srcTags||[]).includes('essential'))) o.push(['essential',T('Essential')]);
+  o.push(['general',T('General 5K')]);
   if(bookChapters('gang').length) o.push(['gang','A0 → A2']);
   if(bookChapters('actie').length) o.push(['actie','A2 → B1']);
   if(bookChapters('niveau').length) o.push(['niveau','B1 → B2']);
@@ -7603,6 +7621,17 @@ function buildDeck(){
     if(e.books && e.books.length) e.srcTags = [...new Set(e.books.map(x=>x.src))];
     else e.srcTags = ['general'];
   });
+  // "Essential Dutch words" (v108): a curated beginner core carved out of the general
+  // corpus = the most-frequent NON-book words that already carry a real English meaning.
+  // They're split OUT of General into their own source (srcTags becomes ['essential'],
+  // not ['general']) so the two never overlap — clean counts, clean donut. Everything is
+  // drawn from the app's own clean data (correct spellings + existing meanings/examples),
+  // so there is no external/scanned import. Tune the size with ESSENTIAL_N.
+  const ESSENTIAL_N = 1000;
+  deck.filter(e => (!e.books || !e.books.length) && e.hasMeaning)
+      .sort((a,b) => (a.rank||99999) - (b.rank||99999))
+      .slice(0, ESSENTIAL_N)
+      .forEach(e => { e.srcTags = ['essential']; });
   computeFree();
 }
 /* Decide which entries are unlocked in the FREE plan. Each source has a cap
@@ -7611,10 +7640,9 @@ function buildDeck(){
    between Gang and (capped-at-0) Actie is still reachable via Gang. Pro ignores this. */
 function computeFree(){
   freeIds = new Set();
-  const bySrc = { general:[], gang:[], actie:[], niveau:[] };
+  const bySrc = { essential:[], general:[], gang:[], actie:[], niveau:[] };
   deck.forEach(e => {
-    if(!e.books || !e.books.length) bySrc.general.push(e);
-    (e.srcTags||[]).forEach(t => { if(bySrc[t] && t!=='general') bySrc[t].push(e); });
+    (e.srcTags||[]).forEach(t => { if(bySrc[t]) bySrc[t].push(e); });
   });
   Object.keys(bySrc).forEach(src => {
     const cap = FREE_LIMITS[src] || 0;
@@ -7666,7 +7694,8 @@ function bookChapters(src){
 }
 function inSource(e, src){
   if(src==='all') return true;
-  if(src==='general') return !e.books || !e.books.length;
+  // Tag-based: srcTags is authoritative. Non-book words are tagged either 'essential'
+  // (the curated core) or 'general' (the rest) — never both — so the sources are disjoint.
   return (e.srcTags||[]).includes(src);
 }
 
@@ -7916,18 +7945,19 @@ function countsByPos(){
 // coloured segments sum to exactly the learned total (unlike the donut's per-source overlap counts).
 // A book word is filed under its book (matches the source-filter taxonomy); non-book words = general.
 function primarySource(e){
-  if(!e.books || !e.books.length) return 'general';
+  if(!e.books || !e.books.length) return (e.srcTags||[]).includes('essential') ? 'essential' : 'general';
   for(const s of ['gang','actie','niveau','perfectie']) if((e.srcTags||[]).includes(s)) return s;
   return 'general';
 }
 // Learned/total per source (general = no book; book sources via inSource). A word shared
 // between two books counts under each, matching how the source filter presents them.
-const SRC_ORDER = ['general','gang','actie','niveau','perfectie'];
-const SRC_SHORT = {general:'General', gang:'A0–A2', actie:'A2–B1', niveau:'B1–B2', perfectie:'B2–C1'};
-const SRC_COLORVAR = {general:'--muted', gang:'--blue', actie:'--red', niveau:'--yellow', perfectie:'--green'};
+const SRC_ORDER = ['essential','general','gang','actie','niveau','perfectie'];
+const SRC_SHORT = {essential:'Essential', general:'General', gang:'A0–A2', actie:'A2–B1', niveau:'B1–B2', perfectie:'B2–C1'};
+const SRC_COLORVAR = {essential:'--purple', general:'--muted', gang:'--blue', actie:'--red', niveau:'--yellow', perfectie:'--green'};
+function hasEssential(){ return deck.some(e=>(e.srcTags||[]).includes('essential')); }
 function countsBySource(){
   const out={};
-  SRC_ORDER.forEach(s=>{ if(s==='general'||bookChapters(s).length) out[s]={total:0,learned:0}; });
+  SRC_ORDER.forEach(s=>{ if(s==='general'||(s==='essential'&&hasEssential())||bookChapters(s).length) out[s]={total:0,learned:0}; });
   deck.forEach(e=>{
     SRC_ORDER.forEach(s=>{
       if(out[s] && inSource(e,s)){
@@ -8147,9 +8177,11 @@ function renderMenu(){
   const body = document.getElementById('drawerBody'); if(!body) return;
   document.getElementById('drawerTitle').textContent = T('Menu');
   const genCount = deck.filter(e=>(e.srcTags||[]).includes('general')).length;
+  const essCount = deck.filter(e=>(e.srcTags||[]).includes('essential')).length;
   const aboutInner = `
       <p>${T('Build your Dutch vocabulary in a structured way. This one-stop app shows all the details of a word — meaning, example sentences, grammar forms and synonyms — so learners can pick it up in a practical way.')}</p>
       <p style="margin-top:6px">${T('The app has {n} common Dutch words, grouped by level:', {n:deck.length})}</p>
+      ${essCount?`<p style="margin-top:6px">&#11088; <b>${T('Essential')}</b>: ${T('{n} core everyday words.', {n:essCount})}</p>`:''}
       <p style="margin-top:6px">&#128218; <b>General</b>: ${T('{n} popular words.', {n:genCount})}</p>
       ${bookChapters('gang').length?`<p style="margin-top:6px">&#128218; <b>A0 &rarr; A2</b>: ${T('{n} words', {n:deck.filter(e=>(e.srcTags||[]).includes('gang')).length})}.</p>`:''}
       ${bookChapters('actie').length?`<p style="margin-top:6px">&#128218; <b>A2 &rarr; B1</b>: ${T('{n} words', {n:deck.filter(e=>(e.srcTags||[]).includes('actie')).length})}.</p>`:''}
@@ -8847,7 +8879,7 @@ function renderWordList(){
     const e = deck[i]; const s = progress[e.id]||'new';
     const meaning = (e.rich || e.hasMeaning) ? esc(ct(e.m)) : (e.books&&e.books.length ? T('tap to open') : `#${e.rank} &#183; ${T('tap to open')}`);
     const pos = posOf(e) ? `<span class="wpos">${esc(T(posOf(e)))}</span>` : '';
-    const badge = (e.srcTags||[]).filter(t=>t!=='general').map(t=>`<span class="srcbadge sb-${t}">${({gang:'A2',actie:'B1',niveau:'B2',perfectie:'C1'})[t]||'?'}</span>`).join('');
+    const badge = (e.srcTags||[]).filter(t=>t!=='general').map(t=>`<span class="srcbadge sb-${t}">${({essential:'&#9733;',gang:'A2',actie:'B1',niveau:'B2',perfectie:'C1'})[t]||'?'}</span>`).join('');
     if(isLocked(e)){
       // Free plan: row stays visible but blurred; tapping opens the Pro upsell.
       return `<div class="wrow locked-row" onclick="openPro(event)">
@@ -9318,7 +9350,7 @@ function goalBoxHtml(c){
   // Compact chip label so targets fit one row: 1000 -> "1K", 2500 -> "2.5K".
   const compactNum = n => n>=1000 ? (n%1000===0 ? (n/1000)+'K' : (n/1000).toFixed(1)+'K') : String(n);
   const gl = goalLearned(c);
-  const srcGoalOpts = SRC_ORDER.filter(s=>s==='general'||bookChapters(s).length);
+  const srcGoalOpts = SRC_ORDER.filter(s=>s==='general'||(s==='essential'&&hasEssential())||bookChapters(s).length);
   // The two goal-type tabs.
   const goalModeBar = `
     <div class="chiprow srcchips" style="margin-bottom:14px">
