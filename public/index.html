@@ -7503,6 +7503,153 @@ const JUNK = new Set(["aa","about","ac","alan","ali","alice","all","am","amanda"
 
 /* JUNK-SKIPS */ ["city","willem","mark","love","he","hey","etc","eu","le","nl","neuken","gary","juan","anti","geile","social","life","time","art","iphone","anna","news","black","league","lul","shit","sexy","da","maria","josé","dé","eén","eindhoven","high","an","maastricht","nijmegen","haarlem","kim","kut","madrid","sex","barcelona","dating","us","go","games","content","party","albert","arnhem","magazine","moskou","breda","zwolle","alex","alexander","bosch","gay","united","ajax","delft","rome","ad","air","make","job","adam","kids","mini","rock","tilburg","lady","hit","don","pik","are","geil","hoer","leeuwarden","brugge","eva","gold","jo","texas","tieten","special","island","ns","private","allah","arthur","dordrecht","amersfoort","leuven","twente","down","pijpen","maarten","france","re","zoo","californië","challenge","ford","fuck","hill","airport","venlo","florida","marie","sub","jacob","rose","sophie","alkmaar","deventer","enschede","eredivisie","apeldoorn","klote","tag","august","run","santa","usa","vice","awards","champions","hilversum","hits","mobile","gerard","isis","saint","shop","slet","express","jason","mohammed","singles","ss","kortrijk","track","act","action","bridge","release","feb","lord","florence","marcus","ede","paris","pre","journal","okt"].forEach(w=>JUNK.add(w));
 
+/* ESSENTIAL: common everyday Dutch words (v-z) taken from the Teach Yourself Essential
+   Dutch Dictionary (v109). Only the Dutch headword + article were taken from the (garbled,
+   OCR-corrected) scan; every English meaning and example sentence is original. These are
+   words absent from the FREQ/BOOKS corpus; buildDeck adds any not already present and tags
+   them srcTags=['essential']. Top-ups: append before the --ESSENTIAL-APPEND-- anchor. */
+const ESSENTIAL = [
+  {"w":"viool","t":"noun","a":"de","m":"violin","ex":[["Zij speelt al tien jaar viool.","She has played the violin for ten years."]]},
+  {"w":"vlam","t":"noun","a":"de","m":"flame","ex":[["De vlam van de kaars ging uit.","The flame of the candle went out."]]},
+  {"w":"vleermuis","t":"noun","a":"de","m":"bat (animal)","ex":[["In de oude toren wonen veel vleermuizen.","Many bats live in the old tower."]]},
+  {"w":"vlek","t":"noun","a":"de","m":"stain, spot","ex":[["Er zit een vlek op mijn overhemd.","There is a stain on my shirt."]]},
+  {"w":"vleugel","t":"noun","a":"de","m":"wing; grand piano","ex":[["De vogel brak zijn vleugel.","The bird broke its wing."]]},
+  {"w":"vlieg","t":"noun","a":"de","m":"fly (insect)","ex":[["Er zit een vlieg op het raam.","There is a fly on the window."]]},
+  {"w":"vlieger","t":"noun","a":"de","m":"kite","ex":[["De kinderen laten een vlieger op.","The children are flying a kite."]]},
+  {"w":"vloek","t":"noun","a":"de","m":"curse, swear word","ex":[["Hij slaakte een luide vloek.","He let out a loud curse."]]},
+  {"w":"vloot","t":"noun","a":"de","m":"fleet (of ships)","ex":[["De vloot vertrok bij zonsopgang.","The fleet departed at sunrise."]]},
+  {"w":"vluchteling","t":"noun","a":"de","m":"refugee","ex":[["De vluchtelingen zoeken een veilige plek.","The refugees are looking for a safe place."]]},
+  {"w":"voegwoord","t":"noun","a":"het","m":"conjunction (grammar)","ex":[["'En' en 'maar' zijn voegwoorden.","'And' and 'but' are conjunctions."]]},
+  {"w":"voetnoot","t":"noun","a":"de","m":"footnote","ex":[["De uitleg staat in een voetnoot.","The explanation is in a footnote."]]},
+  {"w":"voordeur","t":"noun","a":"de","m":"front door","ex":[["Doe de voordeur op slot.","Lock the front door."]]},
+  {"w":"voortuin","t":"noun","a":"de","m":"front garden","ex":[["Onze voortuin staat vol bloemen.","Our front garden is full of flowers."]]},
+  {"w":"voorwoord","t":"noun","a":"het","m":"preface, foreword","ex":[["De schrijver bedankt iedereen in het voorwoord.","The author thanks everyone in the preface."]]},
+  {"w":"voorstad","t":"noun","a":"de","m":"suburb","ex":[["Zij wonen in een rustige voorstad.","They live in a quiet suburb."]]},
+  {"w":"vorst","t":"noun","a":"de","m":"frost; monarch, sovereign","ex":[["Vannacht is er strenge vorst.","There is a hard frost tonight."]]},
+  {"w":"vouw","t":"noun","a":"de","m":"fold, crease","ex":[["Er zit een vouw in het papier.","There is a fold in the paper."]]},
+  {"w":"vracht","t":"noun","a":"de","m":"cargo, freight, load","ex":[["De vrachtwagen vervoert een zware vracht.","The truck is carrying a heavy load."]]},
+  {"w":"vreemdeling","t":"noun","a":"de","m":"stranger; foreigner","ex":[["Een vreemdeling vroeg mij de weg.","A stranger asked me for directions."]]},
+  {"w":"vreugde","t":"noun","a":"de","m":"joy, delight","ex":[["Tot mijn grote vreugde kwam ze terug.","To my great joy she came back."]]},
+  {"w":"vuist","t":"noun","a":"de","m":"fist","ex":[["Hij balde zijn vuist van woede.","He clenched his fist in anger."]]},
+  {"w":"vulkaan","t":"noun","a":"de","m":"volcano","ex":[["De vulkaan is al jaren niet uitgebarsten.","The volcano hasn't erupted in years."]]},
+  {"w":"vuurtoren","t":"noun","a":"de","m":"lighthouse","ex":[["De vuurtoren waarschuwt de schepen.","The lighthouse warns the ships."]]},
+  {"w":"wafel","t":"noun","a":"de","m":"waffle","ex":[["We aten warme wafels met stroop.","We ate warm waffles with syrup."]]},
+  {"w":"wagon","t":"noun","a":"de","m":"(train) carriage, wagon","ex":[["De trein heeft tien wagons.","The train has ten carriages."]]},
+  {"w":"wal","t":"noun","a":"de","m":"shore, bank; quay","ex":[["De boot legde aan bij de wal.","The boat moored at the quay."]]},
+  {"w":"walnoot","t":"noun","a":"de","m":"walnut","ex":[["In de salade zitten stukjes walnoot.","There are pieces of walnut in the salad."]]},
+  {"w":"walvis","t":"noun","a":"de","m":"whale","ex":[["De walvis kwam boven om adem te halen.","The whale surfaced to breathe."]]},
+  {"w":"wandelaar","t":"noun","a":"de","m":"walker, hiker","ex":[["De wandelaar rustte even uit.","The hiker rested for a moment."]]},
+  {"w":"wandelstok","t":"noun","a":"de","m":"walking stick, cane","ex":[["Opa loopt met een wandelstok.","Grandpa walks with a cane."]]},
+  {"w":"wanorde","t":"noun","a":"de","m":"disorder, chaos","ex":[["Na het feest heerste er wanorde.","After the party there was chaos."]]},
+  {"w":"warenhuis","t":"noun","a":"het","m":"department store","ex":[["In het warenhuis verkopen ze bijna alles.","The department store sells almost everything."]]},
+  {"w":"wasmachine","t":"noun","a":"de","m":"washing machine","ex":[["De wasmachine is kapot.","The washing machine is broken."]]},
+  {"w":"wastafel","t":"noun","a":"de","m":"washbasin, sink","ex":[["Hij waste zijn handen bij de wastafel.","He washed his hands at the sink."]]},
+  {"w":"weduwe","t":"noun","a":"de","m":"widow","ex":[["De weduwe woont nu alleen.","The widow lives alone now."]]},
+  {"w":"weduwnaar","t":"noun","a":"de","m":"widower","ex":[["Sinds haar dood is hij weduwnaar.","Since her death he is a widower."]]},
+  {"w":"weegschaal","t":"noun","a":"de","m":"scales, balance","ex":[["Leg de appels op de weegschaal.","Put the apples on the scales."]]},
+  {"w":"weeshuis","t":"noun","a":"het","m":"orphanage","ex":[["Zij groeide op in een weeshuis.","She grew up in an orphanage."]]},
+  {"w":"weiland","t":"noun","a":"het","m":"meadow, pasture","ex":[["De koeien staan in het weiland.","The cows are in the meadow."]]},
+  {"w":"wekker","t":"noun","a":"de","m":"alarm clock","ex":[["Mijn wekker ging om zeven uur.","My alarm clock went off at seven."]]},
+  {"w":"welp","t":"noun","a":"de","m":"cub (young animal)","ex":[["De leeuwin beschermt haar welpen.","The lioness protects her cubs."]]},
+  {"w":"welvaart","t":"noun","a":"de","m":"prosperity, wealth","ex":[["Het land kent grote welvaart.","The country enjoys great prosperity."]]},
+  {"w":"wenkbrauw","t":"noun","a":"de","m":"eyebrow","ex":[["Zij trok verbaasd haar wenkbrauw op.","She raised her eyebrow in surprise."]]},
+  {"w":"wesp","t":"noun","a":"de","m":"wasp","ex":[["Pas op, er zit een wesp op je glas.","Watch out, there's a wasp on your glass."]]},
+  {"w":"wetboek","t":"noun","a":"het","m":"law code, statute book","ex":[["Dat staat niet in het wetboek.","That is not in the law code."]]},
+  {"w":"wieg","t":"noun","a":"de","m":"cradle","ex":[["De baby slaapt in de wieg.","The baby is sleeping in the cradle."]]},
+  {"w":"wier","t":"noun","a":"het","m":"seaweed, algae","ex":[["Op de rotsen groeit groen wier.","Green seaweed grows on the rocks."]]},
+  {"w":"wijngaard","t":"noun","a":"de","m":"vineyard","ex":[["De druiven in de wijngaard zijn rijp.","The grapes in the vineyard are ripe."]]},
+  {"w":"wijsvinger","t":"noun","a":"de","m":"index finger","ex":[["Hij wees met zijn wijsvinger naar de kaart.","He pointed at the map with his index finger."]]},
+  {"w":"wilg","t":"noun","a":"de","m":"willow (tree)","ex":[["Langs de sloot staat een oude wilg.","An old willow stands along the ditch."]]},
+  {"w":"wimper","t":"noun","a":"de","m":"eyelash","ex":[["Er viel een wimper op haar wang.","An eyelash fell on her cheek."]]},
+  {"w":"windhond","t":"noun","a":"de","m":"greyhound","ex":[["Een windhond kan heel hard rennen.","A greyhound can run very fast."]]},
+  {"w":"winkelier","t":"noun","a":"de","m":"shopkeeper, retailer","ex":[["De winkelier opent de winkel om negen uur.","The shopkeeper opens the shop at nine."]]},
+  {"w":"witlof","t":"noun","a":"het","m":"chicory, endive","ex":[["We eten vanavond witlof uit de oven.","We're eating oven-baked chicory tonight."]]},
+  {"w":"wodka","t":"noun","a":"de","m":"vodka","ex":[["Hij bestelde een wodka met sinaasappelsap.","He ordered a vodka with orange juice."]]},
+  {"w":"wolk","t":"noun","a":"de","m":"cloud","ex":[["Er dreef een grote donkere wolk voorbij.","A big dark cloud drifted past."]]},
+  {"w":"wonderkind","t":"noun","a":"het","m":"child prodigy","ex":[["Mozart was een echt wonderkind.","Mozart was a real child prodigy."]]},
+  {"w":"woordenboek","t":"noun","a":"het","m":"dictionary","ex":[["Zoek het woord op in het woordenboek.","Look the word up in the dictionary."]]},
+  {"w":"woordenschat","t":"noun","a":"de","m":"vocabulary","ex":[["Lezen vergroot je woordenschat.","Reading expands your vocabulary."]]},
+  {"w":"worm","t":"noun","a":"de","m":"worm","ex":[["Een vogel trok een worm uit de grond.","A bird pulled a worm out of the ground."]]},
+  {"w":"worp","t":"noun","a":"de","m":"throw, cast","ex":[["Met één worp gooide hij alles om.","With one throw he knocked everything over."]]},
+  {"w":"worst","t":"noun","a":"de","m":"sausage","ex":[["Op brood eet ik graag worst.","I like sausage on bread."]]},
+  {"w":"wortel","t":"noun","a":"de","m":"carrot; root","ex":[["Konijnen zijn dol op wortel.","Rabbits love carrots."]]},
+  {"w":"woud","t":"noun","a":"het","m":"forest, woods","ex":[["In het donkere woud verdwaalden ze.","They got lost in the dark forest."]]},
+  {"w":"wrok","t":"noun","a":"de","m":"grudge, resentment","ex":[["Hij koestert al jaren wrok tegen haar.","He has borne a grudge against her for years."]]},
+  {"w":"yoghurt","t":"noun","a":"de","m":"yoghurt","ex":[["Bij het ontbijt eet ik yoghurt met fruit.","For breakfast I eat yoghurt with fruit."]]},
+  {"w":"yoga","t":"noun","a":"de","m":"yoga","ex":[["Elke ochtend doet zij een uur yoga.","Every morning she does an hour of yoga."]]},
+  {"w":"zakdoek","t":"noun","a":"de","m":"handkerchief","ex":[["Hij pakte een zakdoek om zijn neus te snuiten.","He took a handkerchief to blow his nose."]]},
+  {"w":"zakenman","t":"noun","a":"de","m":"businessman","ex":[["De zakenman reist de hele wereld over.","The businessman travels all over the world."]]},
+  {"w":"zakenreis","t":"noun","a":"de","m":"business trip","ex":[["Volgende week ga ik op zakenreis naar Berlijn.","Next week I'm going on a business trip to Berlin."]]},
+  {"w":"zaklantaarn","t":"noun","a":"de","m":"flashlight, torch","ex":[["Neem een zaklantaarn mee, het is donker.","Bring a flashlight, it's dark."]]},
+  {"w":"zalm","t":"noun","a":"de","m":"salmon","ex":[["We bakken vanavond zalm in de oven.","We're baking salmon in the oven tonight."]]},
+  {"w":"zandbak","t":"noun","a":"de","m":"sandpit, sandbox","ex":[["De kinderen spelen in de zandbak.","The children are playing in the sandpit."]]},
+  {"w":"zang","t":"noun","a":"de","m":"singing, song","ex":[["Haar zang klonk prachtig.","Her singing sounded beautiful."]]},
+  {"w":"zede","t":"noun","a":"de","m":"custom; (plural) morals","ex":[["Elk land heeft zijn eigen zeden.","Every country has its own customs."]]},
+  {"w":"zeef","t":"noun","a":"de","m":"sieve, strainer","ex":[["Giet de pasta door een zeef.","Pour the pasta through a sieve."]]},
+  {"w":"zeeman","t":"noun","a":"de","m":"sailor, seaman","ex":[["De zeeman was maanden op zee.","The sailor was at sea for months."]]},
+  {"w":"zeemeermin","t":"noun","a":"de","m":"mermaid","ex":[["Het sprookje gaat over een zeemeermin.","The fairy tale is about a mermaid."]]},
+  {"w":"zeemeeuw","t":"noun","a":"de","m":"seagull","ex":[["Een zeemeeuw pikte mijn broodje weg.","A seagull snatched my sandwich."]]},
+  {"w":"zeep","t":"noun","a":"de","m":"soap","ex":[["Was je handen goed met zeep.","Wash your hands well with soap."]]},
+  {"w":"zeester","t":"noun","a":"de","m":"starfish","ex":[["Op het strand vonden we een zeester.","We found a starfish on the beach."]]},
+  {"w":"zege","t":"noun","a":"de","m":"victory, triumph","ex":[["Het team vierde de zege uitbundig.","The team celebrated the victory wildly."]]},
+  {"w":"zegel","t":"noun","a":"het","m":"seal; stamp","ex":[["Op de brief zat een rood zegel.","There was a red seal on the letter."]]},
+  {"w":"zeil","t":"noun","a":"het","m":"sail; tarpaulin","ex":[["De wind blies in het zeil.","The wind filled the sail."]]},
+  {"w":"zetel","t":"noun","a":"de","m":"seat (in parliament); armchair","ex":[["De partij won drie zetels.","The party won three seats."]]},
+  {"w":"zeug","t":"noun","a":"de","m":"sow (female pig)","ex":[["De zeug heeft acht biggen.","The sow has eight piglets."]]},
+  {"w":"zenuw","t":"noun","a":"de","m":"nerve","ex":[["De tandarts raakte een zenuw.","The dentist touched a nerve."]]},
+  {"w":"zeshoek","t":"noun","a":"de","m":"hexagon","ex":[["Een bijenraat bestaat uit zeshoeken.","A honeycomb is made of hexagons."]]},
+  {"w":"zetmeel","t":"noun","a":"het","m":"starch","ex":[["Aardappels bevatten veel zetmeel.","Potatoes contain a lot of starch."]]},
+  {"w":"zijkant","t":"noun","a":"de","m":"side","ex":[["Parkeer de auto aan de zijkant.","Park the car on the side."]]},
+  {"w":"zink","t":"noun","a":"het","m":"zinc","ex":[["De dakgoot is van zink.","The gutter is made of zinc."]]},
+  {"w":"zintuig","t":"noun","a":"het","m":"sense (organ)","ex":[["De mens heeft vijf zintuigen.","Humans have five senses."]]},
+  {"w":"zitplaats","t":"noun","a":"de","m":"seat (place to sit)","ex":[["In de trein was geen zitplaats vrij.","There was no free seat on the train."]]},
+  {"w":"zolder","t":"noun","a":"de","m":"attic, loft","ex":[["De oude dozen staan op zolder.","The old boxes are in the attic."]]},
+  {"w":"zondebok","t":"noun","a":"de","m":"scapegoat","ex":[["Hij werd de zondebok van het hele team.","He became the scapegoat for the whole team."]]},
+  {"w":"zonlicht","t":"noun","a":"het","m":"sunlight","ex":[["De kamer baadde in het zonlicht.","The room was bathed in sunlight."]]},
+  {"w":"zonnescherm","t":"noun","a":"het","m":"sunshade, awning; parasol","ex":[["Zet het zonnescherm uit, het is heet.","Put out the awning, it's hot."]]},
+  {"w":"zonneschijn","t":"noun","a":"de","m":"sunshine","ex":[["We genoten van de zonneschijn.","We enjoyed the sunshine."]]},
+  {"w":"zonnestelsel","t":"noun","a":"het","m":"solar system","ex":[["De aarde hoort bij ons zonnestelsel.","The earth belongs to our solar system."]]},
+  {"w":"zonsondergang","t":"noun","a":"de","m":"sunset","ex":[["De zonsondergang kleurde de hemel rood.","The sunset turned the sky red."]]},
+  {"w":"zonsopgang","t":"noun","a":"de","m":"sunrise","ex":[["We stonden op voor de zonsopgang.","We got up for the sunrise."]]},
+  {"w":"zucht","t":"noun","a":"de","m":"sigh","ex":[["Met een diepe zucht ging hij zitten.","With a deep sigh he sat down."]]},
+  {"w":"zuigeling","t":"noun","a":"de","m":"infant, baby","ex":[["Een zuigeling drinkt vooral melk.","An infant mainly drinks milk."]]},
+  {"w":"zuil","t":"noun","a":"de","m":"column, pillar","ex":[["Het dak rust op zware zuilen.","The roof rests on heavy pillars."]]},
+  {"w":"zuivel","t":"noun","a":"de","m":"dairy (produce)","ex":[["Kaas en melk zijn zuivel.","Cheese and milk are dairy products."]]},
+  {"w":"zuurkool","t":"noun","a":"de","m":"sauerkraut","ex":[["In de winter eten we vaak zuurkool.","In winter we often eat sauerkraut."]]},
+  {"w":"zuurstof","t":"noun","a":"de","m":"oxygen","ex":[["Planten geven zuurstof af.","Plants release oxygen."]]},
+  {"w":"zwaan","t":"noun","a":"de","m":"swan","ex":[["Op de vijver zwemt een witte zwaan.","A white swan is swimming on the pond."]]},
+  {"w":"zweep","t":"noun","a":"de","m":"whip","ex":[["De koetsier liet de zweep knallen.","The coachman cracked the whip."]]},
+  {"w":"zweer","t":"noun","a":"de","m":"ulcer, sore, boil","ex":[["Hij heeft een pijnlijke zweer op zijn been.","He has a painful sore on his leg."]]},
+  {"w":"zwembroek","t":"noun","a":"de","m":"swimming trunks","ex":[["Vergeet je zwembroek niet mee te nemen.","Don't forget to bring your swimming trunks."]]},
+  {"w":"zwemvest","t":"noun","a":"het","m":"life jacket","ex":[["Op de boot draagt iedereen een zwemvest.","Everyone wears a life jacket on the boat."]]},
+  {"w":"zwerver","t":"noun","a":"de","m":"tramp, vagrant, wanderer","ex":[["De zwerver sliep onder de brug.","The tramp slept under the bridge."]]},
+  {"w":"zwijn","t":"noun","a":"het","m":"pig, boar; swine","ex":[["In het bos leven wilde zwijnen.","Wild boars live in the forest."]]},
+  {"w":"zwaluw","t":"noun","a":"de","m":"swallow (bird)","ex":[["In de lente komen de zwaluwen terug.","The swallows return in spring."]]},
+  {"w":"vlecht","t":"noun","a":"de","m":"braid, plait","ex":[["Zij draagt haar haar in een vlecht.","She wears her hair in a braid."]]},
+  {"w":"vulling","t":"noun","a":"de","m":"filling, stuffing","ex":[["De taart heeft een vulling van room.","The cake has a cream filling."]]},
+  {"w":"vonk","t":"noun","a":"de","m":"spark","ex":[["Uit het vuur sprong een vonk.","A spark jumped from the fire."]]},
+  {"w":"voorspoed","t":"noun","a":"de","m":"prosperity, success","ex":[["Wij wensen jullie geluk en voorspoed.","We wish you happiness and prosperity."]]},
+  {"w":"vraatzucht","t":"noun","a":"de","m":"gluttony, voracity","ex":[["Zijn vraatzucht kent geen grenzen.","His gluttony knows no bounds."]]},
+  {"w":"vrek","t":"noun","a":"de","m":"miser, skinflint","ex":[["De oude vrek gaf nooit iets weg.","The old miser never gave anything away."]]},
+  {"w":"wanhoop","t":"noun","a":"de","m":"despair","ex":[["In pure wanhoop belde ze de politie.","In sheer despair she called the police."]]},
+  {"w":"weemoed","t":"noun","a":"de","m":"melancholy, wistfulness","ex":[["Met weemoed dacht hij aan vroeger.","He thought of the past with melancholy."]]},
+  {"w":"weerzin","t":"noun","a":"de","m":"aversion, disgust, reluctance","ex":[["Zij keek met weerzin naar het vieze bord.","She looked at the dirty plate with disgust."]]},
+  {"w":"wenteltrap","t":"noun","a":"de","m":"spiral staircase","ex":[["Een smalle wenteltrap leidt naar de toren.","A narrow spiral staircase leads to the tower."]]},
+  {"w":"wingerd","t":"noun","a":"de","m":"vine, grapevine","ex":[["Tegen de muur groeit een wingerd.","A grapevine grows against the wall."]]},
+  {"w":"wisselkoers","t":"noun","a":"de","m":"exchange rate","ex":[["De wisselkoers van de euro is gestegen.","The exchange rate of the euro has risen."]]},
+  {"w":"zeearend","t":"noun","a":"de","m":"sea eagle","ex":[["Boven het meer vloog een zeearend.","A sea eagle flew above the lake."]]},
+  {"w":"zonnebloem","t":"noun","a":"de","m":"sunflower","ex":[["De zonnebloem draait naar de zon.","The sunflower turns toward the sun."]]},
+  {"w":"zwavel","t":"noun","a":"de","m":"sulphur","ex":[["Zwavel ruikt naar rotte eieren.","Sulphur smells like rotten eggs."]]},
+  {"w":"vlijtig","t":"adjective","m":"diligent, industrious","ex":[["Hij is een vlijtige leerling.","He is a diligent pupil."]]},
+  {"w":"voedzaam","t":"adjective","m":"nutritious","ex":[["Soep met groente is heel voedzaam.","Vegetable soup is very nutritious."]]},
+  {"w":"vluchtig","t":"adjective","m":"fleeting, cursory; volatile","ex":[["Zij wierp een vluchtige blik op de krant.","She cast a fleeting glance at the newspaper."]]},
+  {"w":"vleien","t":"verb","m":"to flatter","ex":[["Zij probeerde de baas te vleien.","She tried to flatter the boss."]]},
+  {"w":"vlechten","t":"verb","m":"to braid, to weave, to plait","ex":[["Ze kan mooie manden vlechten.","She can weave beautiful baskets."]]},
+  {"w":"vloeken","t":"verb","m":"to swear, to curse","ex":[["Hij begon te vloeken toen hij zijn trein miste.","He started to swear when he missed his train."]]},
+  {"w":"vouwen","t":"verb","m":"to fold","ex":[["Vouw de brief netjes dubbel.","Fold the letter neatly in half."]]},
+  /* --ESSENTIAL-APPEND-- */
+];
+
 function buildDeck(){
   deck = []; byId = {};
   const seedByWord = {};
@@ -7616,9 +7763,20 @@ function buildDeck(){
     if(ent.ex && ent.ex.length) ent.rich = true;
   });
 
+  // Merge dictionary-sourced Essential words (v109) that are not already in the deck.
+  // Each carries an original meaning + example; tagged 'essential' via essentialDict below.
+  ESSENTIAL.forEach(x => {
+    const lw = x.w.toLowerCase();
+    if(byId[lw] || byId[lw+'|'+x.t] || deck.some(e => e.w.toLowerCase()===lw)) return;
+    const e = {w:x.w, rank:0, id:'essential:'+lw, rich:true, hasMeaning:true, essentialDict:true, t:x.t, m:x.m};
+    if(x.a) e.a = x.a;
+    if(x.ex && x.ex.length) e.ex = x.ex;
+    deck.push(e); byId[e.id] = e;
+  });
   // Give every entry a primary source tag for filtering: book words vs general frequency words
   deck.forEach(e => {
     if(e.books && e.books.length) e.srcTags = [...new Set(e.books.map(x=>x.src))];
+    else if(e.essentialDict) e.srcTags = ['essential'];
     else e.srcTags = ['general'];
   });
   // "Essential Dutch words" (v108): a curated beginner core carved out of the general
