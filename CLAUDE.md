@@ -122,6 +122,17 @@ Owner Adi: B1 Dutch learner in Almere, toward conversational fluency.
 >   themselves were already translated. Verified in jsdom (Progress = streak card, no plan/reminder; Profile =
 >   Study plan + reminder toggle + time input + tz note; 10×3 key parity). SW cache bumped **v105 → v106**.
 
+> **Reminder button now toggles off (v107, Adi: "the button daily reminder on doesn't toggle, it's always on,
+> it should toggle on/off"):** `enableReminders()` (the Study-plan reminder button's onclick) only ever set
+> `remindOn=true` — there was no off path, so once enabled the button was stuck on "✓ Daily reminders on" and
+> tapping it re-requested permission but never turned reminders off. Made it a **real toggle**: when `remindOn`
+> is already true, a tap sets `remindOn=false`, persists `dutch5k-remind:false`, **clears the pending
+> `_remindTimer`** (so no queued notification fires), toasts **"Daily reminders off"**, re-renders, and returns
+> early; when off it still calls `Notification.requestPermission()` and enables as before. New UI string
+> **`'Daily reminders off'`** added to all 10 non-English dicts right beside `'Daily reminders on'` (English
+> falls back to the key). No storage/logic changes elsewhere — `scheduleReminder()` already no-ops when the
+> flag is off. SW cache bumped **v106 → v107**.
+
 > **Convention (Adi):** this `CLAUDE.md` is the project's only memory (sessions get cleared), so it
 > should track features, gotchas, and cache bumps — but **never edit it automatically.** After each
 > feature, **ask Adi** whether to update this file. Likewise **never push to `main` automatically**
