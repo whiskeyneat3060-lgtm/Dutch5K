@@ -164,6 +164,33 @@ Owner Adi: B1 Dutch learner in Almere, toward conversational fluency.
 > - **To resize the core:** change `ESSENTIAL_N`. To re-source from the real dictionary later, replace the
 >   frequency-slice selection with a curated word-id list, keeping the `srcTags=['essential']` tagging pass.
 
+> **Essential expansion — 138 dictionary v–z words (v109, Adi uploaded the Drive split
+> `pdfcoffee.com_dutch-dictionary-pdf-free-200-400.pdf` and chose "extract + OCR-fix + author new"):** the
+> v108 blocker (garbled OCR + copyright) still holds for this *same* commercial dictionary, so v109 does NOT
+> import it wholesale. Instead it adds **138 common everyday Dutch words in the v–z range** that were **absent
+> from the FREQ/BOOKS corpus**, following the agreed provenance rule: **only the Dutch headword + de/het
+> article were taken from the scan (and hand OCR-corrected — the scan has a systematic `a→o` swap,
+> `voetbal`→"voetbol", `vla`→"via", stray stress-mark apostrophes); every English meaning and example is
+> original.** No dictionary glosses copied.
+> - **The split only covered v–z** (its Dutch→English half runs `viool`…`zwoel`; the rest is the English→Dutch
+>   half, English headwords, unused). Method (reproducible via `scratchpad/` scripts, regenerable from this
+>   session): `read_file_content` the Drive PDF → parse Dutch→English portion → mechanical noun-candidate
+>   extraction via `(de)/(het)` anchors → **diff against a full app word inventory** (FREQ + all `"w"` fields +
+>   TRANS/GENEX keys, ~6,777 words) → hand-correct + curate the genuinely-missing common words → author
+>   `{w,t,a,m,ex}` with original meanings/examples. The **a–v split (`…-1-200.pdf`) is still on Drive** — same
+>   pass extends Essential across the rest of the alphabet.
+> - **New `ESSENTIAL` blob** (just above `buildDeck`), 138 entries. `buildDeck` merges each word **not already
+>   in the deck** as a new entry (`id:'essential:<word>'`, `essentialDict:true`, `rank:0`, rich) right before
+>   the primary-source pass, and that pass now reads **`else if(e.essentialDict) e.srcTags=['essential']`** (book
+>   → book tags; essentialDict → essential; otherwise general). The existing `ESSENTIAL_N=1000` frequency-slice
+>   pass is unchanged and composes on top, so **Essential = 1000 frequency-core + 138 dictionary = 1138**. Since
+>   the new words have `rank:0` they sort to the back of the `FREE_LIMITS.essential=150` free slice → they lock
+>   in Free (like actie/niveau), which is fine. **Top-ups: append before the `--ESSENTIAL-APPEND--` anchor.**
+> - **No i18n:** the 138 new meanings/examples are English and fall back safely via `ct()` until packs are
+>   regenerated; no UI-dict keys changed. Verified in jsdom (deck 6406; 138 tagged essential with correct
+>   article/meaning/example; no duplicate ids; `bereiken` still rich; 3 tabs render clean). SW cache **v108 →
+>   v109** (in `public/sw.js`).
+
 > **Convention (Adi):** this `CLAUDE.md` is the project's only memory (sessions get cleared), so it
 > should track features, gotchas, and cache bumps — but **never edit it automatically.** After each
 > feature, **ask Adi** whether to update this file. Likewise **never push to `main` automatically**
