@@ -191,6 +191,25 @@ Owner Adi: B1 Dutch learner in Almere, toward conversational fluency.
 >   article/meaning/example; no duplicate ids; `bereiken` still rich; 3 tabs render clean). SW cache **v108 →
 >   v109** (in `public/sw.js`).
 
+> **Essential expansion — 346 dictionary a–h words (v110, Adi uploaded the second Drive split
+> `pdfcoffee.com_dutch-dictionary-pdf-free-1-200.pdf`):** same extract → OCR-fix → author-original pass as
+> v109, on the *front* half of the dictionary. **346 common everyday a–h nouns** absent from the FREQ/BOOKS
+> corpus were added, appended to the same `ESSENTIAL` blob before the `--ESSENTIAL-APPEND--` anchor (no code
+> changes — the v109 merge + `essentialDict` tagging already handle them). **Essential is now 1000 frequency-core
+> + 484 dictionary = 1484.** Provenance rule unchanged: only the Dutch headword + de/het article taken from the
+> (garbled, hand OCR-corrected) scan — systematic `a→o` swap (`aardappel`→"oardappel", `automaat`→"automoat"),
+> column-interleave, stray apostrophes; every meaning + example is original.
+> - **⚠ This split's `read_file_content` extraction stops at ~letter H** (`haverklap`), the exact cap the v108
+>   note flagged — so **i–u is still uncovered by either split's text extraction.** The a–v PDF physically
+>   contains a–v, but only a–h came through as text. To finish i–u, either paginate/offset the Drive read
+>   differently or render those pages to images (the Niveau/Perfectie method). That's the remaining gap for a
+>   future session; a–h and v–z are done.
+> - Verified in jsdom (deck 6752; 484 tagged essential; no duplicate ids; `bereiken` still rich; 3 tabs render
+>   clean). SW cache **v109 → v110** (in `public/sw.js`). Scratchpad build flow (regenerable): `read_file_content`
+>   the split → slice the Dutch→English portion → noun-candidate extraction via `(de)/(het)` anchors → diff vs the
+>   full app word inventory → hand OCR-correct + curate the genuinely-missing common words → author
+>   `{w,t,a,m,ex}` → append before `--ESSENTIAL-APPEND--`.
+
 > **Convention (Adi):** this `CLAUDE.md` is the project's only memory (sessions get cleared), so it
 > should track features, gotchas, and cache bumps — but **never edit it automatically.** After each
 > feature, **ask Adi** whether to update this file. Likewise **never push to `main` automatically**
