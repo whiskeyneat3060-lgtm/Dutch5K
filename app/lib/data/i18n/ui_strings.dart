@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter/services.dart' show rootBundle;
 
 /// UI string translation.
@@ -16,6 +17,12 @@ class UiStrings {
   String language = 'en';
 
   static const String assetPath = 'assets/data/ui_strings.json';
+
+  /// Builds an instance from already-parsed dictionaries. Lets tests exercise
+  /// lookup without going through asset loading twice.
+  @visibleForTesting
+  factory UiStrings.fromParsed(Map<String, Map<String, String>> dicts) =>
+      UiStrings._(dicts);
 
   static Future<UiStrings> load() async {
     final String raw = await rootBundle.loadString(assetPath);
