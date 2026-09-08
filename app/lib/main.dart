@@ -1,122 +1,133 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-void main() {
-  runApp(const MyApp());
-}
+import 'data/deck_repository.dart';
+import 'data/i18n/content_pack_repository.dart';
+import 'data/i18n/ui_strings.dart';
+import 'data/local_db.dart';
+import 'data/settings_store.dart';
+import 'firebase_options.dart';
+import 'models/deck_entry.dart';
+import 'models/enums.dart';
+import 'services/notification_service.dart';
+import 'state/app_state.dart';
+import 'state/providers.dart';
+import 'state/settings_controller.dart';
+import 'state/study_controller.dart';
+import 'ui/shell.dart';
+import 'ui/theme/app_theme.dart';
+import 'ui/theme/tokens.dart';
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await SystemChrome.setPreferredOrientations(
+      <DeviceOrientation>[DeviceOrientation.portraitUp]);
 
-  // This widget is the root of your application.
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
-  }
-}
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+  // Resolve the async singletons before the first frame so the app opens
+  // straight onto a card rather than a spinner.
+  final SettingsStore settings = await SettingsStore.create();
+  final LocalDb db = await LocalDb.open();
+  final UiStrings ui = await UiStrings.load();
+  final Deck deck = await DeckRepository().load();
+  final ContentPackRepository packs = ContentPackRepository(settings: settings);
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+  ui.language = settings.language;
+  if (settings.language != 'en') {
+    // Best effort: a cached pack loads instantly, and a failure just leaves
+    // meanings in English rather than blocking startup.
+    try {
+      await packs.activate(settings.language);
+    } catch (_) {}
   }
 
+  runApp(
+    ProviderScope(
+      overrides: <Override>[
+        settingsStoreProvider.overrideWithValue(settings),
+        localDbProvider.overrideWithValue(db),
+        uiStringsProvider.overrideWithValue(ui),
+        deckProvider.overrideWithValue(deck),
+        contentPackProvider.overrideWithValue(packs),
+      ],
+      child: const DutchToGoApp(),
+    ),
+  );
+}
+
+class DutchToGoApp extends ConsumerStatefulWidget {
+  const DutchToGoApp({super.key});
+
+  @override
+  ConsumerState<DutchToGoApp> createState() => _DutchToGoAppState();
+}
+
+class _DutchToGoAppState extends ConsumerState<DutchToGoApp>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _bootstrap());
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  Future<void> _bootstrap() async {
+    final StudyController study = ref.read(studyProvider.notifier);
+    await study.load();
+
+    await ref.read(notificationsProvider).init();
+    NotificationService.onTap = (String? _) {
+      // Tapping the reminder should land on the study card.
+    };
+    await ref.read(settingsProvider.notifier).rescheduleReminder();
+
+    // Purchases and sync both depend on who is signed in.
+    ref.listenManual<AsyncValue<User?>>(authStateProvider,
+        (AsyncValue<User?>? _, AsyncValue<User?> next) async {
+      final String? uid = next.value?.uid;
+      ref.read(iapProvider).updateUid(uid);
+      if (uid != null) await study.pullAndMerge();
+    }, fireImmediately: true);
+
+    await ref.read(iapProvider).init(uid: ref.read(authStateProvider).value?.uid);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      // Flush anything the debounce timer has not pushed yet.
+      ref.read(studyProvider.notifier).pushSync();
+    }
+    if (state == AppLifecycleState.resumed) {
+      ref.read(settingsProvider.notifier).rescheduleReminder();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+    final AppThemeId themeId = ref.watch(
+        settingsProvider.select((SettingsState s) => s.theme));
+    final AppTokens tokens = AppTheme.tokensFor(themeId);
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: AppTheme.overlayStyle(tokens),
+      child: MaterialApp(
+        title: 'Dutch To Go',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.materialTheme(tokens),
+        home: const AppShell(),
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
