@@ -1,6 +1,18 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Firebase, content-pack downloads and in-app purchase. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Runtime-requested on API 33+, only when the user enables reminders. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- Re-arms the daily reminder after a reboot. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <!-- Play Billing. -->
+    <uses-permission android:name="com.android.vending.BILLING"/>
+    <!-- Haptic tap feedback. -->
+    <uses-permission android:name="android.permission.VIBRATE"/>
+
     <application
-        android:label="dutch_to_go"
+        android:label="Dutch To Go"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
@@ -30,6 +42,22 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
+        <!-- Daily study reminder: reschedule after reboot and on timezone change. -->
+        <receiver
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+                <action android:name="android.intent.action.QUICKBOOT_POWERON"/>
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>
+                <action android:name="android.intent.action.TIMEZONE_CHANGED"/>
+            </intent-filter>
+        </receiver>
+        <receiver
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver"
+            android:exported="false"/>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
@@ -40,6 +68,15 @@
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
+        </intent>
+        <!-- Dutch pronunciation via the system text-to-speech engine. -->
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE"/>
+        </intent>
+        <!-- The Contact-us mail composer. -->
+        <intent>
+            <action android:name="android.intent.action.SENDTO"/>
+            <data android:scheme="mailto"/>
         </intent>
     </queries>
 </manifest>

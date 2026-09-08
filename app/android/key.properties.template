@@ -1,0 +1,6 @@
+# Copy to android/key.properties and fill in before building a release.
+# This file is gitignored: never commit a keystore or its passwords.
+storePassword=
+keyPassword=
+keyAlias=upload
+storeFile=/absolute/path/to/upload-keystore.jks

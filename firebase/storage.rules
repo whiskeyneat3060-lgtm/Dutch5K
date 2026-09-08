@@ -1,0 +1,21 @@
+rules_version = '2';
+
+// Dutch To Go — Cloud Storage security rules.
+//
+// The only stored objects are the ten translation content packs. They are
+// world-readable to any signed-in or anonymous client because they are the
+// app's own shipped content, and they are never writable from a client —
+// upload them with the Admin SDK or the Firebase console.
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    match /i18n/{lang} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

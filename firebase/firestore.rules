@@ -1,0 +1,78 @@
+rules_version = '2';
+
+// Dutch To Go — Firestore security rules.
+//
+// The central invariant: a client may write its own study data, but may NEVER
+// write its own entitlement. `isPro` is set only by the receipt-verification
+// Cloud Function running with admin credentials, which is what makes the
+// paywall forgery-resistant rather than a client-side boolean.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    // Fields the client is allowed to set on its own profile document.
+    function allowedProfileFields() {
+      return ['email', 'displayName', 'provider', 'createdAt', 'lastSeenAt'];
+    }
+
+    // True when the incoming write touches only allowed fields and leaves the
+    // entitlement exactly as the server last wrote it.
+    function profileWriteIsSafe() {
+      let incoming = request.resource.data;
+      let existing = resource == null ? null : resource.data;
+      return incoming.diff(existing == null ? {} : existing)
+                     .affectedKeys()
+                     .hasOnly(allowedProfileFields())
+        && (
+          existing == null
+            ? !('isPro' in incoming)
+            : (
+              incoming.get('isPro', false) == existing.get('isPro', false)
+              && incoming.get('proSource', '') == existing.get('proSource', '')
+            )
+        );
+    }
+
+    match /users/{uid} {
+      allow read: if isOwner(uid);
+      allow create, update: if isOwner(uid) && profileWriteIsSafe();
+      // Account deletion runs server-side via the auth trigger, so the client
+      // never deletes its own profile document.
+      allow delete: if false;
+
+      // Study data: chunked progress + SRS snapshots.
+      match /progressChunks/{chunkId} {
+        allow read, write: if isOwner(uid);
+      }
+
+      match /study/{docId} {
+        allow read, write: if isOwner(uid);
+      }
+
+      // Purchase receipts. The client submits; only the function may amend or
+      // remove them, so a user cannot mark their own receipt verified.
+      match /receipts/{receiptId} {
+        allow read: if isOwner(uid);
+        allow create: if isOwner(uid)
+          && request.resource.data.status == 'pending'
+          && request.resource.data.keys().hasAll(
+               ['productId', 'source', 'serverVerificationData', 'status'])
+          && request.resource.data.serverVerificationData is string
+          && request.resource.data.serverVerificationData.size() < 20000;
+        allow update, delete: if false;
+      }
+    }
+
+    // Everything else is closed.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

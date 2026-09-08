@@ -13,7 +13,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>dutch_to_go</string>
+	<string>Dutch To Go</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -31,8 +31,6 @@
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>
@@ -45,5 +43,32 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+
+	<!-- Google Sign-In redirects back through the reversed client id. The
+	     placeholder below is replaced by `flutterfire configure`; take the value
+	     of REVERSED_CLIENT_ID from ios/Runner/GoogleService-Info.plist. -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>REPLACE_WITH_REVERSED_CLIENT_ID</string>
+			</array>
+		</dict>
+	</array>
+
+	<!-- Opening the Contact-us mail composer. -->
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>mailto</string>
+	</array>
+
+	<!-- Speech synthesis is used for Dutch pronunciation. iOS does not gate it
+	     behind a permission, but declaring the capability keeps the intent
+	     explicit for review. -->
+	<key>UIBackgroundModes</key>
+	<array/>
 </dict>
 </plist>

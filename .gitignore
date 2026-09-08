@@ -15,6 +15,8 @@ app/android/local.properties
 app/android/app/google-services.json
 app/ios/Runner/GoogleService-Info.plist
 app/lib/firebase_options.dart
+app/android/key.properties
+app/android/app/src/main/res/values/strings.xml.local
 
 # Firebase functions
 firebase/functions/node_modules/
